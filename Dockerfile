@@ -2,6 +2,9 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# Match packageManager in package.json (lockfile is npm 11).
+RUN corepack enable && corepack prepare npm@11.9.0 --activate
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
