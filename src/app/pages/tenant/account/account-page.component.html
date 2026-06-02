@@ -1,0 +1,189 @@
+<div class="profile-page flex w-full min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="w-full min-w-0">
+    <h1 class="text-2xl font-semibold tracking-tight">Your profile</h1>
+    <p class="text-muted-foreground mt-1 max-w-3xl text-sm">
+      Update your name and profile photo. Names show the values stored for your account. All changes are optional; change at
+      least one field or add an image to save.
+    </p>
+  </div>
+
+  <div hlmCard class="w-full min-w-0 flex-1">
+    @if (!profileReady()) {
+      <div hlmCardContent>
+        <div
+          class="text-muted-foreground grid animate-pulse grid-cols-1 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:gap-10"
+          aria-busy="true"
+        >
+          <div class="flex flex-col gap-4">
+            <div class="bg-muted mx-auto aspect-square w-full max-w-[min(100%,20rem)] rounded-lg lg:mx-0 lg:max-w-full"></div>
+            <div class="bg-muted h-10 w-full rounded-md"></div>
+            <div class="bg-muted h-10 max-w-[12rem] rounded-md"></div>
+          </div>
+          <div class="flex flex-col gap-6">
+            <div class="bg-muted h-10 w-full rounded-md"></div>
+            <div class="bg-muted h-10 w-full rounded-md"></div>
+            <div class="bg-muted h-10 w-full rounded-md"></div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div hlmCardContent>
+        <form novalidate (submit)="onSubmit($event)" class="flex w-full min-w-0 flex-col gap-8">
+          @if (serverError()) {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            >
+              {{ serverError() }}
+            </p>
+          }
+          @if (success()) {
+            <p
+              class="rounded-md border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200"
+            >
+              Profile updated.
+            </p>
+          }
+
+          <div
+            class="grid w-full min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:items-start lg:gap-10"
+          >
+            <!-- Column 1: photo (~30%) -->
+            <div class="flex min-w-0 flex-col gap-4">
+              <div
+                class="border-border bg-muted/40 text-muted-foreground relative mx-auto aspect-square w-full max-w-[min(100%,20rem)] overflow-hidden rounded-lg border text-3xl font-semibold ring-1 ring-border sm:text-4xl lg:mx-0 lg:max-w-full"
+                aria-live="polite"
+              >
+                @if (previewSource(); as src) {
+                  <img
+                    [src]="src"
+                    alt=""
+                    class="absolute inset-0 size-full object-cover"
+                    [class.hidden]="avatarPreviewFailed()"
+                    (error)="onAvatarPreviewError()"
+                  />
+                }
+                <span
+                  class="flex size-full items-center justify-center"
+                  [class.hidden]="!!previewSource() && !avatarPreviewFailed()"
+                >
+                  {{ profileInitials() }}
+                </span>
+              </div>
+
+              <div class="flex min-w-0 flex-col gap-3">
+                <label
+                  hlmLabel
+                  for="acc-image"
+                  class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                  >Profile image</label
+                >
+                <div
+                  class="border-border flex w-full min-w-0 items-center gap-3 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground"
+                >
+                  <ng-icon hlm name="lucideImagePlus" class="size-5 shrink-0" />
+                  <input
+                    id="acc-image"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    class="text-foreground min-w-0 flex-1 file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                    (change)="onImagePicked($event)"
+                  />
+                </div>
+                <p class="text-muted-foreground text-xs">JPEG, PNG, WebP, or GIF — max 5 MB.</p>
+                <button
+                  hlmBtn
+                  type="button"
+                  variant="destructive"
+                  class="w-full sm:w-auto"
+                  [disabled]="submitting() || deletingAvatar() || !canRemoveProfileImage()"
+                  (click)="removeProfileImage()"
+                >
+                  <ng-icon hlm name="lucideTrash2" size="sm" />
+                  {{ deletingAvatar() ? 'Removing…' : 'Remove profile image' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Column 2: names + email -->
+            <div class="flex min-w-0 flex-col gap-6">
+              <div class="min-w-0 space-y-2">
+                <label
+                  hlmLabel
+                  for="acc-first"
+                  class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                  >First name</label
+                >
+                <div hlmInputGroup class="w-full">
+                  <div hlmInputGroupAddon>
+                    <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+                  </div>
+                  <input
+                    hlmInputGroupInput
+                    id="acc-first"
+                    type="text"
+                    autocomplete="given-name"
+                    class="min-w-0 flex-1"
+                    [formField]="profileForm.firstName"
+                    [placeholder]="profileReady() ? 'First name' : ''"
+                  />
+                </div>
+              </div>
+              <div class="min-w-0 space-y-2">
+                <label
+                  hlmLabel
+                  for="acc-last"
+                  class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                  >Last name</label
+                >
+                <div hlmInputGroup class="w-full">
+                  <div hlmInputGroupAddon>
+                    <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+                  </div>
+                  <input
+                    hlmInputGroupInput
+                    id="acc-last"
+                    type="text"
+                    autocomplete="family-name"
+                    class="min-w-0 flex-1"
+                    [formField]="profileForm.lastName"
+                    [placeholder]="profileReady() ? 'Last name' : ''"
+                  />
+                </div>
+              </div>
+              <div class="min-w-0 space-y-2">
+                <label
+                  hlmLabel
+                  for="acc-email"
+                  class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+                  >Email</label
+                >
+                <div hlmInputGroup class="w-full">
+                  <div hlmInputGroupAddon>
+                    <ng-icon hlm name="lucideMail" size="sm" class="text-muted-foreground" />
+                  </div>
+                  <input
+                    hlmInputGroupInput
+                    id="acc-email"
+                    type="email"
+                    autocomplete="email"
+                    readonly
+                    tabindex="-1"
+                    class="bg-muted/50 text-muted-foreground min-w-0 flex-1 cursor-not-allowed"
+                    [value]="profileEmail()"
+                  />
+                </div>
+                <p class="text-muted-foreground text-xs">Email cannot be changed here.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-border flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center">
+            <button hlmBtn type="submit" class="w-full sm:w-auto" [disabled]="submitting() || !profileReady()">
+              {{ submitting() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="auth-page text-left">
+  <h1 class="auth-page__title text-3xl font-semibold tracking-tight text-white md:text-4xl">Create account</h1>
+  <p class="auth-page__subtitle mt-2 text-sm text-slate-400">Sign up to access the command center</p>
+
+  <form novalidate (submit)="onSubmit($event)" class="mt-8 space-y-5">
+    @for (err of registerForm().errorSummary(); track err.kind + (err.message ?? '')) {
+      @if (err.kind === 'server') {
+        <p class="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200">{{ err.message }}</p>
+      }
+    }
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="space-y-2">
+        <label hlmLabel for="reg-first" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">First name</label>
+        <div hlmInputGroup class="bg-slate-900/40">
+          <div hlmInputGroupAddon>
+            <ng-icon hlm name="lucideUser" size="sm" class="text-slate-500" />
+          </div>
+          <input
+            hlmInputGroupInput
+            id="reg-first"
+            type="text"
+            autocomplete="given-name"
+            [formField]="registerForm.firstName"
+            placeholder="Alex"
+            class="placeholder:text-slate-600"
+          />
+        </div>
+      </div>
+      <div class="space-y-2">
+        <label hlmLabel for="reg-last" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Last name</label>
+        <div hlmInputGroup class="bg-slate-900/40">
+          <div hlmInputGroupAddon>
+            <ng-icon hlm name="lucideUser" size="sm" class="text-slate-500" />
+          </div>
+          <input
+            hlmInputGroupInput
+            id="reg-last"
+            type="text"
+            autocomplete="family-name"
+            [formField]="registerForm.lastName"
+            placeholder="Taylor"
+            class="placeholder:text-slate-600"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <label hlmLabel for="reg-email" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Email</label>
+      <div hlmInputGroup class="bg-slate-900/40">
+        <div hlmInputGroupAddon>
+          <ng-icon hlm name="lucideMail" size="sm" class="text-slate-500" />
+        </div>
+        <input
+          hlmInputGroupInput
+          id="reg-email"
+          type="email"
+          autocomplete="email"
+          [formField]="registerForm.email"
+          placeholder="name@company.com"
+          class="placeholder:text-slate-600"
+        />
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <label hlmLabel for="reg-password" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Password</label>
+      <div hlmInputGroup class="bg-slate-900/40">
+        <div hlmInputGroupAddon>
+          <ng-icon hlm name="lucideKeyRound" size="sm" class="text-slate-500" />
+        </div>
+        <input
+          hlmInputGroupInput
+          id="reg-password"
+          type="password"
+          autocomplete="new-password"
+          [formField]="registerForm.password"
+          placeholder="••••••••"
+          class="placeholder:text-slate-600"
+        />
+      </div>
+    </div>
+
+    <button type="submit" class="auth-submit-btn mt-2 w-full" [disabled]="submitting()">
+      {{ submitting() ? 'Creating account…' : 'Create account' }}
+    </button>
+  </form>
+
+  <p class="mt-10 text-center text-xs leading-relaxed text-slate-500">
+    By continuing, you agree to our
+    <a href="#" class="text-slate-400 underline-offset-2 hover:text-cyan-400 hover:underline" (click)="$event.preventDefault()"
+      >Terms of Service</a
+    >
+    and
+    <a href="#" class="text-slate-400 underline-offset-2 hover:text-cyan-400 hover:underline" (click)="$event.preventDefault()"
+      >Privacy Policy</a
+    >.
+  </p>
+
+  <p class="mt-6 text-center text-sm text-slate-500">
+    Already have an account?
+    <a routerLink="/auth/login" class="font-medium text-cyan-400 hover:text-cyan-300">Sign in</a>
+  </p>
+</div>

@@ -1,0 +1,119 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="usersListLink()"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to users
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Add user</h1>
+      <p class="text-muted-foreground mt-1 text-sm">Create a new member for this workspace.</p>
+    </div>
+  </div>
+
+  <div hlmCard class="w-full">
+    <div hlmCardHeader>
+      <h2 hlmCardTitle>Account details</h2>
+      <p hlmCardDescription>Email, name, password, and workspace role.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+        @for (err of userForm().errorSummary(); track err.kind + (err.message ?? '')) {
+          @if (err.kind === 'server') {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ err.message }}
+            </p>
+          }
+        }
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label hlmLabel for="user-first">First name</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+              </div>
+              <input hlmInputGroupInput id="user-first" type="text" autocomplete="given-name" [formField]="userForm.firstName" />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label hlmLabel for="user-last">Last name</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+              </div>
+              <input hlmInputGroupInput id="user-last" type="text" autocomplete="family-name" [formField]="userForm.lastName" />
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="user-email">Email</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideMail" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              id="user-email"
+              type="email"
+              autocomplete="email"
+              placeholder="name@company.com"
+              [formField]="userForm.email"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="user-password">Password</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideKeyRound" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              id="user-password"
+              type="password"
+              autocomplete="new-password"
+              [formField]="userForm.password"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel id="user-role-label">Role</label>
+          <hlm-select
+            class="w-full"
+            [value]="model().roleName"
+            (valueChange)="onRoleChange($event)"
+            aria-labelledby="user-role-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Select a role" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (role of roles(); track role.id || role.name) {
+                <hlm-select-item [value]="role.name">{{ role.name }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+          <a hlmBtn variant="outline" [routerLink]="usersListLink()" [class.pointer-events-none]="saving()">Cancel</a>
+          <button type="submit" hlmBtn [disabled]="saving()">
+            {{ saving() ? 'Creating…' : 'Create user' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
