@@ -1,0 +1,45 @@
+name: Deploy UI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  COMPOSE_FILE: docker-compose.yaml
+  COMPOSE_PROJECT_NAME: skemex-ui
+  DOCKER_NETWORK: skemex-network
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      API_URL: ${{ secrets.API_URL }}
+      TOKEN_STORAGE_ENCRYPTION_KEY: ${{ secrets.TOKEN_STORAGE_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate secrets
+        run: |
+          : "${API_URL:?Set repository secret API_URL}"
+          : "${TOKEN_STORAGE_ENCRYPTION_KEY:?Set repository secret TOKEN_STORAGE_ENCRYPTION_KEY}"
+
+      - name: Ensure Docker network exists
+        run: |
+          docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 \
+            || docker network create "${DOCKER_NETWORK}"
+
+      - name: Build Docker images
+        run: docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" build
+
+      - name: Stop existing stack
+        run: docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" down --remove-orphans
+
+      - name: Start stack
+        run: docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" up -d
+
+      - name: Show running services
+        run: docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT_NAME}" ps

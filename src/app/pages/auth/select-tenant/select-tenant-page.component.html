@@ -1,0 +1,164 @@
+@if (user(); as u) {
+  <div class="tenant-page relative min-h-svh overflow-hidden bg-[#020817] text-slate-200">
+    <div class="tenant-page__glow pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div class="tenant-page__noise pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+    <div class="relative z-[1] mx-auto flex min-h-svh max-w-3xl flex-col px-6 py-14 md:px-10 md:py-20">
+      <header class="mb-12 text-center md:mb-16">
+        <div
+          class="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/10 text-cyan-300 shadow-[0_0_40px_-12px_rgba(34,211,238,0.55)]"
+        >
+          <ng-icon hlm name="lucideSparkles" class="size-7" />
+        </div>
+        <h1 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">Choose a workspace</h1>
+        <p class="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+          Pick a company to continue, or create a new one. You’re signed in as
+          <span class="font-medium text-slate-300">{{ u.email }}</span>
+        </p>
+        @if (selectError(); as se) {
+          <p
+            class="mx-auto mt-6 max-w-md rounded-lg border border-red-500/35 bg-red-950/35 px-4 py-3 text-sm text-red-200"
+            role="alert"
+          >
+            {{ se }}
+          </p>
+        }
+      </header>
+
+      <div class="flex flex-col gap-4">
+        <hlm-dialog
+          [state]="createDialogState()"
+          (stateChanged)="onCreateDialogStateChanged($event)"
+          (closed)="onCreateDialogClosed()"
+        >
+          <button
+            type="button"
+            hlmBtn
+            variant="outline"
+            hlmDialogTrigger
+            class="tenant-new-btn group flex h-auto w-full items-center justify-between gap-4 rounded-xl border-dashed border-slate-600 bg-slate-900/30 px-5 py-4 text-left text-slate-200 hover:border-cyan-500/40 hover:bg-slate-900/50"
+          >
+            <span class="flex items-center gap-3">
+              <span
+                class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+              >
+                <ng-icon hlm name="lucidePlus" class="size-5" />
+              </span>
+              <span>
+                <span class="block text-sm font-semibold text-white">Create new company</span>
+                <span class="mt-0.5 block text-xs text-slate-500">Add a workspace and start as admin</span>
+              </span>
+            </span>
+            <ng-icon
+              hlm
+              name="lucideChevronRight"
+              class="size-5 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-cyan-400/80"
+            />
+          </button>
+
+          <hlm-dialog-content *hlmDialogPortal>
+            <hlm-dialog-header>
+              <h2 hlmDialogTitle>New company</h2>
+              <p hlmDialogDescription>This becomes a separate workspace. You’ll be the admin.</p>
+            </hlm-dialog-header>
+
+            <form novalidate (submit)="onCreateSubmit($event)" class="space-y-4">
+              @for (err of createForm().errorSummary(); track err.kind + (err.message ?? '')) {
+                @if (err.kind === 'server') {
+                  <p
+                    class="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200"
+                    role="alert"
+                  >
+                    {{ err.message }}
+                  </p>
+                }
+              }
+
+              <div class="space-y-2">
+                <label hlmLabel for="company-name">Company name</label>
+                <div hlmInputGroup>
+                  <input
+                    hlmInputGroupInput
+                    id="company-name"
+                    type="text"
+                    autocomplete="organization"
+                    [formField]="createForm.name"
+                    placeholder="Acme Inc."
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label hlmLabel for="company-email">Company email</label>
+                <div hlmInputGroup>
+                  <input
+                    hlmInputGroupInput
+                    id="company-email"
+                    type="email"
+                    autocomplete="email"
+                    [formField]="createForm.email"
+                    placeholder="billing@company.com"
+                  />
+                </div>
+              </div>
+
+              <hlm-dialog-footer>
+                <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="creating()">Cancel</button>
+                <button type="submit" hlmBtn [disabled]="creating()">
+                  {{ creating() ? 'Creating…' : 'Create workspace' }}
+                </button>
+              </hlm-dialog-footer>
+            </form>
+          </hlm-dialog-content>
+        </hlm-dialog>
+
+        @if (u.tenants.length === 0) {
+          <p class="rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-6 text-center text-sm text-slate-500">
+            You’re not a member of any company yet. Create one above to get started.
+          </p>
+        } @else {
+          <p class="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">Your companies</p>
+          <ul class="flex flex-col gap-3">
+            @for (t of u.tenants; track t.id) {
+              <li>
+                <hlm-item
+                  variant="outline"
+                  class="tenant-item-select w-full cursor-pointer text-start"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-busy]="selectingId() === t.id"
+                  [attr.aria-disabled]="selectingId() !== null && selectingId() !== t.id ? true : null"
+                  (click)="onTenantItemActivate(t.id)"
+                  (keydown.enter)="onTenantItemActivate(t.id)"
+                  (keydown.space)="$event.preventDefault(); onTenantItemActivate(t.id)"
+                >
+                  <div hlmItemMedia variant="icon">
+                    <ng-icon hlm name="lucideBuilding2" />
+                  </div>
+                  <div hlmItemContent>
+                    <div hlmItemTitle>{{ t.name }}</div>
+                    <p hlmItemDescription>Open workspace</p>
+                  </div>
+                  <div hlmItemActions>
+                    @if (selectingId() === t.id) {
+                      <span class="text-xs">Opening…</span>
+                    } @else {
+                      <ng-icon hlm name="lucideChevronRight" />
+                    }
+                  </div>
+                </hlm-item>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <p class="mt-auto pt-12 text-center text-xs text-slate-600">
+        Wrong account?
+        <button type="button" class="font-medium text-cyan-400 hover:text-cyan-300" (click)="auth.logout()">
+          Sign out
+        </button>
+      </p>
+    </div>
+  </div>
+}

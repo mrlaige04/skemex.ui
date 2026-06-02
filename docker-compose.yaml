@@ -1,0 +1,49 @@
+# Skemex UI (Angular SSR). Requires external network (shared with API / future YARP):
+#   docker network create skemex-network
+#
+# Build args API_URL / TOKEN_STORAGE_ENCRYPTION_KEY come from the shell (deploy pipeline secrets).
+
+services:
+  ui-ssr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_URL: ${API_URL}
+        TOKEN_STORAGE_ENCRYPTION_KEY: ${TOKEN_STORAGE_ENCRYPTION_KEY}
+    expose:
+      - "4000"
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+    networks:
+      - skemex
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  ui:
+    image: nginx:1.27-alpine
+    depends_on:
+      ui-ssr:
+        condition: service_healthy
+    ports:
+      - "4200:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - skemex
+
+networks:
+  skemex:
+    name: skemex-network
+    external: true

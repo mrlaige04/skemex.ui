@@ -1,12 +1,22 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { authInterceptor } from './http/auth.interceptor';
+import { apiConfigProvider } from './config/api.config';
+import { tokenStorageEncryptionKeyProvider } from './config/token-storage.config';
+import { AuthTokenStore } from './services/auth/auth-token.store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes), provideClientHydration(withEventReplay())
+    provideRouter(routes),
+    apiConfigProvider,
+    tokenStorageEncryptionKeyProvider,
+    provideAppInitializer(() => inject(AuthTokenStore).whenHydrated),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideClientHydration(withEventReplay())
   ]
 };
