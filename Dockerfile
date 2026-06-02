@@ -1,12 +1,9 @@
-FROM node:22-alpine AS build
+FROM node:alpine AS build
 
 WORKDIR /app
 
-# Match packageManager in package.json (lockfile is npm 11).
-RUN corepack enable && corepack prepare npm@11.9.0 --activate
-
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package*.json ./
+RUN npm install
 
 COPY . .
 
@@ -21,7 +18,7 @@ RUN sed -i "s|__API_URL__|${API_URL}|g" src/environments/environment.docker.ts &
 
 RUN npm run build -- --configuration=docker
 
-FROM node:22-alpine AS run
+FROM node:alpine AS ssr
 
 WORKDIR /app
 
@@ -33,3 +30,11 @@ COPY --from=build /app/dist/skemex.ui ./dist/skemex.ui
 EXPOSE 4000
 
 CMD ["node", "dist/skemex.ui/server/server.mjs"]
+
+FROM nginx:alpine AS web
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
