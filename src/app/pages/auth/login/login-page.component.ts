@@ -11,6 +11,16 @@ import { HlmLabelImports } from 'spartan/label';
 import { problemDetailMessage } from '../../../http/problem-details';
 import { AuthService } from '../../../services/auth/auth.service';
 
+function formatLoginError(err: unknown): string {
+  if (err instanceof HttpErrorResponse) {
+    return problemDetailMessage(err);
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message;
+  }
+  return 'Something went wrong';
+}
+
 @Component({
   selector: 'app-login-page',
   imports: [
@@ -59,8 +69,7 @@ export class LoginPageComponent {
           await this.router.navigate(['/tenant', 'select']);
           return;
         } catch (err) {
-          const message =
-            err instanceof HttpErrorResponse ? problemDetailMessage(err) : 'Something went wrong';
+          const message = formatLoginError(err);
           return [{ fieldTree: field, kind: 'server', message }];
         }
       });

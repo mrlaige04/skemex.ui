@@ -46,6 +46,9 @@ export class AuthService {
     return firstValueFrom(
       this.api.post<LoginRequest, LoginResponse>('api/auth/login', body),
     ).then(async (res) => {
+      if (!res?.token?.accessToken) {
+        throw new Error('Login response did not include an access token.');
+      }
       await this.tokens.persistFromAccessTokenResponse(res.token);
       this.setPendingTenantSelection(res.user);
       return res;
