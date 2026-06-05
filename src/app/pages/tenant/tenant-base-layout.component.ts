@@ -36,6 +36,7 @@ import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
+import { APP_PATHS, workspaceSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
 
 @Component({
@@ -164,13 +165,12 @@ export class TenantBaseLayoutComponent {
     return chunk.length > 0 ? chunk[0].toUpperCase() + chunk.slice(1) : 'User';
   }
 
-  /** Paths under `/tenant/:tenantId/...` use the server tenant id (stable; names can change). */
+  /** Paths under the workspace layout (tenant id is stored, not in the URL). */
   tenantSection(segment: string): string[] {
-    const id = this.auth.workspaceContext()?.tenantId;
-    if (!id) {
-      return ['/tenant', 'select'];
+    if (!this.auth.workspaceContext()?.tenantId) {
+      return [APP_PATHS.select];
     }
-    return ['/tenant', id, segment];
+    return workspaceSectionPath(segment);
   }
 
   async switchWorkspace(tenantId: string): Promise<void> {
@@ -180,14 +180,14 @@ export class TenantBaseLayoutComponent {
     const leaf = this.route.firstChild?.snapshot.routeConfig?.path ?? 'dashboard';
     try {
       await this.auth.selectTenant(tenantId);
-      await this.router.navigate(['/tenant', tenantId, leaf]);
+      await this.router.navigate(workspaceSectionPath(leaf));
     } catch {
       /* menu closes; optional: surface toast */
     }
   }
 
   goCreateCompany(): void {
-    void this.router.navigate(['/tenant', 'select'], { queryParams: { create: '1' } });
+    void this.router.navigate([APP_PATHS.select], { queryParams: { create: '1' } });
   }
 
   /** User dropdown: CDK menu can block <code>routerLink</code> on anchors — navigate explicitly. */

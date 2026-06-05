@@ -141,9 +141,11 @@
               <hlm-select-value placeholder="Select a role" />
             </hlm-select-trigger>
             <hlm-select-content *hlmSelectPortal>
-              @for (role of roles(); track role.id || role.name) {
-                <hlm-select-item [value]="role.name">{{ role.name }}</hlm-select-item>
-              }
+              <hlm-select-group>
+                @for (role of roles(); track role.id || role.name) {
+                  <hlm-select-item [value]="role.name">{{ role.name }}</hlm-select-item>
+                }
+              </hlm-select-group>
             </hlm-select-content>
           </hlm-select>
         </div>

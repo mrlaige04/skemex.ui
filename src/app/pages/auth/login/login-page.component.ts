@@ -8,6 +8,7 @@ import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmLabelImports } from 'spartan/label';
+import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
 import { AuthService } from '../../../services/auth/auth.service';
 
@@ -66,7 +67,7 @@ export class LoginPageComponent {
         try {
           const { email: mail, password } = field().value();
           await this.auth.login({ email: mail, password });
-          await this.router.navigate(['/tenant', 'select']);
+          await this.router.navigate([APP_PATHS.select]);
           return;
         } catch (err) {
           const message = formatLoginError(err);

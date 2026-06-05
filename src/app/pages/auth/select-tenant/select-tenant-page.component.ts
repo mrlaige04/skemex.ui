@@ -11,6 +11,7 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmItemImports } from 'spartan/item';
 import { HlmLabelImports } from 'spartan/label';
+import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
 import type { CurrentUserResponse, TenantWorkspaceContext } from '../../../models/auth/auth.models';
 import { AuthService } from '../../../services/auth/auth.service';
@@ -78,7 +79,7 @@ export class SelectTenantPageComponent implements OnInit {
         queueMicrotask(() => this.createDialogState.set('open'));
         return;
       }
-      void this.router.navigate(['/tenant', ws.tenantId, 'dashboard']);
+      void this.router.navigate([APP_PATHS.dashboard]);
       return;
     }
 
@@ -132,7 +133,7 @@ export class SelectTenantPageComponent implements OnInit {
     this.selectingId.set(tenantId);
     try {
       await this.auth.selectTenant(tenantId);
-      await this.router.navigate(['/tenant', tenantId, 'dashboard']);
+      await this.router.navigate([APP_PATHS.dashboard]);
     } catch (err) {
       const msg =
         err instanceof HttpErrorResponse ? problemDetailMessage(err) : 'Could not open this workspace.';
@@ -164,7 +165,7 @@ export class SelectTenantPageComponent implements OnInit {
             this.user.set(pending);
           }
           await this.auth.selectTenant(created.id);
-          await this.router.navigate(['/tenant', created.id, 'dashboard']);
+          await this.router.navigate([APP_PATHS.dashboard]);
           return;
         } catch (err) {
           const message =

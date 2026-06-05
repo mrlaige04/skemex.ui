@@ -45,74 +45,68 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'tenant',
+    path: 'tenant-select',
+    loadComponent: () =>
+      import('./pages/auth/select-tenant/select-tenant-page.component').then((m) => m.SelectTenantPageComponent),
+  },
+  {
+    path: '',
+    canActivate: [tenantWorkspaceGuard],
+    loadComponent: () =>
+      import('./pages/tenant/tenant-base-layout.component').then((m) => m.TenantBaseLayoutComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'select' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
-        path: 'select',
+        path: 'dashboard',
         loadComponent: () =>
-          import('./pages/auth/select-tenant/select-tenant-page.component').then((m) => m.SelectTenantPageComponent),
+          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+        data: { breadcrumb: 'Dashboard' },
+        title: 'Dashboard',
       },
       {
-        path: ':tenantId',
-        canActivate: [tenantWorkspaceGuard],
+        path: 'users/new',
         loadComponent: () =>
-          import('./pages/tenant/tenant-base-layout.component').then((m) => m.TenantBaseLayoutComponent),
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-          {
-            path: 'dashboard',
-            loadComponent: () =>
-              import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
-            data: { breadcrumb: 'Dashboard' },
-            title: 'Dashboard',
-          },
-          {
-            path: 'users/new',
-            loadComponent: () =>
-              import('./pages/tenant/users/create-user-page.component').then((m) => m.CreateUserPageComponent),
-            data: { breadcrumb: 'Add user' },
-            title: 'Add user',
-          },
-          {
-            path: 'users/:userId/edit',
-            loadComponent: () =>
-              import('./pages/tenant/users/edit-user-page.component').then((m) => m.EditUserPageComponent),
-            data: { breadcrumb: 'Edit user' },
-            title: 'Edit user',
-          },
-          {
-            path: 'users',
-            loadComponent: () =>
-              import('./pages/tenant/users/users-page.component').then((m) => m.UsersPageComponent),
-            data: { breadcrumb: 'Users' },
-            title: 'Users',
-          },
-          {
-            path: 'projects',
-            loadComponent: () =>
-              import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
-            data: { breadcrumb: 'Projects' },
-            title: 'Projects',
-          },
-          {
-            path: 'settings',
-            loadComponent: () =>
-              import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
-            data: { breadcrumb: 'Settings' },
-            title: 'Settings',
-          },
-          {
-            path: 'profile',
-            loadComponent: () =>
-              import('./pages/tenant/account/account-page.component').then((m) => m.AccountPageComponent),
-            data: { breadcrumb: 'Profile' },
-            title: 'Profile',
-          },
-        ],
+          import('./pages/tenant/users/create-user-page.component').then((m) => m.CreateUserPageComponent),
+        data: { breadcrumb: 'Add user' },
+        title: 'Add user',
+      },
+      {
+        path: 'users/:userId/edit',
+        loadComponent: () =>
+          import('./pages/tenant/users/edit-user-page.component').then((m) => m.EditUserPageComponent),
+        data: { breadcrumb: 'Edit user' },
+        title: 'Edit user',
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./pages/tenant/users/users-page.component').then((m) => m.UsersPageComponent),
+        data: { breadcrumb: 'Users' },
+        title: 'Users',
+      },
+      {
+        path: 'projects',
+        loadComponent: () =>
+          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+        data: { breadcrumb: 'Projects' },
+        title: 'Projects',
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+        data: { breadcrumb: 'Settings' },
+        title: 'Settings',
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./pages/tenant/account/account-page.component').then((m) => m.AccountPageComponent),
+        data: { breadcrumb: 'Profile' },
+        title: 'Profile',
       },
     ],
   },
-  { path: 'home', pathMatch: 'full', redirectTo: 'tenant/select' },
-  { path: '', pathMatch: 'full', redirectTo: 'auth/login' },
+  { path: 'home', pathMatch: 'full', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: 'dashboard' },
 ];

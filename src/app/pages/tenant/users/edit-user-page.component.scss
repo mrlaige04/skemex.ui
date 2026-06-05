@@ -1,3 +1,13 @@
 :host {
   display: block;
 }
+
+.edit-user-page {
+  :where([hlmCardHeader]) {
+    padding-bottom: 0.75rem;
+  }
+
+  :where([hlmCardContent]) {
+    padding-top: 0;
+  }
+}

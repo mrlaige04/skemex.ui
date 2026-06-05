@@ -40,7 +40,7 @@ export class AuthService {
 
   private readonly _workspaceContext = signal<TenantWorkspaceContext | null>(null);
 
-  /** Current tenant workspace (after {@link selectTenant}); cleared on logout. */
+  /** Current tenant workspace (after {@link selectTenant}); persisted in localStorage, cleared on logout. */
   readonly workspaceContext = this._workspaceContext.asReadonly();
 
   constructor() {
@@ -240,7 +240,8 @@ export class AuthService {
       return;
     }
     try {
-      sessionStorage.setItem(WORKSPACE_CONTEXT_KEY, JSON.stringify(ctx));
+      localStorage.setItem(WORKSPACE_CONTEXT_KEY, JSON.stringify(ctx));
+      sessionStorage.removeItem(WORKSPACE_CONTEXT_KEY);
     } catch {
       /* ignore quota / private mode */
     }
@@ -251,6 +252,7 @@ export class AuthService {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
+    localStorage.removeItem(WORKSPACE_CONTEXT_KEY);
     sessionStorage.removeItem(WORKSPACE_CONTEXT_KEY);
   }
 
@@ -258,7 +260,18 @@ export class AuthService {
     if (!isPlatformBrowser(this.platformId)) {
       return null;
     }
-    const raw = sessionStorage.getItem(WORKSPACE_CONTEXT_KEY);
+    let raw = localStorage.getItem(WORKSPACE_CONTEXT_KEY);
+    if (!raw) {
+      raw = sessionStorage.getItem(WORKSPACE_CONTEXT_KEY);
+      if (raw) {
+        try {
+          localStorage.setItem(WORKSPACE_CONTEXT_KEY, raw);
+          sessionStorage.removeItem(WORKSPACE_CONTEXT_KEY);
+        } catch {
+          /* keep using session value for this read */
+        }
+      }
+    }
     if (!raw) {
       return null;
     }

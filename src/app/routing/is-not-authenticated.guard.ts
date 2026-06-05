@@ -4,6 +4,7 @@ import type { CanActivateFn } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthRefreshService } from '../services/auth/auth-refresh.service';
 import { AuthTokenStore } from '../services/auth/auth-token.store';
+import { APP_PATHS } from './app-paths';
 import { AuthService } from '../services/auth/auth.service';
 import { isAccessTokenExpired } from '../utils/jwt.util';
 
@@ -25,12 +26,11 @@ export const isNotAuthenticatedGuard: CanActivateFn = async () => {
     return true;
   }
 
-  const ws = auth.workspaceContext();
-  if (ws?.tenantId) {
-    return router.createUrlTree(['/tenant', ws.tenantId, 'dashboard']);
+  if (auth.workspaceContext()?.tenantId) {
+    return router.createUrlTree([APP_PATHS.dashboard]);
   }
 
-  return router.createUrlTree(['/tenant', 'select']);
+  return router.createUrlTree([APP_PATHS.select]);
 };
 
 async function hasActiveSession(
