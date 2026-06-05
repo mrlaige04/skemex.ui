@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { email, FormField, form, maxLength, required, submit } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -30,6 +30,7 @@ import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
 import { problemDetailMessage } from '../../../http/problem-details';
 import type { LookupUserByEmailResponse, TenantRoleDto } from '../../../models/users/users.models';
+import { APP_PATHS } from '../../../routing/app-paths';
 import { UsersService } from '../../../services/users/users.service';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,7 +68,6 @@ function isValidEmail(value: string): boolean {
 export class CreateUserPageComponent implements OnInit {
   private readonly usersService = inject(UsersService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly emailLookup$ = new Subject<string>();
   private lookupGeneration = 0;
@@ -127,8 +127,7 @@ export class CreateUserPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const tenantId = this.route.parent?.snapshot.paramMap.get('tenantId');
-    this.usersListLink.set(tenantId ? ['/tenant', tenantId, 'users'] : ['/tenant', 'select']);
+    this.usersListLink.set([APP_PATHS.users]);
     void this.loadRoles();
 
     this.emailLookup$

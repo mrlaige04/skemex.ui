@@ -74,8 +74,8 @@ import { HlmPaginationPrevious } from './hlm-pagination-previous';
         </ul>
       </nav>
 
-      <!-- Show Page Size selector -->
-      <hlm-select [(ngModel)]="itemsPerPage" class="ml-auto">
+      <!-- Page size sits on the right; align end so the menu opens to the left. -->
+      <hlm-select [(ngModel)]="itemsPerPage" class="ml-auto shrink-0" align="end">
         <hlm-select-trigger class="w-fit">
           <hlm-select-value />
         </hlm-select-trigger>

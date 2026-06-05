@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideSearch, lucideUserPlus } from '@ng-icons/lucide';
 import { Subject } from 'rxjs';
@@ -20,6 +20,7 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { problemDetailMessage } from '../../../http/problem-details';
 import type { TenantUserDto } from '../../../models/users/users.models';
+import { APP_PATHS } from '../../../routing/app-paths';
 import { UsersService } from '../../../services/users/users.service';
 import {
   RichTableComponent,
@@ -27,6 +28,7 @@ import {
   type RichTablePaginationChange,
 } from '../../../shared/rich-table';
 import { UsersTableActionsCellComponent } from './users-table-actions-cell.component';
+import { UsersTableNameCellComponent } from './users-table-name-cell.component';
 import { USERS_TABLE_HOST, type UsersTableHost } from './users-table-host';
 
 function formatUserDate(iso: string): string {
@@ -58,7 +60,6 @@ function formatUserDate(iso: string): string {
 })
 export class UsersPageComponent implements OnInit, UsersTableHost {
   private readonly usersService = inject(UsersService);
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly search$ = new Subject<string>();
 
@@ -77,14 +78,16 @@ export class UsersPageComponent implements OnInit, UsersTableHost {
 
   readonly columns: RichTableColumn<TenantUserDto>[] = [
     {
-      key: 'email',
-      label: 'Email',
-      render: (row) => `<span class="font-medium">${row.email}</span>`,
-    },
-    {
       key: 'name',
       label: 'Name',
+      component: UsersTableNameCellComponent,
       accessorFn: (row) => `${row.firstName} ${row.lastName}`.trim(),
+      enableHiding: false,
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (row) => `<span class="text-muted-foreground text-sm">${row.email}</span>`,
     },
     {
       key: 'createdAt',
@@ -120,8 +123,7 @@ export class UsersPageComponent implements OnInit, UsersTableHost {
   }
 
   ngOnInit(): void {
-    const tenantId = this.route.parent?.snapshot.paramMap.get('tenantId');
-    this.usersNewLink.set(tenantId ? ['/tenant', tenantId, 'users', 'new'] : ['/tenant', 'select']);
+    this.usersNewLink.set([APP_PATHS.users, 'new']);
 
     void this.refreshList();
 
@@ -134,8 +136,7 @@ export class UsersPageComponent implements OnInit, UsersTableHost {
   }
 
   editLink(userId: string): string[] {
-    const tenantId = this.route.parent?.snapshot.paramMap.get('tenantId');
-    return tenantId ? ['/tenant', tenantId, 'users', userId, 'edit'] : ['/tenant', 'select'];
+    return [APP_PATHS.users, userId, 'edit'];
   }
 
   fullName(user: TenantUserDto): string {

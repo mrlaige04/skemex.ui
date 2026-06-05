@@ -32,7 +32,7 @@ import { USERS_TABLE_HOST } from './users-table-host';
         variant="ghost"
         size="icon"
         class="text-destructive hover:text-destructive"
-        [attr.aria-label]="'Delete ' + ariaName()"
+        [attr.aria-label]="'Remove ' + ariaName()"
         [disabled]="isDeleting()"
         (click)="onDelete()"
       >

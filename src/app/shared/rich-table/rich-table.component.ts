@@ -1,15 +1,16 @@
+import { NgTemplateOutlet } from '@angular/common';
 import type { NumberInput } from '@angular/cdk/coercion';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  contentChild,
   input,
   numberAttribute,
   output,
   signal,
-  untracked,
+  TemplateRef,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown } from '@ng-icons/lucide';
 import {
@@ -20,28 +21,23 @@ import {
   getCoreRowModel,
   type VisibilityState,
 } from '@tanstack/angular-table';
-import { createPageArray } from 'spartan/pagination';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
-import { HlmPaginationImports } from 'spartan/pagination';
-import { HlmSelectImports } from 'spartan/select';
+import { HlmNumberedPagination } from 'spartan/pagination';
 import { HlmTableImports } from 'spartan/table';
 import type { RichTableColumn, RichTablePaginationChange } from './rich-table.models';
-
-type PageToken = number | '...';
 
 @Component({
   selector: 'app-rich-table',
   imports: [
     FlexRenderDirective,
-    FormsModule,
     NgIcon,
+    NgTemplateOutlet,
+    HlmNumberedPagination,
     ...HlmButtonImports,
     ...HlmDropdownMenuImports,
     ...HlmIconImports,
-    ...HlmPaginationImports,
-    ...HlmSelectImports,
     ...HlmTableImports,
   ],
   providers: [provideIcons({ lucideChevronDown })],
@@ -49,27 +45,37 @@ type PageToken = number | '...';
     class: 'block w-full',
   },
   template: `
-    @if (showColumnToggle() && hidableColumns().length > 0) {
-      <div class="mb-2 flex justify-end">
-        <button hlmBtn variant="outline" align="end" [hlmDropdownMenuTrigger]="columnMenu">
-          Columns
-          <ng-icon hlm name="lucideChevronDown" class="ml-2" size="sm" />
-        </button>
-        <ng-template #columnMenu>
-          <hlm-dropdown-menu class="w-36">
-            @for (column of hidableColumns(); track column.id) {
-              <button
-                hlmDropdownMenuCheckbox
-                class="capitalize"
-                [checked]="column.getIsVisible()"
-                (triggered)="column.toggleVisibility()"
-              >
-                <hlm-dropdown-menu-checkbox-indicator />
-                {{ column.id }}
-              </button>
-            }
-          </hlm-dropdown-menu>
-        </ng-template>
+    @if (captionStartTemplate() || (showColumnsSelection() && hidableColumns().length > 0)) {
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          @if (captionStartTemplate(); as tpl) {
+            <ng-container *ngTemplateOutlet="tpl" />
+          }
+        </div>
+
+        @if (showColumnsSelection() && hidableColumns().length > 0) {
+          <div class="ms-auto shrink-0">
+            <button hlmBtn variant="outline" size="sm" align="end" [hlmDropdownMenuTrigger]="columnMenu">
+              Columns
+              <ng-icon hlm name="lucideChevronDown" class="ml-2" size="sm" />
+            </button>
+            <ng-template #columnMenu>
+              <hlm-dropdown-menu class="w-36">
+                @for (column of hidableColumns(); track column.id) {
+                  <button
+                    hlmDropdownMenuCheckbox
+                    class="capitalize"
+                    [checked]="column.getIsVisible()"
+                    (triggered)="column.toggleVisibility()"
+                  >
+                    <hlm-dropdown-menu-checkbox-indicator />
+                    {{ column.id }}
+                  </button>
+                }
+              </hlm-dropdown-menu>
+            </ng-template>
+          </div>
+        }
       </div>
     }
 
@@ -106,7 +112,9 @@ type PageToken = number | '...';
                       <ng-container
                         *flexRender="cell.column.columnDef.cell; props: cell.getContext(); let cellContent"
                       >
-                        <div [innerHTML]="cellContent"></div>
+                        @if (cellContent) {
+                          <div [innerHTML]="cellContent"></div>
+                        }
                       </ng-container>
                     </td>
                   }
@@ -127,68 +135,16 @@ type PageToken = number | '...';
     </div>
 
     @if (showPagination()) {
-      <div
-        class="border-border mt-3 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <p class="text-muted-foreground text-sm">
-          @if (totalItems() > 0) {
-            {{ rangeLabel() }}
-          } @else {
-            No results
-          }
-        </p>
-
-        @if (totalItems() > 0) {
-          <nav hlmPagination>
-            <ul hlmPaginationContent>
-              @if (!isFirstPage()) {
-                <li hlmPaginationItem (click)="goToPrevious()">
-                  <hlm-pagination-previous />
-                </li>
-              }
-
-              @for (token of pageTokens(); track token) {
-                <li hlmPaginationItem>
-                  @if (token === '...') {
-                    <hlm-pagination-ellipsis />
-                  } @else {
-                    <a
-                      hlmPaginationLink
-                      [isActive]="pageNumber() === token"
-                      (click)="goToPage(token)"
-                    >
-                      {{ token }}
-                    </a>
-                  }
-                </li>
-              }
-
-              @if (!isLastPage()) {
-                <li hlmPaginationItem (click)="goToNext()">
-                  <hlm-pagination-next />
-                </li>
-              }
-            </ul>
-          </nav>
-        }
-
-        <hlm-select
-          class="w-fit sm:ml-auto"
-          [value]="page().toString()"
-          (valueChange)="onPageSizeSelect($event)"
-        >
-          <hlm-select-trigger class="w-[5.5rem]">
-            <hlm-select-value />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            <hlm-select-group>
-              @for (size of pageSizeOptions(); track size) {
-                <hlm-select-item [value]="size.toString()">{{ size }} / page</hlm-select-item>
-              }
-            </hlm-select-group>
-          </hlm-select-content>
-        </hlm-select>
-      </div>
+      <hlm-numbered-pagination
+        class="border-border mt-0 border-t"
+        [currentPage]="pageNumber()"
+        (currentPageChange)="onCurrentPageChange($event)"
+        [itemsPerPage]="page()"
+        (itemsPerPageChange)="onItemsPerPageChange($event)"
+        [totalItems]="totalItems()"
+        [pageSizes]="pageSizeOptions()"
+        [maxSize]="paginationMaxSize()"
+      />
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -206,9 +162,11 @@ export class RichTableComponent<T extends object> {
 
   readonly loading = input(false);
   readonly emptyMessage = input('No results.');
-  readonly showColumnToggle = input(true);
+  readonly showColumnsSelection = input(true);
 
   readonly paginationChange = output<RichTablePaginationChange>();
+
+  readonly captionStartTemplate = contentChild<TemplateRef<void>>('captionStartTemplate');
 
   private readonly columnVisibility = signal<VisibilityState>({});
 
@@ -233,65 +191,12 @@ export class RichTableComponent<T extends object> {
     this.table().getAllColumns().filter((column) => column.getCanHide()),
   );
 
-  protected readonly lastPageNumber = computed(() => {
-    const total = this.totalItems();
-    if (total < 1) {
-      return 1;
-    }
-    return Math.ceil(total / this.page());
-  });
-
-  protected readonly pageTokens = computed((): PageToken[] => {
-    if (!this.showPagination()) {
-      return [];
-    }
-
-    return createPageArray(
-      this.pageNumber(),
-      this.page(),
-      this.totalItems(),
-      this.paginationMaxSize(),
-    );
-  });
-
-  protected readonly isFirstPage = computed(() => this.pageNumber() <= 1);
-  protected readonly isLastPage = computed(() => this.pageNumber() >= this.lastPageNumber());
-
-  protected readonly rangeLabel = computed(() => {
-    const total = this.totalItems();
-    if (total === 0) {
-      return '';
-    }
-    const start = (this.pageNumber() - 1) * this.page() + 1;
-    const end = Math.min(this.pageNumber() * this.page(), total);
-    return `${start}–${end} of ${total}`;
-  });
-
-  protected goToPage(page: PageToken): void {
-    if (page === '...') {
-      return;
-    }
+  protected onCurrentPageChange(page: number): void {
     this.emitPagination(page, this.page());
   }
 
-  protected goToPrevious(): void {
-    if (!this.isFirstPage()) {
-      this.emitPagination(this.pageNumber() - 1, this.page());
-    }
-  }
-
-  protected goToNext(): void {
-    if (!this.isLastPage()) {
-      this.emitPagination(this.pageNumber() + 1, this.page());
-    }
-  }
-
-  protected onPageSizeSelect(value: string | null): void {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < 1) {
-      return;
-    }
-    this.emitPagination(1, parsed);
+  protected onItemsPerPageChange(size: number): void {
+    this.emitPagination(1, size);
   }
 
   private emitPagination(pageNumber: number, page: number): void {

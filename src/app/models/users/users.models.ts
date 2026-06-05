@@ -5,6 +5,7 @@ export interface TenantUserDto {
   lastName: string;
   createdAt: string;
   roles: string[];
+  avatarUrl?: string | null;
 }
 
 export interface TenantRoleDto {
