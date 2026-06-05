@@ -16,8 +16,14 @@ export interface CreateTenantUserRequest {
   email: string;
   firstName: string;
   lastName: string;
-  password: string;
   roleName: string;
+}
+
+export interface LookupUserByEmailResponse {
+  exists: boolean;
+  alreadyInWorkspace: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 export interface UpdateTenantUserRequest {

@@ -3,6 +3,8 @@ import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type {
+  AcceptTenantInvitationRequest,
+  AcceptTenantInvitationResponse,
   CreateTenantRequest,
   CurrentUserProfileDto,
   CurrentUserResponse,
@@ -10,6 +12,11 @@ import type {
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  RequestPasswordResetRequest,
+  RequestPasswordResetResponse,
+  ResetPasswordWithCodeRequest,
+  ResetPasswordWithCodeResponse,
+  TenantInvitationPreview,
   TenantSessionResponse,
   TenantSummary,
   TenantWorkspaceContext,
@@ -57,6 +64,38 @@ export class AuthService {
 
   register(body: RegisterRequest): Promise<RegisterResponse> {
     return firstValueFrom(this.api.post<RegisterRequest, RegisterResponse>('api/auth/register', body));
+  }
+
+  getInvitation(token: string): Promise<TenantInvitationPreview> {
+    const encoded = encodeURIComponent(token.trim());
+    return firstValueFrom(this.api.get<TenantInvitationPreview>(`api/auth/invitations/${encoded}`));
+  }
+
+  acceptInvitation(body: AcceptTenantInvitationRequest): Promise<AcceptTenantInvitationResponse> {
+    return firstValueFrom(
+      this.api.post<AcceptTenantInvitationRequest, AcceptTenantInvitationResponse>(
+        'api/auth/invitations/accept',
+        body,
+      ),
+    );
+  }
+
+  requestPasswordReset(body: RequestPasswordResetRequest): Promise<RequestPasswordResetResponse> {
+    return firstValueFrom(
+      this.api.post<RequestPasswordResetRequest, RequestPasswordResetResponse>(
+        'api/auth/password-reset/request',
+        body,
+      ),
+    );
+  }
+
+  resetPasswordWithCode(body: ResetPasswordWithCodeRequest): Promise<ResetPasswordWithCodeResponse> {
+    return firstValueFrom(
+      this.api.post<ResetPasswordWithCodeRequest, ResetPasswordWithCodeResponse>(
+        'api/auth/password-reset/confirm',
+        body,
+      ),
+    );
   }
 
   /** Snapshot of user + tenant list until a workspace is selected (sessionStorage + login). */
