@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { isNotAuthenticatedGuard } from './routing/is-not-authenticated.guard';
 import { tenantWorkspaceGuard } from './routing/tenant-workspace.guard';
 
 export const routes: Routes = [
@@ -9,12 +10,37 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'login' },
       {
         path: 'login',
+        canActivate: [isNotAuthenticatedGuard],
         loadComponent: () => import('./pages/auth/login/login-page.component').then((m) => m.LoginPageComponent),
       },
       {
         path: 'register',
+        canActivate: [isNotAuthenticatedGuard],
         loadComponent: () =>
           import('./pages/auth/register/register-page.component').then((m) => m.RegisterPageComponent),
+      },
+      {
+        path: 'forgot-password',
+        canActivate: [isNotAuthenticatedGuard],
+        loadComponent: () =>
+          import('./pages/auth/forgot-password/forgot-password-page.component').then(
+            (m) => m.ForgotPasswordPageComponent,
+          ),
+        title: 'Reset password',
+      },
+    ],
+  },
+  {
+    path: 'invitations',
+    loadComponent: () => import('./pages/auth/auth-layout.component').then((m) => m.AuthLayoutComponent),
+    children: [
+      {
+        path: 'accept',
+        loadComponent: () =>
+          import('./pages/invitations/accept-invitation-page.component').then(
+            (m) => m.AcceptInvitationPageComponent,
+          ),
+        title: 'Accept invitation',
       },
     ],
   },

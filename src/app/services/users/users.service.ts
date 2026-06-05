@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import type { PaginatedList } from '../../models/paginated-list';
 import type {
   CreateTenantUserRequest,
+  LookupUserByEmailResponse,
   TenantRoleDto,
   TenantUserDto,
   UpdateTenantUserRequest,
@@ -28,6 +29,12 @@ export class UsersService {
 
   roles(): Promise<TenantRoleDto[]> {
     return firstValueFrom(this.api.get<TenantRoleDto[]>('api/users/roles'));
+  }
+
+  lookupByEmail(email: string): Promise<LookupUserByEmailResponse> {
+    return firstValueFrom(
+      this.api.get<LookupUserByEmailResponse>('api/users/lookup', { email: email.trim() }),
+    );
   }
 
   create(body: CreateTenantUserRequest): Promise<TenantUserDto> {

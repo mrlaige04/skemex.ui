@@ -88,3 +88,40 @@ export interface CreateTenantRequest {
   name: string;
   email: string;
 }
+
+export interface TenantInvitationPreview {
+  tenantName: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  requiresPassword: boolean;
+  isExpired: boolean;
+}
+
+export interface AcceptTenantInvitationRequest {
+  token: string;
+  password?: string | null;
+}
+
+export interface AcceptTenantInvitationResponse {
+  tenantId: string;
+  tenantName: string;
+}
+
+export interface RequestPasswordResetRequest {
+  email: string;
+}
+
+export interface RequestPasswordResetResponse {
+  message: string;
+}
+
+export interface ResetPasswordWithCodeRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordWithCodeResponse {
+  message: string;
+}

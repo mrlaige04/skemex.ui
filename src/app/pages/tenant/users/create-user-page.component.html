@@ -11,14 +11,16 @@
     </a>
     <div>
       <h1 class="text-2xl font-semibold tracking-tight">Add user</h1>
-      <p class="text-muted-foreground mt-1 text-sm">Create a new member for this workspace.</p>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Invite someone to this workspace by email. New accounts are created automatically when needed.
+      </p>
     </div>
   </div>
 
   <div hlmCard class="w-full">
     <div hlmCardHeader>
-      <h2 hlmCardTitle>Account details</h2>
-      <p hlmCardDescription>Email, name, password, and workspace role.</p>
+      <h2 hlmCardTitle>Invitation details</h2>
+      <p hlmCardDescription>Enter an email address to check whether to invite an existing user or create a new one.</p>
     </div>
 
     <div hlmCardContent>
@@ -34,27 +36,6 @@
           }
         }
 
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div class="space-y-2">
-            <label hlmLabel for="user-first">First name</label>
-            <div hlmInputGroup>
-              <div hlmInputGroupAddon>
-                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
-              </div>
-              <input hlmInputGroupInput id="user-first" type="text" autocomplete="given-name" [formField]="userForm.firstName" />
-            </div>
-          </div>
-          <div class="space-y-2">
-            <label hlmLabel for="user-last">Last name</label>
-            <div hlmInputGroup>
-              <div hlmInputGroupAddon>
-                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
-              </div>
-              <input hlmInputGroupInput id="user-last" type="text" autocomplete="family-name" [formField]="userForm.lastName" />
-            </div>
-          </div>
-        </div>
-
         <div class="space-y-2">
           <label hlmLabel for="user-email">Email</label>
           <div hlmInputGroup>
@@ -69,24 +50,84 @@
               placeholder="name@company.com"
               [formField]="userForm.email"
             />
+            @if (emailChecking()) {
+              <div hlmInputGroupAddon align="inline-end">
+                <ng-icon hlm name="lucideLoaderCircle" size="sm" class="text-muted-foreground animate-spin" />
+              </div>
+            }
           </div>
         </div>
 
-        <div class="space-y-2">
-          <label hlmLabel for="user-password">Password</label>
-          <div hlmInputGroup>
-            <div hlmInputGroupAddon>
-              <ng-icon hlm name="lucideKeyRound" size="sm" class="text-muted-foreground" />
-            </div>
-            <input
-              hlmInputGroupInput
-              id="user-password"
-              type="password"
-              autocomplete="new-password"
-              [formField]="userForm.password"
-            />
+        @if (alreadyInWorkspace()) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            A user with this email is already a member of this workspace.
+          </p>
+        }
+
+        @if (isInviteMode()) {
+          <div
+            class="rounded-md border border-blue-500/30 bg-blue-950/20 px-4 py-3 text-sm text-blue-900 dark:text-blue-100"
+            role="status"
+          >
+            <p class="font-medium">This person already has a Skemex account.</p>
+            <p class="mt-1 text-blue-800/90 dark:text-blue-200/90">
+              @if (existingUserName()) {
+                You can only invite <span class="font-medium">{{ existingUserName() }}</span> to join this workspace.
+              } @else {
+                You can only invite them to join this workspace — a new account will not be created.
+              }
+            </p>
+            <button
+              type="button"
+              hlmBtn
+              size="sm"
+              class="mt-3"
+              [disabled]="!canSubmit()"
+              (click)="inviteExistingUser($event)"
+            >
+              <ng-icon hlm name="lucideUserPlus" size="sm" />
+              {{ saving() ? 'Sending…' : 'Send invitation' }}
+            </button>
           </div>
-        </div>
+        }
+
+        @if (!isInviteMode()) {
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div class="space-y-2">
+              <label hlmLabel for="user-first">First name</label>
+              <div hlmInputGroup>
+                <div hlmInputGroupAddon>
+                  <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+                </div>
+                <input
+                  hlmInputGroupInput
+                  id="user-first"
+                  type="text"
+                  autocomplete="given-name"
+                  [formField]="userForm.firstName"
+                />
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label hlmLabel for="user-last">Last name</label>
+              <div hlmInputGroup>
+                <div hlmInputGroupAddon>
+                  <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+                </div>
+                <input
+                  hlmInputGroupInput
+                  id="user-last"
+                  type="text"
+                  autocomplete="family-name"
+                  [formField]="userForm.lastName"
+                />
+              </div>
+            </div>
+          </div>
+        }
 
         <div class="space-y-2">
           <label hlmLabel id="user-role-label">Role</label>
@@ -109,9 +150,11 @@
 
         <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
           <a hlmBtn variant="outline" [routerLink]="usersListLink()" [class.pointer-events-none]="saving()">Cancel</a>
-          <button type="submit" hlmBtn [disabled]="saving()">
-            {{ saving() ? 'Creating…' : 'Create user' }}
-          </button>
+          @if (!isInviteMode()) {
+            <button type="submit" hlmBtn [disabled]="!canSubmit()">
+              {{ saving() ? 'Sending…' : 'Send invitation' }}
+            </button>
+          }
         </div>
       </form>
     </div>
