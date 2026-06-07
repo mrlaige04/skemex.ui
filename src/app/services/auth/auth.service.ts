@@ -16,6 +16,7 @@ import type {
   RequestPasswordResetResponse,
   ResetPasswordWithCodeRequest,
   ResetPasswordWithCodeResponse,
+  SuperAdminSession,
   TenantInvitationPreview,
   TenantSessionResponse,
   TenantSummary,
@@ -24,9 +25,11 @@ import type {
 } from '../../models/auth/auth.models';
 import { BaseHttp } from '../http/base-http.service';
 import { AuthTokenStore } from './auth-token.store';
+import { isSuperAdminFromToken } from '../../utils/jwt.util';
 
 const PENDING_TENANT_USER_KEY = 'skemex.sx.tu';
 const WORKSPACE_CONTEXT_KEY = 'skemex.sx.ws';
+const SUPER_ADMIN_SESSION_KEY = 'skemex.sx.sa';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -39,14 +42,48 @@ export class AuthService {
   readonly accessToken = this.tokens.accessToken;
 
   private readonly _workspaceContext = signal<TenantWorkspaceContext | null>(null);
+  private readonly _superAdminSession = signal<SuperAdminSession | null>(null);
+  private readonly _isSuperAdmin = signal(false);
 
   /** Current tenant workspace (after {@link selectTenant}); persisted in localStorage, cleared on logout. */
   readonly workspaceContext = this._workspaceContext.asReadonly();
 
+  /** Platform super-admin console session (no tenant workspace). */
+  readonly superAdminSession = this._superAdminSession.asReadonly();
+
+  readonly isSuperAdmin = this._isSuperAdmin.asReadonly();
+
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this._workspaceContext.set(this.readWorkspaceContextFromStorage());
+      this._superAdminSession.set(this.readSuperAdminSessionFromStorage());
+      this.syncSuperAdminFromToken();
     }
+  }
+
+  /** Re-read {@code IsSuperAdmin} from the stored access token (e.g. after refresh). */
+  syncSuperAdminFromToken(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const fromToken = isSuperAdminFromToken(this.tokens.accessToken());
+    this._isSuperAdmin.set(fromToken);
+    if (!fromToken) {
+      this.clearSuperAdminSession();
+    }
+  }
+
+  establishSuperAdminSession(user: CurrentUserResponse): void {
+    this.clearWorkspaceContext();
+    this.clearPendingTenantSelection();
+    this.persistSuperAdminSession({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl ?? null,
+    });
+    this._isSuperAdmin.set(true);
+    this.syncSuperAdminFromToken();
   }
 
   login(body: LoginRequest): Promise<LoginResponse> {
@@ -57,7 +94,12 @@ export class AuthService {
         throw new Error('Login response did not include an access token.');
       }
       await this.tokens.persistFromAccessTokenResponse(res.token);
-      this.setPendingTenantSelection(res.user);
+      if (res.user.isSuperAdmin) {
+        this.establishSuperAdminSession(res.user);
+      } else {
+        this.clearSuperAdminSession();
+        this.setPendingTenantSelection(res.user);
+      }
       return res;
     });
   }
@@ -130,6 +172,9 @@ export class AuthService {
   }
 
   async selectTenant(tenantId: string): Promise<void> {
+    if (this.isSuperAdmin()) {
+      throw new Error('Platform administrators cannot select a tenant workspace.');
+    }
     const pending = this.getPendingTenantSelection();
     const prev = this._workspaceContext();
     const res = await firstValueFrom(
@@ -230,8 +275,55 @@ export class AuthService {
   logout(): void {
     this.clearPendingTenantSelection();
     this.clearWorkspaceContext();
+    this.clearSuperAdminSession();
     this.tokens.clear();
     void this.router.navigate(['/auth', 'login']);
+  }
+
+  private persistSuperAdminSession(session: SuperAdminSession): void {
+    this._superAdminSession.set(session);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    try {
+      localStorage.setItem(SUPER_ADMIN_SESSION_KEY, JSON.stringify(session));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private clearSuperAdminSession(): void {
+    this._superAdminSession.set(null);
+    this._isSuperAdmin.set(false);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    localStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+  }
+
+  private readSuperAdminSessionFromStorage(): SuperAdminSession | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+    const raw = localStorage.getItem(SUPER_ADMIN_SESSION_KEY);
+    if (!raw) {
+      return null;
+    }
+    try {
+      const o = JSON.parse(raw) as SuperAdminSession;
+      if (typeof o.email !== 'string') {
+        return null;
+      }
+      return {
+        email: o.email,
+        firstName: typeof o.firstName === 'string' ? o.firstName : '',
+        lastName: typeof o.lastName === 'string' ? o.lastName : '',
+        avatarUrl: o.avatarUrl === null || typeof o.avatarUrl === 'string' ? o.avatarUrl : null,
+      };
+    } catch {
+      localStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+      return null;
+    }
   }
 
   private persistWorkspaceContext(ctx: TenantWorkspaceContext): void {

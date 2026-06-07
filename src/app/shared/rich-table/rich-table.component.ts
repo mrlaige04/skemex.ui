@@ -151,7 +151,7 @@ import type { RichTableColumn, RichTablePaginationChange } from './rich-table.mo
 })
 export class RichTableComponent<T extends object> {
   readonly data = input<T[]>([]);
-  readonly columns = input.required<RichTableColumn<T>[]>();
+  readonly columns = input<RichTableColumn<T>[]>([]);
 
   readonly showPagination = input(false);
   readonly pageNumber = input(1, { transform: numberAttribute });

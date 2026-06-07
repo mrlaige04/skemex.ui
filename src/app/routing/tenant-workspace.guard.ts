@@ -19,6 +19,12 @@ export const tenantWorkspaceGuard: CanActivateFn = async () => {
     return router.createUrlTree(['/auth', 'login']);
   }
 
+  auth.syncSuperAdminFromToken();
+
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree([APP_PATHS.adminDashboard]);
+  }
+
   if (!auth.workspaceContext()?.tenantId) {
     return router.createUrlTree([APP_PATHS.select]);
   }

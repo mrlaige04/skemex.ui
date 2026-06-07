@@ -80,10 +80,16 @@ export class CreateUserPageComponent implements OnInit {
 
   readonly isInviteMode = computed(() => {
     const lookup = this.emailLookup();
-    return lookup?.exists === true && lookup.alreadyInWorkspace !== true;
+    return (
+      lookup?.exists === true &&
+      lookup.alreadyInWorkspace !== true &&
+      lookup.cannotBeInvited !== true
+    );
   });
 
   readonly alreadyInWorkspace = computed(() => this.emailLookup()?.alreadyInWorkspace === true);
+
+  readonly cannotBeInvited = computed(() => this.emailLookup()?.cannotBeInvited === true);
 
   readonly existingUserName = computed(() => {
     const lookup = this.emailLookup();
@@ -94,7 +100,11 @@ export class CreateUserPageComponent implements OnInit {
   });
 
   readonly canSubmit = computed(
-    () => !this.saving() && !this.emailChecking() && !this.alreadyInWorkspace(),
+    () =>
+      !this.saving() &&
+      !this.emailChecking() &&
+      !this.alreadyInWorkspace() &&
+      !this.cannotBeInvited(),
   );
 
   readonly model = signal({
@@ -207,7 +217,8 @@ export class CreateUserPageComponent implements OnInit {
         try {
           const m = field().value();
           const lookup = this.emailLookup();
-          const inviteMode = lookup?.exists === true && !lookup.alreadyInWorkspace;
+          const inviteMode =
+            lookup?.exists === true && !lookup.alreadyInWorkspace && !lookup.cannotBeInvited;
 
           if (!inviteMode) {
             if (!m.firstName.trim()) {

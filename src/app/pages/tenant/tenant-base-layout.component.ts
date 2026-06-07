@@ -25,8 +25,10 @@ import {
   lucideFolderKanban,
   lucideLayoutDashboard,
   lucideLogOut,
+  lucideMail,
   lucidePlus,
   lucideSettings,
+  lucideShield,
   lucideSparkles,
   lucideUserCircle,
   lucideUsers,
@@ -36,7 +38,7 @@ import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
-import { APP_PATHS, workspaceSectionPath } from '../../routing/app-paths';
+import { APP_PATHS, adminSectionPath, workspaceSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
 
 @Component({
@@ -66,6 +68,8 @@ import { AuthService } from '../../services/auth/auth.service';
       lucideLogOut,
       lucideCheck,
       lucidePlus,
+      lucideShield,
+      lucideMail,
     }),
     provideHlmSidebarConfig({ closeMobileSidebarOnMenuButtonClick: true }),
   ],
@@ -87,6 +91,7 @@ export class TenantBaseLayoutComponent {
 
   private readonly resetUserAvatarError = effect(() => {
     this.auth.workspaceContext()?.avatarUrl;
+    this.auth.superAdminSession()?.avatarUrl;
     this.userAvatarLoadFailed.set(false);
   });
 
@@ -114,7 +119,11 @@ export class TenantBaseLayoutComponent {
 
   /** Public profile image URL when the API returned one (local <code>/blobs/...</code> or CDN). */
   userAvatarUrl(): string | null {
-    const raw = this.auth.workspaceContext()?.avatarUrl?.trim();
+    const raw = (
+      this.auth.isSuperAdmin()
+        ? this.auth.superAdminSession()?.avatarUrl
+        : this.auth.workspaceContext()?.avatarUrl
+    )?.trim();
     return raw && raw.length > 0 ? raw : null;
   }
 
@@ -123,9 +132,10 @@ export class TenantBaseLayoutComponent {
   }
 
   userInitials(): string {
+    const sa = this.auth.superAdminSession();
     const ctx = this.auth.workspaceContext();
-    const fn = ctx?.firstName?.trim() ?? '';
-    const ln = ctx?.lastName?.trim() ?? '';
+    const fn = (this.auth.isSuperAdmin() ? sa?.firstName : ctx?.firstName)?.trim() ?? '';
+    const ln = (this.auth.isSuperAdmin() ? sa?.lastName : ctx?.lastName)?.trim() ?? '';
     if (fn.length > 0 && ln.length > 0 && fn[0] && ln[0]) {
       return (fn[0] + ln[0]).toUpperCase();
     }
@@ -135,7 +145,7 @@ export class TenantBaseLayoutComponent {
     if (fn.length === 1) {
       return fn.toUpperCase();
     }
-    const e = ctx?.userEmail ?? '';
+    const e = (this.auth.isSuperAdmin() ? sa?.email : ctx?.userEmail) ?? '';
     const local = e.split('@')[0] ?? '';
     if (!local) {
       return '?';
@@ -149,20 +159,40 @@ export class TenantBaseLayoutComponent {
 
   /** Display line in the sidebar (name from profile, else email local-part). */
   userDisplayName(): string {
+    const sa = this.auth.superAdminSession();
     const ctx = this.auth.workspaceContext();
-    const fn = ctx?.firstName?.trim() ?? '';
-    const ln = ctx?.lastName?.trim() ?? '';
+    const fn = (this.auth.isSuperAdmin() ? sa?.firstName : ctx?.firstName)?.trim() ?? '';
+    const ln = (this.auth.isSuperAdmin() ? sa?.lastName : ctx?.lastName)?.trim() ?? '';
     const full = [fn, ln].filter(Boolean).join(' ').trim();
     if (full.length > 0) {
       return full;
     }
-    const e = ctx?.userEmail ?? '';
+    const e = (this.auth.isSuperAdmin() ? sa?.email : ctx?.userEmail) ?? '';
     const local = e.split('@')[0]?.trim() ?? '';
     if (!local) {
-      return 'User';
+      return this.auth.isSuperAdmin() ? 'Super admin' : 'User';
     }
     const chunk = local.split(/[._-]/)[0] ?? local;
     return chunk.length > 0 ? chunk[0].toUpperCase() + chunk.slice(1) : 'User';
+  }
+
+  userEmail(): string {
+    if (this.auth.isSuperAdmin()) {
+      return this.auth.superAdminSession()?.email ?? '';
+    }
+    return this.auth.workspaceContext()?.userEmail ?? '';
+  }
+
+  breadcrumbRootLabel(): string {
+    return this.auth.isSuperAdmin()
+      ? 'Platform admin'
+      : (this.auth.workspaceContext()?.tenantName ?? 'Workspace');
+  }
+
+  breadcrumbRootLink(): string[] {
+    return this.auth.isSuperAdmin()
+      ? adminSectionPath('dashboard')
+      : this.tenantSection('dashboard');
   }
 
   /** Paths under the workspace layout (tenant id is stored, not in the URL). */
@@ -171,6 +201,10 @@ export class TenantBaseLayoutComponent {
       return [APP_PATHS.select];
     }
     return workspaceSectionPath(segment);
+  }
+
+  adminSection(segment: string): string[] {
+    return adminSectionPath(segment);
   }
 
   async switchWorkspace(tenantId: string): Promise<void> {

@@ -18,7 +18,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'profile',
+    path: 'admin/**',
     renderMode: RenderMode.Server,
   },
   {

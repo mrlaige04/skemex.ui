@@ -45,6 +45,7 @@ export class AuthRefreshService {
         client.post<AccessTokenResponse>(`${base}/api/auth/refresh`, body),
       );
       await this.tokens.persistFromAccessTokenResponse(token);
+      this.injector.get(AuthService).syncSuperAdminFromToken();
       return true;
     } catch {
       this.forceLogout();

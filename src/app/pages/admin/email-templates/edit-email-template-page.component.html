@@ -1,0 +1,85 @@
+<div class="flex min-w-0 max-w-full flex-1 flex-col gap-6 overflow-x-hidden p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="templatesListLink"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to email templates
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">{{ pageTitle() }}</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        @if (templateType()) {
+          Type: {{ templateType() }}. Use placeholders like <code class="text-xs">{{ '{{Name}}' }}</code> in the HTML body.
+        } @else {
+          Update subject and HTML body used when this email is sent.
+        }
+      </p>
+    </div>
+  </div>
+
+  @if (loadError(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  } @else if (loading()) {
+    <p class="text-muted-foreground text-sm">Loading…</p>
+  } @else {
+    <div hlmCard class="min-w-0 w-full max-w-full">
+      <div hlmCardHeader>
+        <h2 hlmCardTitle>Template details</h2>
+      </div>
+
+      <div hlmCardContent class="min-w-0 overflow-hidden">
+        <form novalidate (submit)="onSubmit($event)" class="min-w-0 space-y-5">
+          @for (err of templateForm().errorSummary(); track err.kind + (err.message ?? '')) {
+            @if (err.kind === 'server') {
+              <p
+                class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                role="alert"
+              >
+                {{ err.message }}
+              </p>
+            }
+          }
+
+          <div class="space-y-2">
+            <label hlmLabel for="template-title">Title</label>
+            <input hlmInput id="template-title" type="text" [formField]="templateForm.title" />
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="template-subject">Subject</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideMail" size="sm" class="text-muted-foreground" />
+              </div>
+              <input hlmInputGroupInput id="template-subject" type="text" [formField]="templateForm.subject" />
+            </div>
+          </div>
+
+          <div class="min-w-0 space-y-2">
+            <label hlmLabel>Body (HTML)</label>
+            <app-html-editor [value]="bodyHtml()" [disabled]="saving()" (valueChange)="onBodyChange($event)" />
+            @if (bodyError(); as bodyErr) {
+              <p class="text-destructive text-sm" role="alert">{{ bodyErr }}</p>
+            }
+          </div>
+
+          <div hlmCardFooter class="flex flex-wrap justify-end gap-2 px-0 pb-0">
+            <a hlmBtn variant="outline" [routerLink]="templatesListLink" [class.pointer-events-none]="saving()">Cancel</a>
+            <button type="submit" hlmBtn [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
