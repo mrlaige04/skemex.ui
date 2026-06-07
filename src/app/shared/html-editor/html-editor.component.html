@@ -1,0 +1,40 @@
+<div class="html-editor flex min-w-0 w-full max-w-full flex-col gap-2">
+  <div class="flex w-fit items-center gap-1 rounded-md border border-border bg-muted/40 p-1">
+    <button
+      type="button"
+      hlmBtn
+      size="sm"
+      [variant]="viewMode() === 'edit' ? 'default' : 'ghost'"
+      (click)="setViewMode('edit')"
+    >
+      Edit
+    </button>
+    <button
+      type="button"
+      hlmBtn
+      size="sm"
+      [variant]="viewMode() === 'preview' ? 'default' : 'ghost'"
+      (click)="setViewMode('preview')"
+    >
+      Preview
+    </button>
+  </div>
+
+  <div
+    class="html-editor__surface box-border w-full max-w-full min-w-0 overflow-hidden rounded-md border border-input bg-muted shadow-xs dark:bg-input/30"
+    [class.hidden]="viewMode() !== 'edit'"
+    [class.pointer-events-none]="disabled()"
+    [class.opacity-60]="disabled()"
+  >
+    <div #editorHost class="html-editor__codemirror min-w-0"></div>
+  </div>
+
+  @if (viewMode() === 'preview') {
+    <iframe
+      class="box-border block w-full max-w-full min-w-0 min-h-[420px] max-h-[min(480px,60vh)] rounded-md border border-input bg-white shadow-xs dark:bg-input/30"
+      title="Email preview"
+      sandbox=""
+      [srcdoc]="previewSrcdoc()"
+    ></iframe>
+  }
+</div>

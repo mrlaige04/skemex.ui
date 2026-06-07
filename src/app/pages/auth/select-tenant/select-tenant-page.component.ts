@@ -57,6 +57,12 @@ export class SelectTenantPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.auth.syncSuperAdminFromToken();
+    if (this.auth.isSuperAdmin()) {
+      void this.router.navigate([APP_PATHS.adminDashboard]);
+      return;
+    }
+
     const pending = this.auth.getPendingTenantSelection();
     const wantsCreate = this.route.snapshot.queryParamMap.get('create') === '1';
     const ws = this.auth.workspaceContext();

@@ -23,6 +23,7 @@ export interface CreateTenantUserRequest {
 export interface LookupUserByEmailResponse {
   exists: boolean;
   alreadyInWorkspace: boolean;
+  cannotBeInvited: boolean;
   firstName?: string | null;
   lastName?: string | null;
 }

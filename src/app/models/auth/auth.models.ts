@@ -70,6 +70,14 @@ export interface TenantWorkspaceContext {
   tenants: TenantSummary[];
 }
 
+/** Cached platform-admin profile for the super-admin console (no tenant workspace). */
+export interface SuperAdminSession {
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+}
+
 export interface UpdateUserProfileResponse {
   firstName: string;
   lastName: string;

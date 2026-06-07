@@ -26,6 +26,12 @@ export const isNotAuthenticatedGuard: CanActivateFn = async () => {
     return true;
   }
 
+  auth.syncSuperAdminFromToken();
+
+  if (auth.isSuperAdmin()) {
+    return router.createUrlTree([APP_PATHS.adminDashboard]);
+  }
+
   if (auth.workspaceContext()?.tenantId) {
     return router.createUrlTree([APP_PATHS.dashboard]);
   }

@@ -67,7 +67,11 @@ export class LoginPageComponent {
         try {
           const { email: mail, password } = field().value();
           await this.auth.login({ email: mail, password });
-          await this.router.navigate([APP_PATHS.select]);
+          if (this.auth.isSuperAdmin()) {
+            await this.router.navigate([APP_PATHS.adminDashboard]);
+          } else {
+            await this.router.navigate([APP_PATHS.select]);
+          }
           return;
         } catch (err) {
           const message = formatLoginError(err);

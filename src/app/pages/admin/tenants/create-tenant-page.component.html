@@ -1,0 +1,119 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="tenantsListLink"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to tenants
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Add tenant</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Create a workspace. If no account exists for the owner email, one will be created automatically.
+      </p>
+    </div>
+  </div>
+
+  <div hlmCard class="w-full">
+    <div hlmCardHeader>
+      <h2 hlmCardTitle>Workspace details</h2>
+      <p hlmCardDescription>Company name and owner email are required.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+        @for (err of tenantForm().errorSummary(); track err.kind + (err.message ?? '')) {
+          @if (err.kind === 'server') {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ err.message }}
+            </p>
+          }
+        }
+
+        <div class="space-y-2">
+          <label hlmLabel for="tenant-name">Company name</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideBuilding2" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              id="tenant-name"
+              type="text"
+              autocomplete="organization"
+              placeholder="Acme Inc."
+              [formField]="tenantForm.name"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="tenant-email">Owner email</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideMail" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              id="tenant-email"
+              type="email"
+              autocomplete="email"
+              placeholder="owner@company.com"
+              [formField]="tenantForm.email"
+            />
+          </div>
+          <p class="text-muted-foreground text-xs">
+            Used as the workspace contact email. An existing user with this email becomes the admin; otherwise a new
+            account is created.
+          </p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label hlmLabel for="owner-first">Owner first name <span class="text-muted-foreground">(optional)</span></label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="owner-first"
+                type="text"
+                autocomplete="given-name"
+                [formField]="tenantForm.firstName"
+              />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label hlmLabel for="owner-last">Owner last name <span class="text-muted-foreground">(optional)</span></label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideUser" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="owner-last"
+                type="text"
+                autocomplete="family-name"
+                [formField]="tenantForm.lastName"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+          <a hlmBtn variant="outline" [routerLink]="tenantsListLink" [class.pointer-events-none]="saving()">Cancel</a>
+          <button type="submit" hlmBtn [disabled]="saving()">
+            {{ saving() ? 'Creating…' : 'Create tenant' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

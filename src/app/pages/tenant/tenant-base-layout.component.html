@@ -1,113 +1,187 @@
 <div hlmSidebarWrapper class="min-h-svh">
   <hlm-sidebar collapsible="icon" variant="inset" side="left">
     <div hlmSidebarHeader class="border-sidebar-border border-b p-0">
-      <ng-template #companyMenu>
-        <div hlmDropdownMenu class="w-56">
-          <div hlmDropdownMenuGroup class="max-h-60 overflow-y-auto">
-            <div hlmDropdownMenuLabel>Your companies</div>
-            @for (t of auth.workspaceContext()?.tenants ?? []; track t.id) {
-              <button
-                type="button"
-                hlmDropdownMenuItem
-                [disabled]="t.id === auth.workspaceContext()?.tenantId"
-                (click)="switchWorkspace(t.id)"
-              >
-                <ng-icon
-                  hlm
-                  name="lucideCheck"
-                  size="sm"
-                  [class.opacity-0]="t.id !== auth.workspaceContext()?.tenantId"
-                />
-                <span class="truncate">{{ t.name }}</span>
-              </button>
-            }
+      @if (auth.isSuperAdmin()) {
+        <div class="p-2">
+          <div class="flex w-full items-center gap-2 rounded-lg p-2">
+            <div
+              class="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
+            >
+              <ng-icon hlm name="lucideShield" class="size-4" />
+            </div>
+            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-semibold">Platform admin</span>
+              <span class="text-sidebar-foreground/70 truncate text-xs">Skemex console</span>
+            </div>
           </div>
-          <div hlmDropdownMenuSeparator></div>
-          <button type="button" hlmDropdownMenuItem (click)="goCreateCompany()">
-            <ng-icon hlm name="lucidePlus" size="sm" />
-            <span>Create new company</span>
+        </div>
+      } @else {
+        <ng-template #companyMenu>
+          <div hlmDropdownMenu class="w-56">
+            <div hlmDropdownMenuGroup class="max-h-60 overflow-y-auto">
+              <div hlmDropdownMenuLabel>Your companies</div>
+              @for (t of auth.workspaceContext()?.tenants ?? []; track t.id) {
+                <button
+                  type="button"
+                  hlmDropdownMenuItem
+                  [disabled]="t.id === auth.workspaceContext()?.tenantId"
+                  (click)="switchWorkspace(t.id)"
+                >
+                  <ng-icon
+                    hlm
+                    name="lucideCheck"
+                    size="sm"
+                    [class.opacity-0]="t.id !== auth.workspaceContext()?.tenantId"
+                  />
+                  <span class="truncate">{{ t.name }}</span>
+                </button>
+              }
+            </div>
+            <div hlmDropdownMenuSeparator></div>
+            <button type="button" hlmDropdownMenuItem (click)="goCreateCompany()">
+              <ng-icon hlm name="lucidePlus" size="sm" />
+              <span>Create new company</span>
+            </button>
+          </div>
+        </ng-template>
+        <div class="p-2">
+          <button
+            type="button"
+            hlmDropdownMenuTrigger
+            [hlmDropdownMenuTrigger]="companyMenu"
+            side="bottom"
+            align="start"
+            class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-2"
+          >
+            <div
+              class="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
+            >
+              <ng-icon hlm name="lucideBuilding2" class="size-4" />
+            </div>
+            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-semibold">{{ auth.workspaceContext()?.tenantName ?? 'Workspace' }}</span>
+              <span class="text-sidebar-foreground/70 truncate text-xs">Company</span>
+            </div>
+            <ng-icon hlm name="lucideChevronsUpDown" class="text-sidebar-foreground/70 size-4 shrink-0" />
           </button>
         </div>
-      </ng-template>
-      <div class="p-2">
-        <button
-          type="button"
-          hlmDropdownMenuTrigger
-          [hlmDropdownMenuTrigger]="companyMenu"
-          side="bottom"
-          align="start"
-          class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-2"
-        >
-          <div
-            class="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
-          >
-            <ng-icon hlm name="lucideBuilding2" class="size-4" />
-          </div>
-          <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
-            <span class="truncate font-semibold">{{ auth.workspaceContext()?.tenantName ?? 'Workspace' }}</span>
-            <span class="text-sidebar-foreground/70 truncate text-xs">Company</span>
-          </div>
-          <ng-icon hlm name="lucideChevronsUpDown" class="text-sidebar-foreground/70 size-4 shrink-0" />
-        </button>
-      </div>
+      }
     </div>
 
     <div hlmSidebarContent>
-      <div hlmSidebarGroup>
-        <div hlmSidebarGroupLabel>Menu</div>
-        <div hlmSidebarGroupContent>
-          <ul hlmSidebarMenu>
-            <li hlmSidebarMenuItem>
-              <a
-                hlmSidebarMenuButton
-                [routerLink]="tenantSection('dashboard')"
-                routerLinkActive
-                #dashRla="routerLinkActive"
-                [isActive]="dashRla.isActive"
-              >
-                <ng-icon hlm name="lucideLayoutDashboard" />
-                <span>Dashboard</span>
-              </a>
-            </li>
-            <li hlmSidebarMenuItem>
-              <a
-                hlmSidebarMenuButton
-                [routerLink]="tenantSection('users')"
-                routerLinkActive
-                #usersRla="routerLinkActive"
-                [isActive]="usersRla.isActive"
-              >
-                <ng-icon hlm name="lucideUsers" />
-                <span>Users</span>
-              </a>
-            </li>
-            <li hlmSidebarMenuItem>
-              <a
-                hlmSidebarMenuButton
-                [routerLink]="tenantSection('projects')"
-                routerLinkActive
-                #projRla="routerLinkActive"
-                [isActive]="projRla.isActive"
-              >
-                <ng-icon hlm name="lucideFolderKanban" />
-                <span>Projects</span>
-              </a>
-            </li>
-            <li hlmSidebarMenuItem>
-              <a
-                hlmSidebarMenuButton
-                [routerLink]="tenantSection('settings')"
-                routerLinkActive
-                #setRla="routerLinkActive"
-                [isActive]="setRla.isActive"
-              >
-                <ng-icon hlm name="lucideSettings" />
-                <span>Settings</span>
-              </a>
-            </li>
-          </ul>
+      @if (auth.isSuperAdmin()) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Super admin</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="adminSection('dashboard')"
+                  routerLinkActive
+                  #adminDashRla="routerLinkActive"
+                  [isActive]="adminDashRla.isActive"
+                >
+                  <ng-icon hlm name="lucideLayoutDashboard" />
+                  <span>Overview</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="adminSection('tenants')"
+                  routerLinkActive
+                  #adminTenantsRla="routerLinkActive"
+                  [isActive]="adminTenantsRla.isActive"
+                >
+                  <ng-icon hlm name="lucideBuilding2" />
+                  <span>Tenants</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="adminSection('users')"
+                  routerLinkActive
+                  #adminUsersRla="routerLinkActive"
+                  [isActive]="adminUsersRla.isActive"
+                >
+                  <ng-icon hlm name="lucideUsers" />
+                  <span>Users</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="adminSection('email-templates')"
+                  routerLinkActive
+                  #adminEmailTemplatesRla="routerLinkActive"
+                  [isActive]="adminEmailTemplatesRla.isActive"
+                >
+                  <ng-icon hlm name="lucideMail" />
+                  <span>Email templates</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      } @else {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>Menu</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="tenantSection('dashboard')"
+                  routerLinkActive
+                  #dashRla="routerLinkActive"
+                  [isActive]="dashRla.isActive"
+                >
+                  <ng-icon hlm name="lucideLayoutDashboard" />
+                  <span>Dashboard</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="tenantSection('users')"
+                  routerLinkActive
+                  #usersRla="routerLinkActive"
+                  [isActive]="usersRla.isActive"
+                >
+                  <ng-icon hlm name="lucideUsers" />
+                  <span>Users</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="tenantSection('projects')"
+                  routerLinkActive
+                  #projRla="routerLinkActive"
+                  [isActive]="projRla.isActive"
+                >
+                  <ng-icon hlm name="lucideFolderKanban" />
+                  <span>Projects</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
+                  [routerLink]="tenantSection('settings')"
+                  routerLinkActive
+                  #setRla="routerLinkActive"
+                  [isActive]="setRla.isActive"
+                >
+                  <ng-icon hlm name="lucideSettings" />
+                  <span>Settings</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      }
     </div>
 
     <div hlmSidebarFooter class="border-sidebar-border border-t p-0">
@@ -136,27 +210,29 @@
               </div>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium leading-none">{{ userDisplayName() }}</p>
-                <p class="text-muted-foreground mt-1 truncate text-xs">{{ auth.workspaceContext()?.userEmail }}</p>
+                <p class="text-muted-foreground mt-1 truncate text-xs">{{ userEmail() }}</p>
               </div>
             </div>
           </div>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideSparkles" size="sm" />
-            Upgrade to Pro
-          </button>
-          <button type="button" hlmDropdownMenuItem (click)="goUserProfile()">
-            <ng-icon hlm name="lucideUserCircle" size="sm" />
-            My profile
-          </button>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideCreditCard" size="sm" />
-            Billing
-          </button>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideBell" size="sm" />
-            Notifications
-          </button>
-          <div hlmDropdownMenuSeparator></div>
+          @if (!auth.isSuperAdmin()) {
+            <button type="button" hlmDropdownMenuItem>
+              <ng-icon hlm name="lucideSparkles" size="sm" />
+              Upgrade to Pro
+            </button>
+            <button type="button" hlmDropdownMenuItem (click)="goUserProfile()">
+              <ng-icon hlm name="lucideUserCircle" size="sm" />
+              My profile
+            </button>
+            <button type="button" hlmDropdownMenuItem>
+              <ng-icon hlm name="lucideCreditCard" size="sm" />
+              Billing
+            </button>
+            <button type="button" hlmDropdownMenuItem>
+              <ng-icon hlm name="lucideBell" size="sm" />
+              Notifications
+            </button>
+            <div hlmDropdownMenuSeparator></div>
+          }
           <button type="button" hlmDropdownMenuItem variant="destructive" (click)="auth.logout()">
             <ng-icon hlm name="lucideLogOut" size="sm" />
             Log out
@@ -194,7 +270,7 @@
           </div>
           <div class="min-w-0 flex-1 text-left leading-tight">
             <span class="block truncate font-medium">{{ userDisplayName() }}</span>
-            <span class="text-sidebar-foreground/70 block truncate text-xs">{{ auth.workspaceContext()?.userEmail }}</span>
+            <span class="text-sidebar-foreground/70 block truncate text-xs">{{ userEmail() }}</span>
           </div>
           <ng-icon hlm name="lucideChevronsUpDown" class="text-sidebar-foreground/70 size-4 shrink-0" />
         </button>
@@ -202,18 +278,14 @@
     </div>
   </hlm-sidebar>
 
-  <main hlmSidebarInset>
-    <header
-      class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6"
-    >
+  <main hlmSidebarInset class="min-w-0 overflow-x-hidden">
+    <header class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6">
       <button type="button" hlmSidebarTrigger class="md:hidden" aria-label="Toggle sidebar"></button>
       <div class="flex min-w-0 flex-1 items-center">
         <nav hlmBreadcrumb>
           <ol hlmBreadcrumbList>
             <li hlmBreadcrumbItem>
-              <a hlmBreadcrumbLink [link]="tenantSection('dashboard')">{{
-                auth.workspaceContext()?.tenantName ?? 'Workspace'
-              }}</a>
+              <a hlmBreadcrumbLink [link]="breadcrumbRootLink()">{{ breadcrumbRootLabel() }}</a>
             </li>
             <li hlmBreadcrumbSeparator></li>
             <li hlmBreadcrumbItem>
@@ -223,7 +295,7 @@
         </nav>
       </div>
     </header>
-    <div class="flex flex-1 flex-col overflow-auto">
+    <div class="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
       <router-outlet />
     </div>
   </main>

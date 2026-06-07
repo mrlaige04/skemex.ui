@@ -1,0 +1,46 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Email templates</h1>
+    <p class="text-muted-foreground mt-1 text-sm">
+      System defaults and company-specific email templates for signup, invitations, and password recovery.
+    </p>
+  </div>
+
+  <div hlmCard class="email-templates-card">
+    <div hlmCardContent>
+      @if (listError(); as err) {
+        <p
+          class="mb-4 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <app-rich-table
+        [data]="templates()"
+        [columns]="columns"
+        [loading]="loading()"
+        emptyMessage="No email templates match your search."
+        [showPagination]="false"
+        [showColumnsSelection]="false"
+      >
+        <ng-template #captionStartTemplate>
+          <div hlmInputGroup class="w-full max-w-sm">
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              type="search"
+              placeholder="Search templates…"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+        </ng-template>
+      </app-rich-table>
+    </div>
+  </div>
+</div>
+
