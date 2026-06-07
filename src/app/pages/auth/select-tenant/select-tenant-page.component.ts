@@ -90,6 +90,7 @@ export class SelectTenantPageComponent implements OnInit {
     }
 
     if (this.auth.accessToken()) {
+      void this.auth.logout();
       return;
     }
     void this.router.navigate(['/auth', 'login']);
