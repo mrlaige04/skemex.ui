@@ -208,6 +208,29 @@ export class AuthService {
     return firstValueFrom(this.api.get<CurrentUserProfileDto>('api/auth/me'));
   }
 
+  /** Fresh user + workspace list from the API (for tenant selection after login or refresh). */
+  getSession(): Promise<CurrentUserResponse> {
+    return firstValueFrom(this.api.get<CurrentUserResponse>('api/auth/session'));
+  }
+
+  /** Re-fetches session from the API and updates pending selection / workspace tenant list. */
+  async refreshSessionState(): Promise<CurrentUserResponse> {
+    const session = await this.getSession();
+    this.setPendingTenantSelection(session);
+    const ws = this._workspaceContext();
+    if (ws) {
+      this.persistWorkspaceContext({
+        ...ws,
+        userEmail: session.email,
+        firstName: session.firstName,
+        lastName: session.lastName,
+        avatarUrl: session.avatarUrl ?? null,
+        tenants: session.tenants,
+      });
+    }
+    return session;
+  }
+
   updateProfile(body: {
     firstName?: string;
     lastName?: string;
