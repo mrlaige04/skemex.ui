@@ -272,12 +272,12 @@ export class AuthService {
     return created;
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
     this.clearPendingTenantSelection();
     this.clearWorkspaceContext();
     this.clearSuperAdminSession();
     this.tokens.clear();
-    void this.router.navigate(['/auth', 'login']);
+    await this.router.navigate(['/auth', 'login']);
   }
 
   private persistSuperAdminSession(session: SuperAdminSession): void {

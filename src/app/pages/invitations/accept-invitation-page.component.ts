@@ -133,8 +133,8 @@ export class AcceptInvitationPageComponent implements OnInit {
           }
 
           try {
-            const result = await this.auth.acceptInvitation({ token, password });
-            this.accepted.set(result);
+            await this.auth.acceptInvitation({ token, password });
+            await this.auth.logout();
             return;
           } catch (err) {
             const message =
@@ -146,8 +146,8 @@ export class AcceptInvitationPageComponent implements OnInit {
         });
       } else {
         try {
-          const result = await this.auth.acceptInvitation({ token });
-          this.accepted.set(result);
+          await this.auth.acceptInvitation({ token });
+          await this.auth.logout();
         } catch (err) {
           const message =
             err instanceof HttpErrorResponse
