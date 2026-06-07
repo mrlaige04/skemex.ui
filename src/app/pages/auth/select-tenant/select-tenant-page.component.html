@@ -1,4 +1,8 @@
-@if (user(); as u) {
+@if (loading()) {
+  <div class="tenant-page relative flex min-h-svh items-center justify-center bg-[#020817] text-slate-400">
+    <p class="text-sm">Loading workspaces…</p>
+  </div>
+} @else if (user(); as u) {
   <div class="tenant-page relative min-h-svh overflow-hidden bg-[#020817] text-slate-200">
     <div class="tenant-page__glow pointer-events-none absolute inset-0" aria-hidden="true"></div>
     <div class="tenant-page__noise pointer-events-none absolute inset-0" aria-hidden="true"></div>

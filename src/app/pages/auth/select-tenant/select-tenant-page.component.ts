@@ -13,8 +13,9 @@ import { HlmItemImports } from 'spartan/item';
 import { HlmLabelImports } from 'spartan/label';
 import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
-import type { CurrentUserResponse, TenantWorkspaceContext } from '../../../models/auth/auth.models';
+import type { CurrentUserResponse } from '../../../models/auth/auth.models';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthTokenStore } from '../../../services/auth/auth-token.store';
 
 @Component({
   selector: 'app-select-tenant-page',
@@ -38,8 +39,10 @@ export class SelectTenantPageComponent implements OnInit {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly tokens = inject(AuthTokenStore);
 
   readonly user = signal<CurrentUserResponse | null>(null);
+  readonly loading = signal(false);
   readonly selectingId = signal<string | null>(null);
   readonly selectError = signal<string | null>(null);
   readonly creating = signal(false);
@@ -56,44 +59,50 @@ export class SelectTenantPageComponent implements OnInit {
     maxLength(f.email, 256);
   });
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    await this.tokens.whenHydrated;
+
     this.auth.syncSuperAdminFromToken();
     if (this.auth.isSuperAdmin()) {
       void this.router.navigate([APP_PATHS.adminDashboard]);
       return;
     }
 
-    const pending = this.auth.getPendingTenantSelection();
     const wantsCreate = this.route.snapshot.queryParamMap.get('create') === '1';
     const ws = this.auth.workspaceContext();
 
-    if (pending) {
-      this.user.set(pending);
-      this.createModel.set({ name: '', email: pending.email });
-      if (wantsCreate) {
-        this.stripCreateQueryParam();
-        queueMicrotask(() => this.createDialogState.set('open'));
-      }
-      return;
-    }
-
-    if (this.auth.accessToken() && ws) {
-      if (wantsCreate) {
-        this.user.set(this.userFromWorkspace(ws));
-        this.createModel.set({ name: '', email: ws.userEmail });
-        this.stripCreateQueryParam();
-        queueMicrotask(() => this.createDialogState.set('open'));
-        return;
-      }
+    if (this.auth.accessToken() && ws && !wantsCreate) {
       void this.router.navigate([APP_PATHS.dashboard]);
       return;
     }
 
-    if (this.auth.accessToken()) {
-      void this.auth.logout();
+    if (!this.auth.accessToken()) {
+      void this.router.navigate(['/auth', 'login']);
       return;
     }
-    void this.router.navigate(['/auth', 'login']);
+
+    this.loading.set(true);
+    try {
+      const session = await this.auth.refreshSessionState();
+
+      if (session.isSuperAdmin) {
+        this.auth.establishSuperAdminSession(session);
+        void this.router.navigate([APP_PATHS.adminDashboard]);
+        return;
+      }
+
+      this.user.set(session);
+      this.createModel.set({ name: '', email: session.email });
+
+      if (wantsCreate) {
+        this.stripCreateQueryParam();
+        queueMicrotask(() => this.createDialogState.set('open'));
+      }
+    } catch {
+      await this.auth.logout();
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   onCreateDialogStateChanged(state: 'open' | 'closed'): void {
@@ -114,20 +123,6 @@ export class SelectTenantPageComponent implements OnInit {
     });
   }
 
-  private userFromWorkspace(ws: TenantWorkspaceContext): CurrentUserResponse {
-    return {
-      id: '',
-      email: ws.userEmail,
-      firstName: ws.firstName ?? '',
-      lastName: ws.lastName ?? '',
-      isSuperAdmin: false,
-      avatarUrl: ws.avatarUrl ?? null,
-      tenants: ws.tenants,
-      roles: [],
-      permissions: [],
-    };
-  }
-
   onTenantItemActivate(tenantId: string): void {
     if (this.selectingId() !== null) {
       return;
@@ -145,6 +140,14 @@ export class SelectTenantPageComponent implements OnInit {
       const msg =
         err instanceof HttpErrorResponse ? problemDetailMessage(err) : 'Could not open this workspace.';
       this.selectError.set(msg);
+      if (err instanceof HttpErrorResponse && (err.status === 403 || err.status === 404)) {
+        try {
+          const session = await this.auth.refreshSessionState();
+          this.user.set(session);
+        } catch {
+          /* keep existing list */
+        }
+      }
     } finally {
       this.selectingId.set(null);
     }
