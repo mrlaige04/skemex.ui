@@ -1,0 +1,17 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+
+# Public entry pages (indexable)
+Allow: /auth/login
+Allow: /auth/register
+Allow: /auth/forgot-password
+
+# Authenticated / private areas
+Disallow: /admin/
+Disallow: /settings
+Disallow: /profile
+Disallow: /dashboard
+Disallow: /users
+Disallow: /projects
+Disallow: /tenant-select
+Disallow: /invitations
