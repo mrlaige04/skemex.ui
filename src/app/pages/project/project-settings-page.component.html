@@ -1,0 +1,16 @@
+<div class="flex flex-col gap-6 p-4 md:p-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Project settings</h1>
+    <p class="text-muted-foreground mt-1 text-sm">Configure this project's board and preferences.</p>
+  </div>
+
+  <div hlmTabs [tab]="activeTab()" (tabActivated)="onTabActivated($event)">
+    <div hlmTabsList variant="line">
+      <button type="button" hlmTabsTrigger="columns">Columns</button>
+    </div>
+
+    <div hlmTabsContent="columns" class="pt-4">
+      <app-project-settings-columns-tab />
+    </div>
+  </div>
+</div>

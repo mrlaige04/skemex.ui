@@ -1,0 +1,108 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="boardLink()"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to board
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Create task</h1>
+      <p class="text-muted-foreground mt-1 text-sm">Add a new task to this project board.</p>
+    </div>
+  </div>
+
+  <div hlmCard class="w-full">
+    <div hlmCardHeader>
+      <h2 hlmCardTitle>Task details</h2>
+      <p hlmCardDescription>
+        New tasks are placed in the project's default column. You can change that in project settings.
+      </p>
+    </div>
+
+    <div hlmCardContent>
+      @if (loading()) {
+        <p class="text-muted-foreground text-sm">Loading form…</p>
+      } @else {
+        <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+          @if (formError(); as err) {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ err }}
+            </p>
+          }
+
+          <div class="space-y-2">
+            <label hlmLabel for="task-title">Title</label>
+            <input
+              hlmInput
+              id="task-title"
+              type="text"
+              maxlength="256"
+              placeholder="Implement board task creation"
+              [value]="model().title"
+              (input)="updateField('title', $event)"
+            />
+            @if (submitted() && !model().title.trim()) {
+              <p class="text-destructive text-sm">Title is required.</p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="task-description">Description</label>
+            <textarea
+              hlmInput
+              id="task-description"
+              rows="5"
+              maxlength="2000"
+              placeholder="Optional details"
+              [value]="model().description"
+              (input)="updateField('description', $event)"
+            ></textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel id="task-assignee-label">Assignee</label>
+            <hlm-select
+              class="w-full"
+              [value]="model().assigneeId"
+              [itemToString]="assigneeLabel"
+              (valueChange)="onAssigneeChange($event)"
+              aria-labelledby="task-assignee-label"
+            >
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value placeholder="Unassigned" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                <hlm-select-group>
+                  <hlm-select-item [value]="null">Unassigned</hlm-select-item>
+                  @for (user of users(); track user.id) {
+                    <hlm-select-item [value]="user.id">{{ userLabel(user) }}</hlm-select-item>
+                  }
+                </hlm-select-group>
+              </hlm-select-content>
+            </hlm-select>
+          </div>
+
+          <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+            <a hlmBtn variant="outline" [routerLink]="boardLink()" [class.pointer-events-none]="saving()">Cancel</a>
+            <button type="submit" hlmBtn [disabled]="!canSubmit()">
+              @if (saving()) {
+                <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                Creating...
+              } @else {
+                <ng-icon hlm name="lucidePlus" size="sm" />
+                Create task
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+</div>

@@ -53,6 +53,11 @@ export class BaseHttp {
     return this.http.patch<Res>(fullUrl, data, { params, headers });
   }
 
+  public postFormData<Res>(url: string, data: FormData): Observable<Res> {
+    const fullUrl = `${this.baseUrl}/${url}`;
+    return this.http.post<Res>(fullUrl, data);
+  }
+
   /** PATCH with <code>multipart/form-data</code> (e.g. profile image + fields). */
   public patchFormData<Res>(url: string, data: FormData): Observable<Res> {
     const fullUrl = `${this.baseUrl}/${url}`;

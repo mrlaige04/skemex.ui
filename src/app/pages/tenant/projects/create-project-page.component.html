@@ -1,0 +1,145 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="projectsListLink()"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to projects
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Create project</h1>
+      <p class="text-muted-foreground mt-1 text-sm">Add a project for this company.</p>
+    </div>
+  </div>
+
+  <div hlmCard class="w-full">
+    <div hlmCardHeader>
+      <h2 hlmCardTitle>Project details</h2>
+      <p hlmCardDescription>Project codes must be unique inside the selected company.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+        @if (formError(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        }
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label hlmLabel for="project-name">Project name</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideFolderKanban" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="project-name"
+                type="text"
+                maxlength="256"
+                placeholder="Website redesign"
+                [value]="model().name"
+                (input)="updateField('name', $event)"
+              />
+            </div>
+            @if (submitted() && !model().name.trim()) {
+              <p class="text-destructive text-sm">Project name is required.</p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="project-code">Project code</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideHash" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="project-code"
+                type="text"
+                maxlength="64"
+                placeholder="WEB"
+                [value]="model().code"
+                (input)="updateCode($event)"
+              />
+            </div>
+            @if (submitted() && !model().code.trim()) {
+              <p class="text-destructive text-sm">Project code is required.</p>
+            }
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="project-logo">Project logo</label>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div
+              class="border-border bg-muted text-muted-foreground relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border"
+            >
+              @if (logoPreviewUrl(); as preview) {
+                <img
+                  [src]="preview"
+                  alt=""
+                  class="absolute inset-0 size-full object-cover"
+                  [class.hidden]="logoPreviewFailed()"
+                  (error)="onLogoPreviewError()"
+                />
+              }
+              <ng-icon
+                hlm
+                name="lucideFolderKanban"
+                class="size-6"
+                [class.hidden]="!!logoPreviewUrl() && !logoPreviewFailed()"
+              />
+            </div>
+            <div
+              class="border-border flex min-w-0 flex-1 items-center gap-3 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground"
+            >
+              <ng-icon hlm name="lucideImagePlus" class="size-5 shrink-0" />
+              <input
+                id="project-logo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="text-foreground min-w-0 flex-1 file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                (change)="onLogoPicked($event)"
+              />
+            </div>
+          </div>
+          <p class="text-muted-foreground text-xs">Optional. JPEG, PNG, WebP, or GIF — max 5 MB.</p>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="project-description">Description</label>
+          <textarea
+            id="project-description"
+            maxlength="2000"
+            rows="5"
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-28 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="What is this project about?"
+            [value]="model().description"
+            (input)="updateField('description', $event)"
+          ></textarea>
+        </div>
+
+        <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+          <a hlmBtn variant="outline" [routerLink]="projectsListLink()" [class.pointer-events-none]="saving()">Cancel</a>
+          <button type="submit" hlmBtn [disabled]="!canSubmit()">
+            @if (saving()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              Creating...
+            } @else {
+              <ng-icon hlm name="lucidePlus" size="sm" />
+              Create project
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

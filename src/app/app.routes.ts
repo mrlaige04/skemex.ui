@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { isNotAuthenticatedGuard } from './routing/is-not-authenticated.guard';
+import { projectWorkspaceGuard } from './routing/project-workspace.guard';
 import { superAdminGuard } from './routing/super-admin.guard';
 import { tenantWorkspaceGuard } from './routing/tenant-workspace.guard';
 
@@ -162,16 +163,25 @@ export const routes: Routes = [
         title: 'Users',
       },
       {
+        path: 'projects/new',
+        loadComponent: () =>
+          import('./pages/tenant/projects/create-project-page.component').then(
+            (m) => m.CreateProjectPageComponent,
+          ),
+        data: { breadcrumb: 'Create project' },
+        title: 'Create project',
+      },
+      {
         path: 'projects',
         loadComponent: () =>
-          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+          import('./pages/tenant/projects/projects-page.component').then((m) => m.ProjectsPageComponent),
         data: { breadcrumb: 'Projects' },
         title: 'Projects',
       },
       {
         path: 'settings',
         loadComponent: () =>
-          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+          import('./pages/tenant/settings/settings-page.component').then((m) => m.SettingsPageComponent),
         data: { breadcrumb: 'Settings' },
         title: 'Settings',
       },
@@ -181,6 +191,57 @@ export const routes: Routes = [
           import('./pages/tenant/account/account-page.component').then((m) => m.AccountPageComponent),
         data: { breadcrumb: 'Profile' },
         title: 'Profile',
+      },
+    ],
+  },
+  {
+    path: ':projectCode',
+    canActivate: [tenantWorkspaceGuard, projectWorkspaceGuard],
+    loadComponent: () =>
+      import('./pages/project/project-base-layout.component').then((m) => m.ProjectBaseLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'board' },
+      {
+        path: 'board',
+        loadComponent: () =>
+          import('./pages/project/project-board-page.component').then((m) => m.ProjectBoardPageComponent),
+        data: { breadcrumb: 'Board' },
+        title: 'Board',
+      },
+      {
+        path: 'tasks/new',
+        loadComponent: () =>
+          import('./pages/project/create-task-page.component').then((m) => m.CreateTaskPageComponent),
+        data: { breadcrumb: 'New task' },
+        title: 'New task',
+      },
+      {
+        path: 'backlog',
+        loadComponent: () =>
+          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+        data: { breadcrumb: 'Backlog' },
+        title: 'Backlog',
+      },
+      {
+        path: 'issues',
+        loadComponent: () =>
+          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+        data: { breadcrumb: 'Issues' },
+        title: 'Issues',
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./pages/project/project-users-page.component').then((m) => m.ProjectUsersPageComponent),
+        data: { breadcrumb: 'Users' },
+        title: 'Users',
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./pages/project/project-settings-page.component').then((m) => m.ProjectSettingsPageComponent),
+        data: { breadcrumb: 'Settings' },
+        title: 'Settings',
       },
     ],
   },

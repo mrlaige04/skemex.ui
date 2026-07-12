@@ -1,0 +1,236 @@
+<div hlmSidebarWrapper class="flex h-svh max-h-svh overflow-hidden">
+  <hlm-sidebar collapsible="icon" variant="inset" side="left">
+    <div hlmSidebarHeader class="border-sidebar-border border-b p-0">
+      <div class="space-y-2 p-2">
+        <button
+          type="button"
+          hlmBtn
+          variant="ghost"
+          size="sm"
+          class="text-sidebar-foreground/80 hover:text-sidebar-foreground h-8 w-full justify-start gap-1.5 px-2 text-xs"
+          (click)="goBackToWorkspace()"
+        >
+          <ng-icon hlm name="lucideArrowLeft" size="sm" class="shrink-0 opacity-70" />
+          <span>All projects</span>
+        </button>
+        <div class="flex w-full items-center gap-2 rounded-lg p-2">
+          <div
+            class="bg-sidebar-primary text-sidebar-primary-foreground relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
+          >
+            @if (project()?.logoUrl; as logoSrc) {
+              <img
+                [src]="logoSrc"
+                alt=""
+                class="absolute inset-0 size-full object-cover"
+                [class.hidden]="projectLogoLoadFailed()"
+                (error)="onProjectLogoError()"
+              />
+            }
+            <ng-icon
+              hlm
+              name="lucideFolderKanban"
+              class="size-4"
+              [class.hidden]="!!project()?.logoUrl && !projectLogoLoadFailed()"
+            />
+          </div>
+          <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-semibold">{{ project()?.name ?? projectCode() }}</span>
+            <span class="text-sidebar-foreground/70 truncate text-xs uppercase">{{
+              project()?.code ?? projectCode()
+            }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div hlmSidebarContent>
+      <div hlmSidebarGroup>
+        <div hlmSidebarGroupLabel>Project</div>
+        <div hlmSidebarGroupContent>
+          <ul hlmSidebarMenu>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('board')"
+                routerLinkActive
+                #boardRla="routerLinkActive"
+                [isActive]="boardRla.isActive"
+              >
+                <ng-icon hlm name="lucideKanbanSquare" />
+                <span>Board</span>
+              </a>
+            </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('backlog')"
+                routerLinkActive
+                #backlogRla="routerLinkActive"
+                [isActive]="backlogRla.isActive"
+              >
+                <ng-icon hlm name="lucideList" />
+                <span>Backlog</span>
+              </a>
+            </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('issues')"
+                routerLinkActive
+                #issuesRla="routerLinkActive"
+                [isActive]="issuesRla.isActive"
+              >
+                <ng-icon hlm name="lucideCircleAlert" />
+                <span>Issues</span>
+              </a>
+            </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('users')"
+                routerLinkActive
+                #usersRla="routerLinkActive"
+                [isActive]="usersRla.isActive"
+              >
+                <ng-icon hlm name="lucideUsers" />
+                <span>Users</span>
+              </a>
+            </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('settings')"
+                routerLinkActive
+                #settingsRla="routerLinkActive"
+                [isActive]="settingsRla.isActive"
+              >
+                <ng-icon hlm name="lucideSettings" />
+                <span>Settings</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div hlmSidebarFooter class="border-sidebar-border border-t p-0">
+      <ng-template #userAccountMenu>
+        <div hlmDropdownMenu class="w-56">
+          <div hlmDropdownMenuGroup class="border-border border-b">
+            <div class="flex items-center gap-2 px-2 py-1.5">
+              <div
+                class="border-border bg-muted/40 text-popover-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-border"
+              >
+                @if (userAvatarUrl(); as avatarSrc) {
+                  <img
+                    [src]="avatarSrc"
+                    alt=""
+                    class="absolute inset-0 size-full object-cover"
+                    [class.hidden]="userAvatarLoadFailed()"
+                    (error)="onUserAvatarImageError()"
+                  />
+                }
+                <span
+                  class="flex size-full items-center justify-center"
+                  [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
+                  aria-hidden="true"
+                  >{{ userInitials() }}</span
+                >
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium leading-none">{{ userDisplayName() }}</p>
+                <p class="text-muted-foreground mt-1 truncate text-xs">{{ userEmail() }}</p>
+              </div>
+            </div>
+          </div>
+          <button type="button" hlmDropdownMenuItem>
+            <ng-icon hlm name="lucideSparkles" size="sm" />
+            Upgrade to Pro
+          </button>
+          <button type="button" hlmDropdownMenuItem (click)="goUserProfile()">
+            <ng-icon hlm name="lucideUserCircle" size="sm" />
+            My profile
+          </button>
+          <button type="button" hlmDropdownMenuItem>
+            <ng-icon hlm name="lucideCreditCard" size="sm" />
+            Billing
+          </button>
+          <button type="button" hlmDropdownMenuItem>
+            <ng-icon hlm name="lucideBell" size="sm" />
+            Notifications
+          </button>
+          <div hlmDropdownMenuSeparator></div>
+          <button type="button" hlmDropdownMenuItem variant="destructive" (click)="auth.logout()">
+            <ng-icon hlm name="lucideLogOut" size="sm" />
+            Log out
+          </button>
+        </div>
+      </ng-template>
+      <div class="p-2">
+        <button
+          type="button"
+          hlmDropdownMenuTrigger
+          [hlmDropdownMenuTrigger]="userAccountMenu"
+          side="top"
+          align="start"
+          class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
+        >
+          <div
+            class="border-sidebar-border text-sidebar-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-sidebar-border"
+          >
+            @if (userAvatarUrl(); as avatarSrc) {
+              <img
+                [src]="avatarSrc"
+                alt=""
+                class="absolute inset-0 size-full object-cover"
+                [class.hidden]="userAvatarLoadFailed()"
+                (error)="onUserAvatarImageError()"
+              />
+            }
+            <span
+              class="flex size-full items-center justify-center"
+              [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
+              aria-hidden="true"
+              >{{ userInitials() }}</span
+            >
+          </div>
+          <div class="min-w-0 flex-1 text-left leading-tight">
+            <span class="block truncate font-medium">{{ userDisplayName() }}</span>
+            <span class="text-sidebar-foreground/70 block truncate text-xs">{{ userEmail() }}</span>
+          </div>
+          <ng-icon
+            hlm
+            name="lucideChevronsUpDown"
+            class="text-sidebar-foreground/70 size-4 shrink-0"
+          />
+        </button>
+      </div>
+    </div>
+  </hlm-sidebar>
+  <main hlmSidebarInset class="min-h-0 min-w-0 overflow-hidden">
+    <header class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6">
+      <button
+        type="button"
+        hlmSidebarTrigger
+        class="md:hidden"
+        aria-label="Toggle sidebar"
+      ></button>
+      <div class="flex min-w-0 flex-1 items-center">
+        <nav hlmBreadcrumb>
+          <ol hlmBreadcrumbList>
+            <li hlmBreadcrumbItem>
+              <a hlmBreadcrumbLink [link]="projectSection('board')">{{
+                project()?.name ?? projectCode()
+              }}</a>
+            </li>
+            <li hlmBreadcrumbSeparator></li>
+            <li hlmBreadcrumbItem>
+              <span hlmBreadcrumbPage>{{ breadcrumbPage() }}</span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </header>
+    <div class="project-outlet flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <router-outlet />
+    </div>
+  </main>
+</div>
