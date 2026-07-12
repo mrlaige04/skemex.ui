@@ -1,0 +1,211 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+    <div>
+
+      <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
+
+      <p class="text-muted-foreground mt-1 text-sm">Manage project workspaces for this company.</p>
+
+    </div>
+
+    <a hlmBtn [routerLink]="projectsNewLink()">
+
+      <ng-icon hlm name="lucidePlus" size="sm" />
+
+      Create project
+
+    </a>
+
+  </div>
+
+
+
+  <div hlmCard>
+
+    <div hlmCardContent class="space-y-4">
+
+      @if (listError(); as err) {
+
+        <p
+
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+
+          role="alert"
+
+        >
+
+          {{ err }}
+
+        </p>
+
+      }
+
+
+
+      <div hlmInputGroup class="w-full max-w-sm">
+
+        <div hlmInputGroupAddon>
+
+          <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+
+        </div>
+
+        <input
+
+          hlmInputGroupInput
+
+          type="search"
+
+          placeholder="Search projects..."
+
+          [value]="searchInput()"
+
+          (input)="onSearchInput($event)"
+
+        />
+
+      </div>
+
+
+
+      @if (loading()) {
+
+        <div class="flex flex-col gap-2">
+
+          @for (item of [1, 2, 3]; track item) {
+
+            <div class="border-border bg-muted/20 h-14 animate-pulse rounded-lg border"></div>
+
+          }
+
+        </div>
+
+      } @else if (projects().length === 0) {
+
+        <div class="border-border rounded-lg border border-dashed p-8 text-center">
+
+          <ng-icon hlm name="lucideFolderKanban" class="text-muted-foreground mx-auto size-8" />
+
+          <h2 class="mt-3 text-base font-medium">No projects yet</h2>
+
+          <p class="text-muted-foreground mt-1 text-sm">Create your first project to start grouping work.</p>
+
+        </div>
+
+      } @else {
+
+        <div class="flex flex-col gap-2">
+
+          @for (project of projects(); track project.id) {
+
+            <article
+
+              class="border-border bg-card hover:bg-accent/30 focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:gap-4 sm:px-4"
+
+              [routerLink]="projectLink(project.code)"
+
+              tabindex="0"
+
+              role="link"
+
+            >
+
+              <div class="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md">
+
+                @if (project.logoUrl; as logoSrc) {
+
+                  <img
+
+                    [src]="logoSrc"
+
+                    alt=""
+
+                    class="size-full object-cover"
+
+                    [class.hidden]="logoFailed(project.id)"
+
+                    (error)="onLogoError(project.id)"
+
+                  />
+
+                }
+
+                <ng-icon
+
+                  hlm
+
+                  name="lucideFolderKanban"
+
+                  class="size-4"
+
+                  [class.hidden]="!!project.logoUrl && !logoFailed(project.id)"
+
+                />
+
+              </div>
+
+
+
+              <div class="grid min-w-0 flex-1 gap-0.5 sm:grid-cols-[minmax(0,12rem)_1fr] sm:items-center sm:gap-4">
+
+                <div class="min-w-0">
+
+                  <h2 class="truncate text-sm font-semibold">{{ project.name }}</h2>
+
+                  <p class="text-muted-foreground truncate text-xs font-medium uppercase tracking-wide">
+
+                    {{ project.code }}
+
+                  </p>
+
+                </div>
+
+
+
+                <p class="text-muted-foreground hidden truncate text-sm sm:block">
+
+                  {{ project.description || 'No description.' }}
+
+                </p>
+
+              </div>
+
+            </article>
+
+          }
+
+        </div>
+
+      }
+
+
+
+      @if (!loading()) {
+
+        <hlm-numbered-pagination
+
+          class="border-border border-t pt-4"
+
+          [currentPage]="currentPage()"
+
+          (currentPageChange)="onCurrentPageChange($event)"
+
+          [itemsPerPage]="pageSize()"
+
+          (itemsPerPageChange)="onItemsPerPageChange($event)"
+
+          [totalItems]="totalItems()"
+
+        />
+
+      }
+
+    </div>
+
+  </div>
+
+</div>
+
+

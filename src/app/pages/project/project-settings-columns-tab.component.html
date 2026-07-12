@@ -1,0 +1,638 @@
+<section hlmCard>
+
+  <div hlmCardHeader class="flex flex-row items-start justify-between gap-4">
+
+    <div>
+
+      <h2 hlmCardTitle>Board columns</h2>
+
+      <p hlmCardDescription>
+
+        Manage this project's board columns. Required and fixed-position rules come from workspace settings.
+
+      </p>
+
+    </div>
+
+    @if (!loading()) {
+
+      <button hlmBtn type="button" variant="outline" size="sm" (click)="toggleAddForm()">
+
+        <ng-icon hlm name="lucidePlus" size="sm" />
+
+        Add column
+
+      </button>
+
+    }
+
+  </div>
+
+
+
+  <div hlmCardContent class="flex flex-col gap-4">
+
+    @if (error(); as message) {
+
+      <p class="text-destructive text-sm">{{ message }}</p>
+
+    }
+
+
+
+    @if (reorderErrors().length > 0) {
+
+      <div
+
+        class="border-destructive/30 bg-destructive/5 text-destructive rounded-lg border px-3 py-2 text-sm"
+
+        role="alert"
+
+      >
+
+        <p class="font-medium">Column order is invalid. Changes were not saved.</p>
+
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+
+          @for (issue of reorderErrors(); track issue.columnKey) {
+
+            <li>
+
+              <span class="font-medium">{{ issue.columnTitle }}</span>
+
+              must be at position {{ formatPosition(issue.requiredSortOrder) }}, but would be at position
+
+              {{ formatPosition(issue.currentSortOrder) }}.
+
+            </li>
+
+          }
+
+        </ul>
+
+      </div>
+
+    }
+
+
+
+    @if (showAddForm()) {
+
+      <form
+
+        class="border-border bg-muted/20 flex flex-col gap-4 rounded-lg border p-4"
+
+        (submit)="addColumn($event)"
+
+      >
+
+        <p class="text-sm font-medium">New project column</p>
+
+        <div class="grid gap-4 md:grid-cols-2">
+
+          <div class="space-y-2">
+
+            <label hlmLabel for="add-column-title">Title</label>
+
+            <input
+
+              hlmInput
+
+              id="add-column-title"
+
+              type="text"
+
+              maxlength="256"
+
+              [value]="addModel().title"
+
+              (input)="onAddTitleInput($event)"
+
+              placeholder="Review"
+
+            />
+
+            @if (addSubmitted() && !addModel().title.trim()) {
+
+              <p class="text-destructive text-xs">Title is required.</p>
+
+            }
+
+          </div>
+
+          <div class="space-y-2">
+
+            <label hlmLabel for="add-column-key">Key</label>
+
+            <input
+
+              hlmInput
+
+              id="add-column-key"
+
+              type="text"
+
+              maxlength="64"
+
+              [value]="addModel().key"
+
+              (input)="updateAddField('key', $event)"
+
+              placeholder="review"
+
+            />
+
+            <p class="text-muted-foreground text-xs">Stable identifier for this column on the board.</p>
+
+            @if (addSubmitted() && !addModel().key.trim()) {
+
+              <p class="text-destructive text-xs">Key is required.</p>
+
+            }
+
+          </div>
+
+        </div>
+
+        <div class="space-y-2">
+
+          <label hlmLabel for="add-column-description">Description</label>
+
+          <textarea
+
+            hlmInput
+
+            id="add-column-description"
+
+            rows="2"
+
+            maxlength="2000"
+
+            [value]="addModel().description"
+
+            (input)="updateAddField('description', $event)"
+
+            placeholder="Optional description"
+
+          ></textarea>
+
+        </div>
+
+        <div class="flex justify-end gap-2">
+
+          <button hlmBtn type="button" variant="ghost" (click)="toggleAddForm()">Cancel</button>
+
+          <button hlmBtn type="submit" [disabled]="!canCreateColumn()">
+
+            @if (saving()) {
+
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+
+            }
+
+            Add column
+
+          </button>
+
+        </div>
+
+      </form>
+
+
+
+      @if (availableColumns().length > 0) {
+
+        <div class="border-border bg-muted/20 flex flex-col gap-4 rounded-lg border p-4">
+
+          <p class="text-sm font-medium">Or add from workspace</p>
+
+          <div class="space-y-2">
+
+            <label hlmLabel id="available-column-label">Workspace column</label>
+
+            <hlm-select
+
+              class="w-full"
+
+              [value]="selectedTenantColumnId()"
+
+              (valueChange)="onAvailableColumnChange($event)"
+
+              aria-labelledby="available-column-label"
+
+            >
+
+              <hlm-select-trigger class="w-full">
+
+                <hlm-select-value placeholder="Select a column to add" />
+
+              </hlm-select-trigger>
+
+              <hlm-select-content *hlmSelectPortal>
+
+                <hlm-select-group>
+
+                  @for (column of availableColumns(); track column.id) {
+
+                    <hlm-select-item [value]="column.id">
+
+                      {{ column.title }} ({{ column.key }})
+
+                    </hlm-select-item>
+
+                  }
+
+                </hlm-select-group>
+
+              </hlm-select-content>
+
+            </hlm-select>
+
+          </div>
+
+          <div class="flex justify-end">
+
+            <button hlmBtn type="button" [disabled]="!canAddFromWorkspace()" (click)="addColumnFromWorkspace()">
+
+              @if (saving()) {
+
+                <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+
+              }
+
+              Add from workspace
+
+            </button>
+
+          </div>
+
+        </div>
+
+      }
+
+    }
+
+
+
+    @if (loading()) {
+
+      <p class="text-muted-foreground text-sm">Loading columns…</p>
+
+    } @else if (columns().length === 0) {
+
+      <p class="text-muted-foreground text-sm">
+
+        This project has no board columns yet. Use Add column to create one.
+
+      </p>
+
+    } @else {
+
+      <div
+
+        class="columns-list flex flex-col gap-2"
+
+        cdkDropList
+
+        [cdkDropListData]="columns()"
+
+        (cdkDropListDropped)="onColumnDrop($event)"
+
+      >
+
+        @for (column of columns(); track column.id) {
+
+          <article
+
+            class="column-row border-border bg-card flex flex-col gap-3 rounded-lg border p-3 shadow-sm"
+
+            cdkDrag
+
+            [cdkDragDisabled]="reordering() || saving() || editingColumnId() === column.id"
+
+          >
+
+            @if (editingColumnId() === column.id) {
+
+              <form class="flex flex-col gap-3" (submit)="saveEdit($event)">
+
+                <div class="space-y-2">
+
+                  <label hlmLabel [for]="'edit-title-' + column.id">Title</label>
+
+                  <input
+
+                    hlmInput
+
+                    [id]="'edit-title-' + column.id"
+
+                    type="text"
+
+                    maxlength="256"
+
+                    [value]="editModel().title"
+
+                    (input)="updateEditField('title', $event)"
+
+                  />
+
+                  @if (editSubmitted() && !editModel().title.trim()) {
+
+                    <p class="text-destructive text-xs">Title is required.</p>
+
+                  }
+
+                </div>
+
+                <div class="space-y-2">
+
+                  <label hlmLabel [for]="'edit-description-' + column.id">Description</label>
+
+                  <textarea
+
+                    hlmInput
+
+                    [id]="'edit-description-' + column.id"
+
+                    rows="2"
+
+                    maxlength="2000"
+
+                    [value]="editModel().description"
+
+                    (input)="updateEditField('description', $event)"
+
+                  ></textarea>
+
+                </div>
+
+                <div class="flex justify-end gap-2">
+
+                  <button hlmBtn type="button" variant="ghost" size="sm" (click)="cancelEdit()">
+
+                    <ng-icon hlm name="lucideX" size="sm" />
+
+                    Cancel
+
+                  </button>
+
+                  <button hlmBtn type="submit" size="sm" [disabled]="!canSaveEdit()">
+
+                    @if (saving()) {
+
+                      <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+
+                    } @else {
+
+                      <ng-icon hlm name="lucideCheck" size="sm" />
+
+                    }
+
+                    Save
+
+                  </button>
+
+                </div>
+
+              </form>
+
+            } @else {
+
+              <div
+
+                class="flex gap-3"
+
+                [class.items-center]="!column.description && !column.isRequired"
+
+                [class.items-start]="!!column.description || column.isRequired"
+
+              >
+
+                <button
+
+                  type="button"
+
+                  class="text-muted-foreground hover:text-foreground mt-0.5 shrink-0 cursor-grab active:cursor-grabbing"
+
+                  cdkDragHandle
+
+                  [attr.aria-label]="'Reorder ' + column.title"
+
+                >
+
+                  <ng-icon hlm name="lucideGripVertical" size="sm" />
+
+                </button>
+
+
+
+                <div class="min-w-0 flex-1">
+
+                  <div class="flex flex-wrap items-center gap-2">
+
+                    <h3 class="text-sm leading-tight font-semibold">{{ column.title }}</h3>
+
+                    <span
+
+                      class="bg-muted text-muted-foreground inline-flex items-center rounded px-2 py-0.5 font-mono text-[11px] leading-none uppercase"
+
+                    >
+
+                      {{ column.key }}
+
+                    </span>
+
+                    @if (column.isRequired) {
+
+                      <span class="bg-primary/10 text-primary rounded px-2 py-0.5 text-[10px] font-medium uppercase">
+
+                        Required
+
+                      </span>
+
+                    }
+
+                    @if (column.isSortOrderForced) {
+
+                      <span class="bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded px-2 py-0.5 text-[10px] font-medium uppercase">
+
+                        Fixed position
+
+                      </span>
+
+                    }
+
+                  </div>
+
+                  @if (column.description) {
+
+                    <p class="text-muted-foreground mt-1 text-sm">{{ column.description }}</p>
+
+                  }
+
+                  @if (column.isRequired) {
+
+                    <p class="text-muted-foreground mt-1 text-xs">
+
+                      This column is required for every project and cannot be removed.
+
+                    </p>
+
+                  }
+
+                  @if (column.isSortOrderForced && column.forcedSortOrder != null) {
+
+                    <p class="text-muted-foreground mt-1 text-xs">
+
+                      Must stay at position {{ formatPosition(column.forcedSortOrder) }}.
+
+                    </p>
+
+                  }
+
+                </div>
+
+
+
+                <div class="flex shrink-0 items-center gap-1">
+
+                  <button
+
+                    hlmBtn
+
+                    type="button"
+
+                    variant="ghost"
+
+                    size="icon-sm"
+
+                    (click)="startEdit(column)"
+
+                    [attr.aria-label]="'Edit ' + column.title"
+
+                  >
+
+                    <ng-icon hlm name="lucidePencil" size="sm" />
+
+                  </button>
+
+                  @if (canDelete(column)) {
+
+                    <button
+
+                      hlmBtn
+
+                      type="button"
+
+                      variant="ghost"
+
+                      size="icon-sm"
+
+                      (click)="deleteColumn(column)"
+
+                      [disabled]="deletingColumnId() === column.id"
+
+                      [attr.aria-label]="'Delete ' + column.title"
+
+                      title="Remove column"
+
+                    >
+
+                      @if (deletingColumnId() === column.id) {
+
+                        <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+
+                      } @else {
+
+                        <ng-icon hlm name="lucideTrash2" size="sm" />
+
+                      }
+
+                    </button>
+
+                  }
+
+                </div>
+
+              </div>
+
+            }
+
+          </article>
+
+        }
+
+      </div>
+
+
+
+      @if (reordering()) {
+
+        <p class="text-muted-foreground text-xs">Saving order…</p>
+
+      }
+
+    }
+
+  </div>
+
+</section>
+
+<section hlmCard class="mt-6">
+  <div hlmCardHeader>
+    <h2 hlmCardTitle>Task defaults</h2>
+    <p hlmCardDescription>
+      Choose which column new tasks are placed in when created from the board.
+    </p>
+  </div>
+
+  <div hlmCardContent>
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading settings…</p>
+    } @else if (columns().length === 0) {
+      <p class="text-muted-foreground text-sm">
+        Add at least one column before configuring the default task column.
+      </p>
+    } @else {
+      <form class="flex flex-col gap-4" (submit)="saveSettings($event)">
+        <div class="space-y-2">
+          <label hlmLabel id="default-task-column-label">Default column for new tasks</label>
+          <hlm-select
+            class="w-full max-w-md"
+            [value]="defaultTaskColumnId()"
+            [itemToString]="defaultColumnLabel"
+            (valueChange)="onDefaultTaskColumnChange($event)"
+            aria-labelledby="default-task-column-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Select column" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (column of columns(); track column.id) {
+                  <hlm-select-item [value]="column.id">{{ column.title }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+          @if (settingsSubmitted() && !defaultTaskColumnId()) {
+            <p class="text-destructive text-xs">Default column is required.</p>
+          }
+        </div>
+
+        <div class="flex justify-end">
+          <button hlmBtn type="submit" [disabled]="!canSaveSettings()">
+            @if (savingSettings()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              Saving...
+            } @else {
+              <ng-icon hlm name="lucideCheck" size="sm" />
+              Save defaults
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>
+

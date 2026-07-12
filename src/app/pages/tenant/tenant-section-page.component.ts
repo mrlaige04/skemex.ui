@@ -24,6 +24,7 @@ import { map } from 'rxjs';
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block min-h-0 overflow-y-auto' },
 })
 export class TenantSectionPageComponent {
   private readonly route = inject(ActivatedRoute);

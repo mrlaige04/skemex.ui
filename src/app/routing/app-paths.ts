@@ -6,6 +6,14 @@ export const APP_PATHS = {
   usersNew: '/users/new',
   userEdit: (userId: string) => `/users/${userId}/edit`,
   projects: '/projects',
+  projectsNew: '/projects/new',
+  project: (projectCode: string) => `/${projectCode}`,
+  projectBoard: (projectCode: string) => `/${projectCode}/board`,
+  projectTaskNew: (projectCode: string) => `/${projectCode}/tasks/new`,
+  projectBacklog: (projectCode: string) => `/${projectCode}/backlog`,
+  projectIssues: (projectCode: string) => `/${projectCode}/issues`,
+  projectUsers: (projectCode: string) => `/${projectCode}/users`,
+  projectSettings: (projectCode: string) => `/${projectCode}/settings`,
   settings: '/settings',
   profile: '/profile',
   adminDashboard: '/admin/dashboard',
@@ -19,6 +27,13 @@ export const APP_PATHS = {
 
 export function workspaceSectionPath(segment: string): string[] {
   return [segment.startsWith('/') ? segment.slice(1) : segment];
+}
+
+/** Absolute router link array under `/{projectCode}/...`. */
+export function projectSectionPath(projectCode: string, segment: string): string[] {
+  const normalized = segment.startsWith('/') ? segment.slice(1) : segment;
+  const segments = normalized.split('/').filter((part) => part.length > 0);
+  return ['/', projectCode, ...segments];
 }
 
 /** Absolute router link array under `/admin/...` (use from anywhere, including the admin layout). */
