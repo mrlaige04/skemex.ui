@@ -2,6 +2,8 @@
 User-agent: *
 
 # Public entry pages (indexable)
+Allow: /$
+Allow: /pricing$
 Allow: /auth/login
 Allow: /auth/register
 Allow: /auth/forgot-password

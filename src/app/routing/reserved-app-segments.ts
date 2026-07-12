@@ -6,6 +6,7 @@ export const RESERVED_APP_SEGMENTS = new Set([
   'home',
   'invitations',
   'profile',
+  'pricing',
   'projects',
   'settings',
   'tenant-select',
