@@ -6,6 +6,19 @@ import { tenantWorkspaceGuard } from './routing/tenant-workspace.guard';
 
 export const routes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./pages/landing/landing-page.component').then((m) => m.LandingPageComponent),
+    title: 'Skemex — Project work, organized',
+  },
+  {
+    path: 'pricing',
+    loadComponent: () =>
+      import('./pages/pricing/pricing-page.component').then((m) => m.PricingPageComponent),
+    title: 'Pricing — Skemex',
+  },
+  {
     path: 'auth',
     loadComponent: () => import('./pages/auth/auth-layout.component').then((m) => m.AuthLayoutComponent),
     children: [
@@ -133,7 +146,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/tenant/tenant-base-layout.component').then((m) => m.TenantBaseLayoutComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -246,5 +258,5 @@ export const routes: Routes = [
     ],
   },
   { path: 'home', pathMatch: 'full', redirectTo: 'dashboard' },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '**', redirectTo: '' },
 ];

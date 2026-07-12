@@ -1,5 +1,7 @@
 /** Workspace-scoped routes (tenant id is stored, not in the URL). */
 export const APP_PATHS = {
+  landing: '/',
+  pricing: '/pricing',
   select: '/tenant-select',
   dashboard: '/dashboard',
   users: '/users',
