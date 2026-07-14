@@ -178,6 +178,12 @@ export class RichTableComponent<T extends object> {
     data: this.data(),
     columns: this.columnDefs(),
     getCoreRowModel: getCoreRowModel(),
+    // Prefer stable entity ids so cell components are not reused across different rows
+    // when the list is refreshed (e.g. after upload inserts a new first row).
+    getRowId: (row, index) => {
+      const id = (row as { id?: string | number }).id;
+      return id != null && `${id}`.length > 0 ? `${id}` : String(index);
+    },
     onColumnVisibilityChange: (updater) => {
       const next = typeof updater === 'function' ? updater(this.columnVisibility()) : updater;
       this.columnVisibility.set(next);

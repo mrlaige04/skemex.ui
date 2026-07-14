@@ -3,6 +3,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import type { CanActivateFn } from '@angular/router';
 import { Router } from '@angular/router';
 import { APP_PATHS } from './app-paths';
+import { AuthRefreshService } from '../services/auth/auth-refresh.service';
 import { AuthService } from '../services/auth/auth.service';
 
 /** Requires a bearer token and a selected workspace (stored in localStorage). */
@@ -13,9 +14,10 @@ export const tenantWorkspaceGuard: CanActivateFn = async () => {
   }
 
   const auth = inject(AuthService);
+  const refresh = inject(AuthRefreshService);
   const router = inject(Router);
 
-  if (!auth.accessToken()) {
+  if (!(await refresh.ensureValidAccessToken())) {
     return router.createUrlTree(['/auth', 'login']);
   }
 

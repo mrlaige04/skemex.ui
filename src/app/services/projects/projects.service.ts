@@ -5,13 +5,16 @@ import type {
   CreateProjectColumnRequest,
   CreateProjectRequest,
   CreateProjectTaskRequest,
+  ListProjectTasksParams,
   ProjectColumnDto,
+  ProjectDocumentDto,
   ProjectDto,
   ProjectSettingsDto,
   ProjectTaskDto,
   ProjectUserDto,
   ReorderProjectColumnsRequest,
   UpdateProjectColumnRequest,
+  UpdateProjectRequest,
   UpdateProjectSettingsRequest,
   UpdateProjectTaskRequest,
 } from '../../models/projects/projects.models';
@@ -34,6 +37,12 @@ export class ProjectsService {
 
   get(id: string): Promise<ProjectDto> {
     return firstValueFrom(this.api.get<ProjectDto>(`api/projects/${id}`));
+  }
+
+  update(id: string, body: UpdateProjectRequest): Promise<ProjectDto> {
+    return firstValueFrom(
+      this.api.patch<UpdateProjectRequest, ProjectDto>(`api/projects/${id}`, body),
+    );
   }
 
   async getByCode(code: string): Promise<ProjectDto | null> {
@@ -101,12 +110,47 @@ export class ProjectsService {
     );
   }
 
+  listTasks(
+    projectId: string,
+    params: ListProjectTasksParams = {},
+  ): Promise<PaginatedList<ProjectTaskDto>> {
+    const query: Record<string, string | number | boolean> = {
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 10,
+      sort: params.sort ?? 'createdAtDesc',
+    };
+
+    const search = params.search?.trim();
+    if (search) {
+      query['search'] = search;
+    }
+    if (params.columnId) {
+      query['columnId'] = params.columnId;
+    }
+    if (params.unassigned) {
+      query['unassigned'] = true;
+    } else if (params.assigneeId) {
+      query['assigneeId'] = params.assigneeId;
+    }
+
+    return firstValueFrom(
+      this.api.get<PaginatedList<ProjectTaskDto>>(`api/projects/${projectId}/tasks`, query),
+    );
+  }
+
   createTask(projectId: string, body: CreateProjectTaskRequest): Promise<ProjectTaskDto> {
     return firstValueFrom(
       this.api.post<CreateProjectTaskRequest, ProjectTaskDto>(
         `api/projects/${projectId}/tasks`,
         body,
       ),
+    );
+  }
+
+  getTaskByCode(projectId: string, code: string): Promise<ProjectTaskDto> {
+    const normalized = encodeURIComponent(code.trim());
+    return firstValueFrom(
+      this.api.get<ProjectTaskDto>(`api/projects/${projectId}/tasks/by-code/${normalized}`),
     );
   }
 
@@ -161,6 +205,51 @@ export class ProjectsService {
 
     return firstValueFrom(
       this.api.get<PaginatedList<ProjectUserDto>>(`api/projects/${projectId}/users`, params),
+    );
+  }
+
+  addUser(projectId: string, userId: string): Promise<ProjectUserDto> {
+    return firstValueFrom(
+      this.api.post<{ userId: string }, ProjectUserDto>(`api/projects/${projectId}/users`, {
+        userId,
+      }),
+    );
+  }
+
+  removeUser(projectId: string, userId: string): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(`api/projects/${projectId}/users/${userId}`),
+    );
+  }
+
+  listDocuments(
+    projectId: string,
+    search?: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<PaginatedList<ProjectDocumentDto>> {
+    const params: Record<string, string | number> = { page, pageSize };
+    const term = search?.trim();
+    if (term) {
+      params['search'] = term;
+    }
+
+    return firstValueFrom(
+      this.api.get<PaginatedList<ProjectDocumentDto>>(`api/projects/${projectId}/documents`, params),
+    );
+  }
+
+  uploadDocument(projectId: string, file: File): Promise<ProjectDocumentDto> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return firstValueFrom(
+      this.api.postFormData<ProjectDocumentDto>(`api/projects/${projectId}/documents`, fd),
+    );
+  }
+
+  deleteDocument(projectId: string, documentId: string): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(`api/projects/${projectId}/documents/${documentId}`),
     );
   }
 

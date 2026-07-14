@@ -15,7 +15,7 @@ import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
 import type { CurrentUserResponse } from '../../../models/auth/auth.models';
 import { AuthService } from '../../../services/auth/auth.service';
-import { AuthTokenStore } from '../../../services/auth/auth-token.store';
+import { AuthRefreshService } from '../../../services/auth/auth-refresh.service';
 
 @Component({
   selector: 'app-select-tenant-page',
@@ -39,7 +39,7 @@ export class SelectTenantPageComponent implements OnInit {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly tokens = inject(AuthTokenStore);
+  private readonly refresh = inject(AuthRefreshService);
 
   readonly user = signal<CurrentUserResponse | null>(null);
   readonly loading = signal(false);
@@ -60,7 +60,10 @@ export class SelectTenantPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    await this.tokens.whenHydrated;
+    if (!(await this.refresh.ensureValidAccessToken())) {
+      void this.router.navigate(['/auth', 'login']);
+      return;
+    }
 
     this.auth.syncSuperAdminFromToken();
     if (this.auth.isSuperAdmin()) {
@@ -73,11 +76,6 @@ export class SelectTenantPageComponent implements OnInit {
 
     if (this.auth.accessToken() && ws && !wantsCreate) {
       void this.router.navigate([APP_PATHS.dashboard]);
-      return;
-    }
-
-    if (!this.auth.accessToken()) {
-      void this.router.navigate(['/auth', 'login']);
       return;
     }
 
@@ -98,8 +96,15 @@ export class SelectTenantPageComponent implements OnInit {
         this.stripCreateQueryParam();
         queueMicrotask(() => this.createDialogState.set('open'));
       }
-    } catch {
-      await this.auth.logout();
+    } catch (err) {
+      // Session API failed after a valid (or freshly refreshed) token — only logout on auth errors.
+      if (err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403)) {
+        await this.auth.logout();
+        return;
+      }
+      this.selectError.set(
+        err instanceof HttpErrorResponse ? problemDetailMessage(err) : 'Could not load workspaces.',
+      );
     } finally {
       this.loading.set(false);
     }

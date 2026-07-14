@@ -1,0 +1,208 @@
+<div class="flex flex-col gap-6 p-4 md:p-6">
+  @if (loading()) {
+    <p class="text-muted-foreground text-sm">Loading issue…</p>
+  } @else if (loadError(); as error) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+  } @else if (task(); as issue) {
+    @if (saveError(); as err) {
+      <p
+        class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+        role="alert"
+      >
+        {{ err }}
+      </p>
+    }
+
+    <div class="w-full space-y-6">
+      <div>
+        @if (editingTitle()) {
+          <div class="space-y-2">
+            <input
+              hlmInput
+              class="issue-title-input text-xl font-semibold tracking-tight md:text-2xl"
+              maxlength="256"
+              [value]="titleDraft()"
+              (input)="onTitleInput($event)"
+              (keydown.enter)="$event.preventDefault(); saveTitle()"
+              (keydown.escape)="cancelEditTitle()"
+            />
+            <div class="flex gap-2">
+              <button type="button" hlmBtn size="sm" [disabled]="saving()" (click)="saveTitle()">
+                @if (saving()) {
+                  <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                }
+                Save
+              </button>
+              <button
+                type="button"
+                hlmBtn
+                variant="ghost"
+                size="sm"
+                [disabled]="saving()"
+                (click)="cancelEditTitle()"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="issue-title-btn group min-w-0 text-left"
+              (click)="startEditTitle()"
+              title="Click to edit title"
+            >
+              <h1 class="text-xl leading-snug font-semibold tracking-tight md:text-2xl">
+                {{ issue.title }}
+              </h1>
+            </button>
+            @if (isSubtask()) {
+              <span
+                class="border-border text-muted-foreground rounded-md border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase"
+              >
+                Sub-task
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <div hlmAccordion type="multiple" class="w-full">
+        <div hlmAccordionItem [isOpened]="true" class="border-border border-b">
+          <hlm-accordion-trigger>Details</hlm-accordion-trigger>
+          <hlm-accordion-content>
+            <div class="issue-details-grid gap-x-8 gap-y-3 pt-1">
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Status</span>
+                <div class="min-w-0">
+                  <hlm-select
+                    class="w-full max-w-56"
+                    [value]="issue.projectColumnId"
+                    [itemToString]="columnLabel"
+                    [disabled]="saving() || isSubtask()"
+                    (valueChange)="onStatusChange($event)"
+                  >
+                    <hlm-select-trigger class="h-8 w-full">
+                      <hlm-select-value placeholder="Select status" />
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        @for (column of columns(); track column.id) {
+                          <hlm-select-item [value]="column.id">{{ column.title }}</hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                  @if (isSubtask()) {
+                    <p class="text-muted-foreground mt-1 text-xs">Follows parent column</p>
+                  }
+                </div>
+              </div>
+
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Reporter</span>
+                <app-issue-person-chip [user]="issue.reporter" />
+              </div>
+
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Assignee</span>
+                <div class="min-w-0 space-y-1">
+                  <hlm-select
+                    class="w-full max-w-56"
+                    [value]="issue.assignee?.id ?? null"
+                    [itemToString]="assigneeLabel"
+                    [disabled]="saving()"
+                    (valueChange)="onAssigneeChange($event)"
+                  >
+                    <hlm-select-trigger class="h-8 w-full">
+                      <hlm-select-value placeholder="Unassigned" />
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        <hlm-select-item [value]="null">Unassigned</hlm-select-item>
+                        @for (member of members(); track member.id) {
+                          <hlm-select-item [value]="member.id">{{ memberLabel(member) }}</hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                  @if (canAssignToMe()) {
+                    <button
+                      type="button"
+                      class="text-muted-foreground hover:text-foreground text-xs hover:underline"
+                      [disabled]="saving()"
+                      (click)="assignToMe()"
+                    >
+                      Assign to me
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Created</span>
+                <span class="text-sm">{{ createdLabel() }}</span>
+              </div>
+
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Updated</span>
+                <span class="text-sm">{{ updatedLabel() }}</span>
+              </div>
+            </div>
+          </hlm-accordion-content>
+        </div>
+      </div>
+
+      <section class="space-y-3">
+        <div class="flex items-end justify-between gap-3">
+          <h2 class="text-sm font-semibold">Description</h2>
+          @if (descriptionDirty()) {
+            <button type="button" hlmBtn size="sm" [disabled]="saving()" (click)="saveDescription()">
+              @if (saving()) {
+                <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              }
+              Save description
+            </button>
+          }
+        </div>
+        <textarea
+          hlmInput
+          class="min-h-40 w-full resize-y"
+          rows="8"
+          maxlength="2000"
+          placeholder="Add a description…"
+          [value]="descriptionDraft()"
+          (input)="onDescriptionInput($event)"
+          (blur)="saveDescription()"
+        ></textarea>
+      </section>
+
+      @if (subtasks().length > 0) {
+        <section class="space-y-3">
+          <h2 class="text-sm font-semibold">Sub-tasks</h2>
+          <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+            @for (sub of subtasks(); track sub.id) {
+              <li>
+                <a
+                  class="hover:bg-muted/40 flex items-center gap-3 px-3 py-2.5 transition-colors"
+                  [routerLink]="issueLink(sub.code)"
+                >
+                  <span class="text-muted-foreground shrink-0 font-mono text-xs font-semibold">{{
+                    sub.code
+                  }}</span>
+                  <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ sub.title }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  }
+</div>

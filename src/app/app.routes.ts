@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { ActivatedRoute, Router, Routes } from '@angular/router';
 import { isNotAuthenticatedGuard } from './routing/is-not-authenticated.guard';
 import { projectWorkspaceGuard } from './routing/project-workspace.guard';
 import { superAdminGuard } from './routing/super-admin.guard';
@@ -235,18 +236,36 @@ export const routes: Routes = [
         title: 'Backlog',
       },
       {
+        path: 'issues/:issueCode',
+        loadComponent: () =>
+          import('./pages/project/project-issue-page.component').then((m) => m.ProjectIssuePageComponent),
+        data: { breadcrumb: 'Issue' },
+        title: 'Issue',
+      },
+      {
         path: 'issues',
         loadComponent: () =>
-          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+          import('./pages/project/project-issues-page.component').then((m) => m.ProjectIssuesPageComponent),
         data: { breadcrumb: 'Issues' },
         title: 'Issues',
       },
       {
         path: 'users',
+        pathMatch: 'full',
+        canActivate: [
+          () => {
+            const router = inject(Router);
+            const route = inject(ActivatedRoute);
+            return router.createUrlTree(['../settings'], {
+              relativeTo: route,
+              queryParams: { tab: 'users' },
+            });
+          },
+        ],
         loadComponent: () =>
-          import('./pages/project/project-users-page.component').then((m) => m.ProjectUsersPageComponent),
-        data: { breadcrumb: 'Users' },
-        title: 'Users',
+          import('./pages/project/project-settings-page.component').then(
+            (m) => m.ProjectSettingsPageComponent,
+          ),
       },
       {
         path: 'settings',
@@ -254,6 +273,15 @@ export const routes: Routes = [
           import('./pages/project/project-settings-page.component').then((m) => m.ProjectSettingsPageComponent),
         data: { breadcrumb: 'Settings' },
         title: 'Settings',
+      },
+      {
+        path: 'documents',
+        loadComponent: () =>
+          import('./pages/project/project-documents-page.component').then(
+            (m) => m.ProjectDocumentsPageComponent,
+          ),
+        data: { breadcrumb: 'Documents' },
+        title: 'Documents',
       },
     ],
   },

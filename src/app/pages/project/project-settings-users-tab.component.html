@@ -1,0 +1,124 @@
+<section hlmCard>
+  <div hlmCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 hlmCardTitle>Users</h2>
+      <p hlmCardDescription>Manage who can access this project. Only workspace members can be added.</p>
+    </div>
+
+    <hlm-dialog [state]="addDialogState()" (stateChanged)="onAddDialogStateChanged($event)">
+      <button type="button" hlmBtn hlmDialogTrigger>
+        <ng-icon hlm name="lucideUserPlus" size="sm" />
+        Add user
+      </button>
+
+      <hlm-dialog-content *hlmDialogPortal class="sm:max-w-lg">
+        <hlm-dialog-header>
+          <h2 hlmDialogTitle>Add user to project</h2>
+          <p hlmDialogDescription>
+            Choose an active workspace member who is not already on this project.
+          </p>
+        </hlm-dialog-header>
+
+        <div class="space-y-4">
+          @if (candidateError(); as err) {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ err }}
+            </p>
+          }
+
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              type="search"
+              placeholder="Search workspace users…"
+              [value]="candidateSearch()"
+              (input)="onCandidateSearchInput($event)"
+            />
+          </div>
+
+          <div class="max-h-72 overflow-y-auto rounded-md border">
+            @if (candidateLoading()) {
+              <p class="text-muted-foreground px-3 py-6 text-center text-sm">Loading users…</p>
+            } @else if (candidates().length === 0) {
+              <p class="text-muted-foreground px-3 py-6 text-center text-sm">
+                No available workspace users to add.
+              </p>
+            } @else {
+              <ul class="divide-y">
+                @for (user of candidates(); track user.id) {
+                  <li class="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-medium">
+                        {{ fullName(user) || user.email }}
+                      </p>
+                      <p class="text-muted-foreground truncate text-xs">{{ user.email }}</p>
+                    </div>
+                    <button
+                      type="button"
+                      hlmBtn
+                      size="sm"
+                      [disabled]="addingId() !== null"
+                      (click)="addCandidate(user)"
+                    >
+                      {{ addingId() === user.id ? 'Adding…' : 'Add' }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+
+        <hlm-dialog-footer>
+          <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="addingId() !== null">
+            Cancel
+          </button>
+        </hlm-dialog-footer>
+      </hlm-dialog-content>
+    </hlm-dialog>
+  </div>
+
+  <div hlmCardContent>
+    @if (listError(); as err) {
+      <p
+        class="mb-4 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+        role="alert"
+      >
+        {{ err }}
+      </p>
+    }
+    <app-rich-table
+      [data]="users()"
+      [columns]="columns"
+      [loading]="loading()"
+      emptyMessage="No users match your search."
+      [showPagination]="true"
+      [showColumnsSelection]="false"
+      [pageNumber]="currentPage()"
+      [page]="pageSize()"
+      [totalItems]="totalItems()"
+      (paginationChange)="onPaginationChange($event)"
+    >
+      <ng-template #captionStartTemplate>
+        <div hlmInputGroup class="w-full max-w-sm">
+          <div hlmInputGroupAddon>
+            <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+          </div>
+          <input
+            hlmInputGroupInput
+            type="search"
+            placeholder="Search users…"
+            [value]="searchInput()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+      </ng-template>
+    </app-rich-table>
+  </div>
+</section>

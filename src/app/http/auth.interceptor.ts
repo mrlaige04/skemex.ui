@@ -56,21 +56,25 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     );
   };
 
-  const accessToken = tokens.accessToken();
-  if (!accessToken) {
-    return send(null);
-  }
-
-  if (!isAccessTokenExpired(accessToken)) {
-    return send(accessToken);
-  }
-
-  return from(refresh.tryRefresh()).pipe(
-    switchMap((ok) => {
-      if (!ok) {
-        return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' }));
+  return from(tokens.whenHydrated).pipe(
+    switchMap(() => {
+      const accessToken = tokens.accessToken();
+      if (!accessToken) {
+        return send(null);
       }
-      return send(tokens.accessToken());
+
+      if (!isAccessTokenExpired(accessToken)) {
+        return send(accessToken);
+      }
+
+      return from(refresh.tryRefresh()).pipe(
+        switchMap((ok) => {
+          if (!ok) {
+            return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' }));
+          }
+          return send(tokens.accessToken());
+        }),
+      );
     }),
   );
 };
