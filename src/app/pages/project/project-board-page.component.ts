@@ -9,7 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCircleDot, lucideLayers, lucidePlus } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
@@ -25,6 +25,8 @@ interface BoardTask {
   title: string;
   description?: string | null;
   assigneeInitials?: string;
+  assigneeAvatarUrl?: string | null;
+  assigneeName?: string;
   subtasks: BoardTask[];
 }
 
@@ -47,6 +49,14 @@ function initials(user: ProjectTaskUserDto | null | undefined): string | undefin
   return (user.email[0] ?? '?').toUpperCase();
 }
 
+function assigneeDisplayName(user: ProjectTaskUserDto | null | undefined): string | undefined {
+  if (!user) {
+    return undefined;
+  }
+  const full = `${user.firstName} ${user.lastName}`.trim();
+  return full || user.email || undefined;
+}
+
 function mapTask(task: ProjectTaskDto): BoardTask {
   return {
     id: task.id,
@@ -54,6 +64,8 @@ function mapTask(task: ProjectTaskDto): BoardTask {
     title: task.title,
     description: task.description,
     assigneeInitials: initials(task.assignee),
+    assigneeAvatarUrl: task.assignee?.avatarUrl ?? null,
+    assigneeName: assigneeDisplayName(task.assignee),
     subtasks: task.subtasks.map(mapTask),
   };
 }
@@ -83,6 +95,7 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
 })
 export class ProjectBoardPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly projectsService = inject(ProjectsService);
 
   readonly loading = signal(true);
@@ -91,8 +104,10 @@ export class ProjectBoardPageComponent implements OnInit {
   readonly moveError = signal<string | null>(null);
   readonly columns = signal<BoardColumn[]>([]);
   readonly createTaskLink = signal<string[]>(['/']);
+  private readonly failedAssigneeAvatarIds = signal<Set<string>>(new Set());
 
   private projectId: string | null = null;
+  private projectCode = '';
 
   ngOnInit(): void {
     void this.loadBoard();
@@ -100,6 +115,28 @@ export class ProjectBoardPageComponent implements OnInit {
 
   taskCount(column: BoardColumn): number {
     return countTasks(column.tasks);
+  }
+
+  showAssigneeAvatar(task: BoardTask): boolean {
+    const url = task.assigneeAvatarUrl?.trim();
+    return !!url && !this.failedAssigneeAvatarIds().has(task.id);
+  }
+
+  onAssigneeAvatarError(taskId: string): void {
+    this.failedAssigneeAvatarIds.update((current) => {
+      const next = new Set(current);
+      next.add(taskId);
+      return next;
+    });
+  }
+
+  openIssue(event: Event, issueCode: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.projectCode || !issueCode) {
+      return;
+    }
+    void this.router.navigate(projectSectionPath(this.projectCode, `issues/${issueCode}`));
   }
 
   onDrop(event: CdkDragDrop<BoardTask[]>): void {
@@ -175,6 +212,7 @@ export class ProjectBoardPageComponent implements OnInit {
     }
 
     this.createTaskLink.set(projectSectionPath(code, 'tasks/new'));
+    this.projectCode = code;
     this.loading.set(true);
     this.loadError.set(null);
 

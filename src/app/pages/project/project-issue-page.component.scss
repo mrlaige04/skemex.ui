@@ -1,0 +1,31 @@
+.issue-title-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: text;
+}
+
+.issue-title-input {
+  height: auto !important;
+  min-height: 2.25rem;
+  padding-block: 0.25rem;
+  line-height: 1.25;
+}
+
+.issue-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .issue-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.issue-detail-row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.75rem;
+}

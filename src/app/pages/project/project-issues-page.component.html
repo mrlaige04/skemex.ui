@@ -1,0 +1,134 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Issues</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        @if (projectName()) {
+          All tasks in {{ projectName() }}.
+        } @else {
+          All tasks in this project.
+        }
+      </p>
+    </div>
+
+    <a hlmBtn [routerLink]="createLink()" [class.pointer-events-none]="!createLink().length">
+      <ng-icon hlm name="lucidePlus" size="sm" />
+      Create issue
+    </a>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="space-y-4">
+      @if (listError(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <div class="grid gap-3 lg:grid-cols-4">
+        <div class="space-y-1.5 lg:col-span-1">
+          <label hlmLabel class="text-xs">Search</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              type="search"
+              placeholder="Search key, title…"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="issues-status-label">Status</label>
+          <hlm-select
+            class="w-full"
+            [value]="columnFilter()"
+            [itemToString]="columnLabel"
+            (valueChange)="onColumnFilterChange($event)"
+            aria-labelledby="issues-status-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="All statuses" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                <hlm-select-item [value]="allValue">All statuses</hlm-select-item>
+                @for (column of columns(); track column.id) {
+                  <hlm-select-item [value]="column.id">{{ column.title }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="issues-assignee-label">Assignee</label>
+          <hlm-select
+            class="w-full"
+            [value]="assigneeFilter()"
+            [itemToString]="assigneeLabel"
+            (valueChange)="onAssigneeFilterChange($event)"
+            aria-labelledby="issues-assignee-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="All assignees" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                <hlm-select-item [value]="allValue">All assignees</hlm-select-item>
+                <hlm-select-item [value]="unassignedValue">Unassigned</hlm-select-item>
+                @for (user of members(); track user.id) {
+                  <hlm-select-item [value]="user.id">
+                    {{ user.firstName }} {{ user.lastName }}
+                  </hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="issues-sort-label">Sort</label>
+          <hlm-select
+            class="w-full"
+            [value]="sort()"
+            [itemToString]="sortLabel"
+            (valueChange)="onSortChange($event)"
+            aria-labelledby="issues-sort-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Sort by" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of sortOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+      </div>
+
+      <app-rich-table
+        [data]="issues()"
+        [columns]="tableColumns"
+        [loading]="loading()"
+        emptyMessage="No issues match your filters."
+        [showPagination]="true"
+        [showColumnsSelection]="false"
+        [pageNumber]="currentPage()"
+        [page]="pageSize()"
+        [totalItems]="totalItems()"
+        (paginationChange)="onPaginationChange($event)"
+      />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,98 @@
+<section hlmCard>
+  <div hlmCardHeader>
+    <h2 hlmCardTitle>Main info</h2>
+    <p hlmCardDescription>Update this project's title and description. The project code cannot be changed.</p>
+  </div>
+
+  <div hlmCardContent>
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading project…</p>
+    } @else {
+      <form novalidate class="space-y-5" (submit)="onSubmit($event)">
+        @if (formError(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        }
+
+        @if (savedMessage(); as msg) {
+          <p
+            class="rounded-md border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+            role="status"
+          >
+            {{ msg }}
+          </p>
+        }
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label hlmLabel for="project-title">Title</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideFolderKanban" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="project-title"
+                type="text"
+                maxlength="256"
+                placeholder="Website redesign"
+                [value]="model().name"
+                (input)="updateField('name', $event)"
+              />
+            </div>
+            @if (submitted() && !model().name.trim()) {
+              <p class="text-destructive text-sm">Title is required.</p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="project-code">Code</label>
+            <div hlmInputGroup>
+              <div hlmInputGroupAddon>
+                <ng-icon hlm name="lucideHash" size="sm" class="text-muted-foreground" />
+              </div>
+              <input
+                hlmInputGroupInput
+                id="project-code"
+                type="text"
+                [value]="model().code"
+                disabled
+                aria-disabled="true"
+              />
+            </div>
+            <p class="text-muted-foreground text-xs">Project code is permanent and cannot be edited.</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="project-description">Description</label>
+          <textarea
+            id="project-description"
+            rows="5"
+            maxlength="2000"
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-28 w-full rounded-md border px-3 py-2 text-sm shadow-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="What is this project about?"
+            [value]="model().description"
+            (input)="updateField('description', $event)"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button hlmBtn type="submit" [disabled]="!canSave()">
+            @if (saving()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              Saving…
+            } @else {
+              <ng-icon hlm name="lucideCheck" size="sm" />
+              Save changes
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

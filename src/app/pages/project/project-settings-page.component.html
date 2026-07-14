@@ -6,7 +6,17 @@
 
   <div hlmTabs [tab]="activeTab()" (tabActivated)="onTabActivated($event)">
     <div hlmTabsList variant="line">
+      <button type="button" hlmTabsTrigger="main">Main Info</button>
+      <button type="button" hlmTabsTrigger="users">Users</button>
       <button type="button" hlmTabsTrigger="columns">Columns</button>
+    </div>
+
+    <div hlmTabsContent="main" class="pt-4">
+      <app-project-settings-main-info-tab />
+    </div>
+
+    <div hlmTabsContent="users" class="pt-4">
+      <app-project-settings-users-tab />
     </div>
 
     <div hlmTabsContent="columns" class="pt-4">

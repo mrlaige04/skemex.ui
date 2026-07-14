@@ -23,6 +23,7 @@ import {
   lucideChevronsUpDown,
   lucideCircleAlert,
   lucideCreditCard,
+  lucideFileText,
   lucideFolderKanban,
   lucideKanbanSquare,
   lucideList,
@@ -30,7 +31,6 @@ import {
   lucideSettings,
   lucideSparkles,
   lucideUserCircle,
-  lucideUsers,
 } from '@ng-icons/lucide';
 import { filter, merge, of } from 'rxjs';
 import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
@@ -62,6 +62,7 @@ import { ProjectsService } from '../../services/projects/projects.service';
       lucideChevronsUpDown,
       lucideCircleAlert,
       lucideCreditCard,
+      lucideFileText,
       lucideFolderKanban,
       lucideKanbanSquare,
       lucideList,
@@ -69,7 +70,6 @@ import { ProjectsService } from '../../services/projects/projects.service';
       lucideSettings,
       lucideSparkles,
       lucideUserCircle,
-      lucideUsers,
     }),
     provideHlmSidebarConfig({ closeMobileSidebarOnMenuButtonClick: true }),
   ],
@@ -108,6 +108,11 @@ export class ProjectBaseLayoutComponent implements OnInit {
       let child = this.route.firstChild;
       while (child?.firstChild) {
         child = child.firstChild;
+      }
+      const issueCode = child?.snapshot?.paramMap.get('issueCode')?.trim();
+      if (issueCode) {
+        this.breadcrumbPage.set(issueCode.toUpperCase());
+        return;
       }
       const label = (child?.snapshot?.data?.['breadcrumb'] as string) ?? '';
       this.breadcrumbPage.set(label);

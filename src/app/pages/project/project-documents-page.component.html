@@ -1,0 +1,116 @@
+<div class="flex flex-col gap-6 p-4 md:p-6">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight">Documents</h1>
+    <p class="text-muted-foreground mt-1 text-sm">
+      Project document base. Upload PDF, DOCX, PNG, or JPG files up to 25 MB.
+    </p>
+  </div>
+
+  @if (uploadError(); as uploadErr) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ uploadErr }}
+    </p>
+  }
+
+  <input
+    #fileInput
+    type="file"
+    class="hidden"
+    accept=".pdf,.docx,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+    (change)="onFileSelected($event)"
+  />
+
+  <div
+    class="border-border bg-muted/20 flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-6 py-8 text-center transition-colors"
+  [class.border-primary]="dragActive()"
+  [class.bg-primary/5]="dragActive()"
+  [class.pointer-events-none]="uploading() || loading()"
+  [class.opacity-60]="uploading() || loading()"
+  (click)="onBrowseClick(fileInput)"
+  (dragenter)="onDragEnter($event)"
+  (dragleave)="onDragLeave($event)"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)"
+  role="button"
+  tabindex="0"
+  (keydown.enter)="onBrowseClick(fileInput)"
+  (keydown.space)="onBrowseClick(fileInput); $event.preventDefault()"
+  >
+    @if (uploading()) {
+      <ng-icon hlm name="lucideLoaderCircle" size="lg" class="text-primary animate-spin" />
+      <div>
+        <p class="font-medium">Uploading document…</p>
+        <p class="text-muted-foreground mt-1 text-sm">Please wait while your file is being uploaded.</p>
+      </div>
+    } @else {
+      <ng-icon
+        hlm
+        name="lucideUploadCloud"
+        size="lg"
+        class="text-muted-foreground"
+        [class.text-primary]="dragActive()"
+      />
+      <div>
+        <p class="font-medium">
+          @if (dragActive()) {
+            Drop file to upload
+          } @else {
+            Drag and drop a file here
+          }
+        </p>
+        <p class="text-muted-foreground mt-1 text-sm">
+          PDF, DOCX, PNG, or JPG up to 25 MB — or
+          <span class="text-primary font-medium">browse files</span>
+        </p>
+      </div>
+    }
+  </div>
+
+  <section hlmCard>
+    <div hlmCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 hlmCardTitle>Files</h2>
+        <p hlmCardDescription>All documents uploaded to this project.</p>
+      </div>
+      <div hlmInputGroup class="w-full sm:max-w-xs">
+        <div hlmInputGroupAddon>
+          <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+        </div>
+        <input
+          hlmInputGroupInput
+          type="search"
+          placeholder="Search documents…"
+          [value]="searchInput()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+    </div>
+
+    <div hlmCardContent>
+      @if (loading()) {
+        <p class="text-muted-foreground text-sm">Loading documents…</p>
+      } @else if (listError(); as error) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ error }}
+        </p>
+      } @else {
+        <app-rich-table
+          [columns]="tableColumns"
+          [data]="documents()"
+          [showPagination]="true"
+          [showColumnsSelection]="false"
+          [pageNumber]="currentPage()"
+          [page]="pageSize()"
+          [totalItems]="totalItems()"
+          (paginationChange)="onPaginationChange($event)"
+        />
+      }
+    </div>
+  </section>
+</div>
