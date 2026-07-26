@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Skemex">
+  <rect width="64" height="64" rx="5" fill="#0c1219"/>
+  <!-- Split-S mark: signal lime + accent red -->
+  <path fill="#c8f04d" d="M51 12H26L14 32h16l4.2-7.2H51V12Z"/>
+  <path fill="#e23b2d" d="M13 52h25l12-20H34l-4.2 7.2H13V52Z"/>
+</svg>

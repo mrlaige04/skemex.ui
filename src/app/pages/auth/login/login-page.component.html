@@ -1,9 +1,9 @@
-<div class="auth-page text-left">
-  <h1 class="auth-page__title text-3xl font-semibold tracking-tight text-white md:text-4xl">Sign in</h1>
-  <p class="auth-page__subtitle mt-2 text-sm text-slate-400">Log in to the command center</p>
+<div class="auth-page">
+  <h1 class="auth-page__title">Sign in</h1>
+  <p class="auth-page__subtitle">Welcome back — pick up where your team left off.</p>
 
-  <div class="mt-8 grid grid-cols-2 gap-3">
-    <button type="button" hlmBtn variant="outline" class="auth-social-btn h-10 border-slate-700 bg-slate-900/50 text-slate-200 hover:bg-slate-800">
+  <div class="auth-social">
+    <button type="button" hlmBtn variant="outline" class="auth-social-btn">
       <svg class="mr-2 size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
         <path
           fill="currentColor"
@@ -24,34 +24,28 @@
       </svg>
       Google
     </button>
-    <button type="button" hlmBtn variant="outline" class="auth-social-btn h-10 border-slate-700 bg-slate-900/50 text-slate-200 hover:bg-slate-800">
+    <button type="button" hlmBtn variant="outline" class="auth-social-btn">
       <ng-icon hlm name="lucideGithub" class="mr-2 shrink-0" size="sm" />
       GitHub
     </button>
   </div>
 
-  <div class="relative my-8 flex items-center">
-    <div class="grow border-t border-slate-700"></div>
-    <span class="mx-4 shrink text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
-      or continue with
-    </span>
-    <div class="grow border-t border-slate-700"></div>
+  <div class="auth-divider">
+    <span class="auth-divider__label">or email</span>
   </div>
 
   <form novalidate (submit)="onSubmit($event)" class="space-y-5">
     @for (err of loginForm().errorSummary(); track err.kind + (err.message ?? '')) {
       @if (err.kind === 'server') {
-        <p class="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200">{{ err.message }}</p>
+        <p class="auth-alert auth-alert--error">{{ err.message }}</p>
       }
     }
 
     <div class="space-y-2">
-      <label hlmLabel for="login-email" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-        Email
-      </label>
-      <div hlmInputGroup class="bg-slate-900/40">
+      <label hlmLabel for="login-email" class="auth-label">Email</label>
+      <div hlmInputGroup class="auth-input-group">
         <div hlmInputGroupAddon>
-          <ng-icon hlm name="lucideMail" size="sm" class="text-slate-500" />
+          <ng-icon hlm name="lucideMail" size="sm" class="auth-input-icon" />
         </div>
         <input
           hlmInputGroupInput
@@ -60,26 +54,18 @@
           autocomplete="email"
           [formField]="loginForm.email"
           placeholder="name@company.com"
-          class="placeholder:text-slate-600"
         />
       </div>
     </div>
 
     <div class="space-y-2">
       <div class="flex items-baseline justify-between gap-2">
-        <label hlmLabel for="login-password" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-          Password
-        </label>
-        <a
-          routerLink="/auth/forgot-password"
-          class="text-[11px] text-slate-400 underline-offset-4 hover:text-cyan-400 hover:underline"
-        >
-          Forgot password?
-        </a>
+        <label hlmLabel for="login-password" class="auth-label">Password</label>
+        <a routerLink="/auth/forgot-password" class="auth-field-link">Forgot password?</a>
       </div>
-      <div hlmInputGroup class="bg-slate-900/40">
+      <div hlmInputGroup class="auth-input-group">
         <div hlmInputGroupAddon>
-          <ng-icon hlm name="lucideKeyRound" size="sm" class="text-slate-500" />
+          <ng-icon hlm name="lucideKeyRound" size="sm" class="auth-input-icon" />
         </div>
         <input
           hlmInputGroupInput
@@ -88,29 +74,24 @@
           autocomplete="current-password"
           [formField]="loginForm.password"
           placeholder="••••••••"
-          class="placeholder:text-slate-600"
         />
       </div>
     </div>
 
-    <button type="submit" class="auth-submit-btn mt-2 w-full" [disabled]="submitting()">
+    <button type="submit" class="auth-submit-btn" [disabled]="submitting()">
       {{ submitting() ? 'Signing in…' : 'Sign in' }}
     </button>
   </form>
 
-  <p class="mt-10 text-center text-xs leading-relaxed text-slate-500">
+  <p class="auth-legal">
     By continuing, you agree to our
-    <a href="#" class="text-slate-400 underline-offset-2 hover:text-cyan-400 hover:underline" (click)="$event.preventDefault()"
-      >Terms of Service</a
-    >
+    <a href="#" (click)="$event.preventDefault()">Terms of Service</a>
     and
-    <a href="#" class="text-slate-400 underline-offset-2 hover:text-cyan-400 hover:underline" (click)="$event.preventDefault()"
-      >Privacy Policy</a
-    >.
+    <a href="#" (click)="$event.preventDefault()">Privacy Policy</a>.
   </p>
 
-  <p class="mt-6 text-center text-sm text-slate-500">
+  <p class="auth-switch">
     Don’t have an account?
-    <a routerLink="/auth/register" class="font-medium text-cyan-400 hover:text-cyan-300">Create one</a>
+    <a routerLink="/auth/register">Create one</a>
   </p>
 </div>

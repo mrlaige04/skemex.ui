@@ -49,7 +49,7 @@
 }
 .board-issue-card.cdk-drag-preview {
   box-sizing: border-box;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.15),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -64,5 +64,5 @@
 }
 .board-column-body.cdk-drop-list-receiving {
   background-color: color-mix(in oklab, var(--muted) 35%, transparent);
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
 }

@@ -8,7 +8,7 @@ import type { ProjectTaskUserDto } from '../../models/projects/projects.models';
     @if (user(); as person) {
       <div class="flex min-w-0 items-center gap-2.5">
         <div
-          class="border-border bg-muted/50 text-muted-foreground relative size-8 shrink-0 overflow-hidden rounded-full border text-xs font-semibold"
+          class="border-border bg-muted/50 text-muted-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold"
         >
           @if (avatarUrl(); as src) {
             <img
@@ -37,7 +37,7 @@ import type { ProjectTaskUserDto } from '../../models/projects/projects.models';
     } @else {
       <div class="flex min-w-0 items-center gap-2.5">
         <div
-          class="border-border text-muted-foreground/50 flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed text-xs"
+          class="border-border text-muted-foreground/50 flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed text-xs"
           aria-hidden="true"
         >
           —

@@ -1,53 +1,42 @@
-<div class="auth-page text-left">
-  <h1 class="auth-page__title text-3xl font-semibold tracking-tight text-white md:text-4xl">Workspace invitation</h1>
-  <p class="auth-page__subtitle mt-2 text-sm text-slate-400">Join your team on Skemex</p>
+<div class="auth-page">
+  <h1 class="auth-page__title">Workspace invitation</h1>
+  <p class="auth-page__subtitle">Join your team on Skemex</p>
 
   @if (loading()) {
-    <div class="mt-10 flex items-center justify-center gap-2 text-sm text-slate-400">
+    <div class="mt-10 flex items-center justify-center gap-2 text-sm" style="color: var(--auth-muted)">
       <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
       Loading invitation…
     </div>
   } @else if (accepted(); as result) {
     <div class="mt-8 space-y-5">
-      <p
-        class="rounded-md border border-emerald-500/30 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200"
-        role="status"
-      >
-        You have joined <span class="font-medium">{{ result.tenantName }}</span>. Sign in to open the workspace.
+      <p class="auth-alert auth-alert--success" role="status">
+        You have joined <strong>{{ result.tenantName }}</strong>. Sign in to open the workspace.
       </p>
-      <a hlmBtn class="auth-submit-btn w-full" [routerLink]="loginLink()">Sign in</a>
+      <a hlmBtn class="auth-submit-btn" [routerLink]="loginLink()">Sign in</a>
     </div>
   } @else if (loadError()) {
-    <p
-      class="mt-8 rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200"
-      role="alert"
-    >
-      {{ loadError() }}
-    </p>
-    <p class="mt-6 text-center text-sm text-slate-500">
-      <a routerLink="/auth/login" class="font-medium text-cyan-400 hover:text-cyan-300">Back to sign in</a>
+    <p class="auth-alert auth-alert--error mt-8" role="alert">{{ loadError() }}</p>
+    <p class="auth-switch">
+      <a routerLink="/auth/login">Back to sign in</a>
     </p>
   } @else if (preview(); as invite) {
     @if (invite.isExpired) {
-      <p
-        class="mt-8 rounded-md border border-amber-500/30 bg-amber-950/40 px-3 py-2 text-sm text-amber-100"
-        role="alert"
-      >
-        This invitation to <span class="font-medium">{{ invite.tenantName }}</span> has expired. Ask your workspace admin
-        to send a new invitation.
+      <p class="auth-alert auth-alert--warn mt-8" role="alert">
+        This invitation to <strong>{{ invite.tenantName }}</strong> has expired. Ask your workspace admin to send a new
+        invitation.
       </p>
-      <p class="mt-6 text-center text-sm text-slate-500">
-        <a routerLink="/auth/login" class="font-medium text-cyan-400 hover:text-cyan-300">Back to sign in</a>
+      <p class="auth-switch">
+        <a routerLink="/auth/login">Back to sign in</a>
       </p>
     } @else {
       <div class="mt-8 space-y-5">
-        <div class="rounded-md border border-slate-700/80 bg-slate-900/40 px-4 py-3 text-sm text-slate-300">
-          <p class="font-medium text-white">You are invited to join</p>
-          <p class="mt-2 flex items-center gap-2 text-base font-semibold text-cyan-300">
+        <div class="auth-note">
+          <p class="auth-note__em">You are invited to join</p>
+          <p class="mt-2 flex items-center gap-2 text-base font-semibold" style="color: var(--auth-ink)">
             <ng-icon hlm name="lucideBuilding2" size="sm" />
             {{ invite.tenantName }}
           </p>
-          <div class="mt-3 space-y-1 text-slate-400">
+          <div class="mt-3 space-y-1">
             @if (inviteeName()) {
               <p class="flex items-center gap-2">
                 <ng-icon hlm name="lucideUser" size="sm" />
@@ -63,31 +52,23 @@
 
         <form novalidate (submit)="onSubmit($event)" class="space-y-5">
           @if (acceptError()) {
-            <p class="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200" role="alert">
-              {{ acceptError() }}
-            </p>
+            <p class="auth-alert auth-alert--error" role="alert">{{ acceptError() }}</p>
           }
 
           @for (err of acceptForm().errorSummary(); track err.kind + (err.message ?? '')) {
             @if (err.kind === 'server' || err.kind === 'custom') {
-              <p class="rounded-md border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-200" role="alert">
-                {{ err.message }}
-              </p>
+              <p class="auth-alert auth-alert--error" role="alert">{{ err.message }}</p>
             }
           }
 
           @if (invite.requiresPassword) {
-            <p class="text-sm text-slate-400">
-              Create a password to activate your account and accept the invitation.
-            </p>
+            <p class="auth-hint">Create a password to activate your account and accept the invitation.</p>
 
             <div class="space-y-2">
-              <label hlmLabel for="invite-password" class="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-                Password
-              </label>
-              <div hlmInputGroup class="bg-slate-900/40">
+              <label hlmLabel for="invite-password" class="auth-label">Password</label>
+              <div hlmInputGroup class="auth-input-group">
                 <div hlmInputGroupAddon>
-                  <ng-icon hlm name="lucideKeyRound" size="sm" class="text-slate-500" />
+                  <ng-icon hlm name="lucideKeyRound" size="sm" class="auth-input-icon" />
                 </div>
                 <input
                   hlmInputGroupInput
@@ -96,22 +77,15 @@
                   autocomplete="new-password"
                   [formField]="acceptForm.password"
                   placeholder="••••••••"
-                  class="placeholder:text-slate-600"
                 />
               </div>
             </div>
 
             <div class="space-y-2">
-              <label
-                hlmLabel
-                for="invite-confirm-password"
-                class="text-[11px] font-medium uppercase tracking-wider text-slate-500"
-              >
-                Confirm password
-              </label>
-              <div hlmInputGroup class="bg-slate-900/40">
+              <label hlmLabel for="invite-confirm-password" class="auth-label">Confirm password</label>
+              <div hlmInputGroup class="auth-input-group">
                 <div hlmInputGroupAddon>
-                  <ng-icon hlm name="lucideKeyRound" size="sm" class="text-slate-500" />
+                  <ng-icon hlm name="lucideKeyRound" size="sm" class="auth-input-icon" />
                 </div>
                 <input
                   hlmInputGroupInput
@@ -120,13 +94,12 @@
                   autocomplete="new-password"
                   [formField]="acceptForm.confirmPassword"
                   placeholder="••••••••"
-                  class="placeholder:text-slate-600"
                 />
               </div>
             </div>
           }
 
-          <button type="submit" class="auth-submit-btn mt-2 w-full" [disabled]="submitting()">
+          <button type="submit" class="auth-submit-btn" [disabled]="submitting()">
             {{ submitting() ? 'Accepting…' : 'Accept invitation' }}
           </button>
         </form>

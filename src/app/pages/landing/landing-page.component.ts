@@ -3,16 +3,9 @@ import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowRight,
-  lucideBot,
   lucideGithub,
-  lucideGitBranch,
-  lucideKanban,
-  lucideLayers,
   lucideLinkedin,
-  lucideSparkles,
-  lucideSplit,
   lucideTwitter,
-  lucideUsers,
 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
@@ -25,16 +18,9 @@ import { AuthService } from '../../services/auth/auth.service';
   providers: [
     provideIcons({
       lucideArrowRight,
-      lucideBot,
       lucideGithub,
-      lucideGitBranch,
-      lucideKanban,
-      lucideLayers,
       lucideLinkedin,
-      lucideSparkles,
-      lucideSplit,
       lucideTwitter,
-      lucideUsers,
     }),
   ],
   templateUrl: './landing-page.component.html',
@@ -52,24 +38,20 @@ export class LandingPageComponent {
 
   readonly features = [
     {
-      icon: 'lucideSplit',
       title: 'Smart decomposition',
       description:
         'Describe a goal in plain language — AI breaks it into actionable subtasks with clear scope and hierarchy.',
     },
     {
-      icon: 'lucideBot',
       title: 'Intelligent routing',
       description:
         'Tasks are classified and placed on the right column automatically, so status always matches the work.',
     },
     {
-      icon: 'lucideKanban',
       title: 'Visual boards',
       description: 'Kanban columns per project. Drag tasks across statuses and see progress in one place.',
     },
     {
-      icon: 'lucideUsers',
       title: 'Team workspaces',
       description: 'Invite members, assign owners, and keep every project scoped to the right people.',
     },
@@ -77,43 +59,25 @@ export class LandingPageComponent {
 
   readonly decompositionSteps = [
     {
-      index: '1',
+      index: '01',
       title: 'Drop in a high-level task',
       description: 'Write what you need in one sentence — a feature, bug fix, or initiative.',
     },
     {
-      index: '2',
+      index: '02',
       title: 'AI decomposes it',
       description: 'Skemex splits the work into subtasks, keeps parent-child links, and suggests assignees.',
     },
     {
-      index: '3',
+      index: '03',
       title: 'Board updates itself',
       description: 'Each piece lands in the right column. Your team executes — no manual triage.',
     },
   ] as const;
 
-  readonly aiHighlights = [
-    {
-      icon: 'lucideSplit',
-      title: 'Automatic breakdown',
-      description: 'Large tasks become a tree of subtasks you can refine, assign, and track on the board.',
-    },
-    {
-      icon: 'lucideGitBranch',
-      title: 'Context preserved',
-      description: 'Subtasks stay linked to their parent so decomposition never scatters related work.',
-    },
-    {
-      icon: 'lucideSparkles',
-      title: 'Column-aware placement',
-      description: 'AI respects your workspace columns and project defaults when routing new work.',
-    },
-  ] as const;
-
   readonly headerNavLinks: Array<{ label: string; href?: string; routerLink?: readonly string[] }> = [
-    { label: 'AI decomposition', href: '#ai' },
-    { label: 'Features', href: '#features' },
+    { label: 'Decomposition', href: '#ai' },
+    { label: 'Capabilities', href: '#features' },
     { label: 'Pricing', routerLink: [APP_PATHS.pricing] },
   ];
 
@@ -154,7 +118,7 @@ export class LandingPageComponent {
       return { label: 'Choose workspace', link: [APP_PATHS.select] };
     }
 
-    return { label: 'Try Skemex', link: [APP_PATHS.dashboard] };
+    return { label: 'Open workspace', link: [APP_PATHS.dashboard] };
   }
 
   private resolveSecondaryCta(): { label: string; link: string[] } | null {

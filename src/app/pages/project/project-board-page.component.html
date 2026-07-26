@@ -32,7 +32,7 @@
             >
               <h2 class="truncate text-sm font-semibold">{{ column.title }}</h2>
               <span
-                class="bg-background text-muted-foreground border-border min-w-6 rounded-full border px-2 py-0.5 text-center text-xs font-medium tabular-nums"
+                class="bg-background text-muted-foreground border-border min-w-6 rounded-md border px-2 py-0.5 text-center text-xs font-medium tabular-nums"
               >
                 {{ taskCount(column) }}
               </span>
@@ -64,7 +64,7 @@
                     </div>
                     @if (task.assigneeInitials || task.assigneeAvatarUrl) {
                       <span
-                        class="bg-muted text-muted-foreground border-border relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full border text-[10px] font-semibold"
+                        class="bg-muted text-muted-foreground border-border relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md border text-[10px] font-semibold"
                         [attr.title]="task.assigneeName ? 'Assignee ' + task.assigneeName : 'Assignee'"
                       >
                         @if (showAssigneeAvatar(task)) {
@@ -80,7 +80,7 @@
                       </span>
                     } @else {
                       <span
-                        class="border-border text-muted-foreground/60 flex size-6 shrink-0 items-center justify-center rounded-full border border-dashed"
+                        class="border-border text-muted-foreground/60 flex size-6 shrink-0 items-center justify-center rounded-md border border-dashed"
                         title="Unassigned"
                       >
                         <ng-icon hlm name="lucideCircleDot" size="sm" />
@@ -112,7 +112,7 @@
                               <img
                                 [src]="subtask.assigneeAvatarUrl!"
                                 alt=""
-                                class="border-border size-4 rounded-full border object-cover"
+                                class="border-border size-4 rounded-md border object-cover"
                                 [attr.title]="subtask.assigneeName ?? 'Assignee'"
                                 (error)="onAssigneeAvatarError(subtask.id)"
                               />

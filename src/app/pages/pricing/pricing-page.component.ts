@@ -1,14 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import {
-  lucideArrowRight,
-  lucideCheck,
-  lucideGithub,
-  lucideLinkedin,
-  lucideSparkles,
-  lucideTwitter,
-} from '@ng-icons/lucide';
+import { lucideArrowRight, lucideCheck, lucideGithub, lucideLinkedin, lucideTwitter } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { APP_PATHS } from '../../routing/app-paths';
@@ -23,7 +16,6 @@ import { AuthService } from '../../services/auth/auth.service';
       lucideCheck,
       lucideGithub,
       lucideLinkedin,
-      lucideSparkles,
       lucideTwitter,
     }),
   ],
@@ -53,8 +45,8 @@ export class PricingPageComponent {
   } as const;
 
   readonly footerProductLinks: Array<{ label: string; href?: string; routerLink?: readonly string[] }> = [
-    { label: 'AI decomposition', href: '/#ai' },
-    { label: 'Features', href: '/#features' },
+    { label: 'Decomposition', href: '/#ai' },
+    { label: 'Capabilities', href: '/#features' },
     { label: 'Pricing', routerLink: [APP_PATHS.pricing] },
   ];
 
@@ -93,7 +85,7 @@ export class PricingPageComponent {
       return { label: 'Choose workspace', link: [APP_PATHS.select] };
     }
 
-    return { label: 'Try Skemex', link: [APP_PATHS.dashboard] };
+    return { label: 'Open workspace', link: [APP_PATHS.dashboard] };
   }
 
   private resolveSecondaryCta(): { label: string; link: string[] } | null {

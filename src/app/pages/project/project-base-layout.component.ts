@@ -19,17 +19,14 @@ import {
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
-  lucideBell,
   lucideChevronsUpDown,
   lucideCircleAlert,
-  lucideCreditCard,
   lucideFileText,
   lucideFolderKanban,
   lucideKanbanSquare,
   lucideList,
   lucideLogOut,
   lucideSettings,
-  lucideSparkles,
   lucideUserCircle,
 } from '@ng-icons/lucide';
 import { filter, merge, of } from 'rxjs';
@@ -58,17 +55,14 @@ import { ProjectsService } from '../../services/projects/projects.service';
   providers: [
     provideIcons({
       lucideArrowLeft,
-      lucideBell,
       lucideChevronsUpDown,
       lucideCircleAlert,
-      lucideCreditCard,
       lucideFileText,
       lucideFolderKanban,
       lucideKanbanSquare,
       lucideList,
       lucideLogOut,
       lucideSettings,
-      lucideSparkles,
       lucideUserCircle,
     }),
     provideHlmSidebarConfig({ closeMobileSidebarOnMenuButtonClick: true }),

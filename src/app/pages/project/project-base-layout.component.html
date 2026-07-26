@@ -1,48 +1,41 @@
-<div hlmSidebarWrapper class="flex h-svh max-h-svh overflow-hidden">
-  <hlm-sidebar collapsible="icon" variant="inset" side="left">
-    <div hlmSidebarHeader class="border-sidebar-border border-b p-0">
-      <div class="space-y-2 p-2">
-        <button
-          type="button"
-          hlmBtn
-          variant="ghost"
-          size="sm"
-          class="text-sidebar-foreground/80 hover:text-sidebar-foreground h-8 w-full justify-start gap-1.5 px-2 text-xs"
-          (click)="goBackToWorkspace()"
-        >
-          <ng-icon hlm name="lucideArrowLeft" size="sm" class="shrink-0 opacity-70" />
-          <span>All projects</span>
-        </button>
-        <div class="flex w-full items-center gap-2 rounded-lg p-2">
-          <div
-            class="bg-sidebar-primary text-sidebar-primary-foreground relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
-          >
-            @if (project()?.logoUrl; as logoSrc) {
-              <img
-                [src]="logoSrc"
-                alt=""
-                class="absolute inset-0 size-full object-cover"
-                [class.hidden]="projectLogoLoadFailed()"
-                (error)="onProjectLogoError()"
-              />
-            }
-            <ng-icon
-              hlm
-              name="lucideFolderKanban"
-              class="size-4"
-              [class.hidden]="!!project()?.logoUrl && !projectLogoLoadFailed()"
+<div hlmSidebarWrapper class="app-shell flex h-svh max-h-svh overflow-hidden">
+  <hlm-sidebar collapsible="icon" variant="sidebar" side="left">
+    <div hlmSidebarHeader class="app-shell__header">
+      <a routerLink="/" class="app-shell__brand">
+        Skemex<span class="app-shell__brand-dot">.</span>
+      </a>
+
+      <button type="button" hlmBtn variant="ghost" size="sm" class="app-shell__back" (click)="goBackToWorkspace()">
+        <ng-icon hlm name="lucideArrowLeft" size="sm" class="shrink-0 opacity-70" />
+        <span class="group-data-[collapsible=icon]:hidden">All projects</span>
+      </button>
+
+      <div class="app-shell__switcher pointer-events-none">
+        <div class="app-shell__switcher-icon app-shell__switcher-icon--muted relative overflow-hidden" aria-hidden="true">
+          @if (project()?.logoUrl; as logoSrc) {
+            <img
+              [src]="logoSrc"
+              alt=""
+              class="absolute inset-0 size-full object-cover"
+              [class.hidden]="projectLogoLoadFailed()"
+              (error)="onProjectLogoError()"
             />
-          </div>
-          <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
-            <span class="truncate font-semibold">{{ project()?.name ?? projectCode() }}</span>
-            <span class="text-sidebar-foreground/70 truncate text-xs uppercase">{{
-              project()?.code ?? projectCode()
-            }}</span>
-          </div>
+          }
+          <ng-icon
+            hlm
+            name="lucideFolderKanban"
+            class="size-3.5"
+            [class.hidden]="!!project()?.logoUrl && !projectLogoLoadFailed()"
+          />
+        </div>
+        <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+          <span class="app-shell__switcher-title">{{ project()?.name ?? projectCode() }}</span>
+          <span class="app-shell__switcher-meta">{{ project()?.code ?? projectCode() }}</span>
         </div>
       </div>
     </div>
-    <div hlmSidebarContent>
+
+    <div hlmSidebarContent class="app-shell__nav">
       <div hlmSidebarGroup>
         <div hlmSidebarGroupLabel>Project</div>
         <div hlmSidebarGroupContent>
@@ -111,13 +104,14 @@
         </div>
       </div>
     </div>
-    <div hlmSidebarFooter class="border-sidebar-border border-t p-0">
+
+    <div hlmSidebarFooter class="app-shell__footer">
       <ng-template #userAccountMenu>
         <div hlmDropdownMenu class="w-56">
           <div hlmDropdownMenuGroup class="border-border border-b">
             <div class="flex items-center gap-2 px-2 py-1.5">
               <div
-                class="border-border bg-muted/40 text-popover-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-border"
+                class="border-border bg-muted text-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold"
               >
                 @if (userAvatarUrl(); as avatarSrc) {
                   <img
@@ -141,21 +135,9 @@
               </div>
             </div>
           </div>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideSparkles" size="sm" />
-            Upgrade to Pro
-          </button>
           <button type="button" hlmDropdownMenuItem (click)="goUserProfile()">
             <ng-icon hlm name="lucideUserCircle" size="sm" />
             My profile
-          </button>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideCreditCard" size="sm" />
-            Billing
-          </button>
-          <button type="button" hlmDropdownMenuItem>
-            <ng-icon hlm name="lucideBell" size="sm" />
-            Notifications
           </button>
           <div hlmDropdownMenuSeparator></div>
           <button type="button" hlmDropdownMenuItem variant="destructive" (click)="auth.logout()">
@@ -164,55 +146,48 @@
           </button>
         </div>
       </ng-template>
-      <div class="p-2">
-        <button
-          type="button"
-          hlmDropdownMenuTrigger
-          [hlmDropdownMenuTrigger]="userAccountMenu"
-          side="top"
-          align="start"
-          class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
-        >
-          <div
-            class="border-sidebar-border text-sidebar-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-sidebar-border"
-          >
-            @if (userAvatarUrl(); as avatarSrc) {
-              <img
-                [src]="avatarSrc"
-                alt=""
-                class="absolute inset-0 size-full object-cover"
-                [class.hidden]="userAvatarLoadFailed()"
-                (error)="onUserAvatarImageError()"
-              />
-            }
-            <span
-              class="flex size-full items-center justify-center"
-              [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
-              aria-hidden="true"
-              >{{ userInitials() }}</span
-            >
-          </div>
-          <div class="min-w-0 flex-1 text-left leading-tight">
-            <span class="block truncate font-medium">{{ userDisplayName() }}</span>
-            <span class="text-sidebar-foreground/70 block truncate text-xs">{{ userEmail() }}</span>
-          </div>
-          <ng-icon
-            hlm
-            name="lucideChevronsUpDown"
-            class="text-sidebar-foreground/70 size-4 shrink-0"
-          />
-        </button>
-      </div>
-    </div>
-  </hlm-sidebar>
-  <main hlmSidebarInset class="min-h-0 min-w-0 overflow-hidden">
-    <header class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6">
+
       <button
         type="button"
-        hlmSidebarTrigger
-        class="md:hidden"
-        aria-label="Toggle sidebar"
-      ></button>
+        class="app-shell__user"
+        hlmDropdownMenuTrigger
+        [hlmDropdownMenuTrigger]="userAccountMenu"
+        side="top"
+        align="start"
+      >
+        <div class="app-shell__avatar">
+          @if (userAvatarUrl(); as avatarSrc) {
+            <img
+              [src]="avatarSrc"
+              alt=""
+              class="absolute inset-0 size-full object-cover"
+              [class.hidden]="userAvatarLoadFailed()"
+              (error)="onUserAvatarImageError()"
+            />
+          }
+          <span
+            class="flex size-full items-center justify-center"
+            [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
+            aria-hidden="true"
+            >{{ userInitials() }}</span
+          >
+        </div>
+        <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+          <span class="app-shell__user-name">{{ userDisplayName() }}</span>
+          <span class="app-shell__user-email">{{ userEmail() }}</span>
+        </div>
+        <ng-icon
+          hlm
+          name="lucideChevronsUpDown"
+          class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+        />
+      </button>
+    </div>
+  </hlm-sidebar>
+
+  <main hlmSidebarInset class="min-h-0 min-w-0 overflow-hidden">
+    <header class="app-shell__topbar">
+      <button type="button" hlmSidebarTrigger class="md:hidden" aria-label="Toggle sidebar"></button>
       <div class="flex min-w-0 flex-1 items-center">
         <nav hlmBreadcrumb>
           <ol hlmBreadcrumbList>
@@ -229,7 +204,7 @@
         </nav>
       </div>
     </header>
-    <div class="project-outlet flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div class="app-shell__content app-shell__content--project project-outlet">
       <router-outlet />
     </div>
   </main>

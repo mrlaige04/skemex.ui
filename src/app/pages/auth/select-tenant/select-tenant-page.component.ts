@@ -1,15 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BrnDialogContent } from '@spartan-ng/brain/dialog';
 import { email, FormField, form, maxLength, required, submit } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideBuilding2, lucideChevronRight, lucidePlus, lucideSparkles } from '@ng-icons/lucide';
-import { HlmButtonImports } from 'spartan/button';
+import { lucideBuilding2, lucideChevronRight, lucidePlus } from '@ng-icons/lucide';
 import { HlmDialogImports } from 'spartan/dialog';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
-import { HlmItemImports } from 'spartan/item';
 import { HlmLabelImports } from 'spartan/label';
 import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
@@ -23,14 +21,13 @@ import { AuthRefreshService } from '../../../services/auth/auth-refresh.service'
     BrnDialogContent,
     FormField,
     NgIcon,
-    ...HlmButtonImports,
+    RouterLink,
     ...HlmDialogImports,
     ...HlmIconImports,
     ...HlmInputGroupImports,
-    ...HlmItemImports,
     ...HlmLabelImports,
   ],
-  providers: [provideIcons({ lucideBuilding2, lucideChevronRight, lucidePlus, lucideSparkles })],
+  providers: [provideIcons({ lucideBuilding2, lucideChevronRight, lucidePlus })],
   templateUrl: './select-tenant-page.component.html',
   styleUrl: './select-tenant-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
