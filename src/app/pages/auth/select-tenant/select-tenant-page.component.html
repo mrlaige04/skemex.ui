@@ -1,13 +1,11 @@
 @if (loading()) {
   <div class="tenant-page tenant-page--loading">
     <div class="tenant-page__grid" aria-hidden="true"></div>
-    <div class="tenant-page__noise" aria-hidden="true"></div>
     <p class="relative z-[1]">Loading workspaces…</p>
   </div>
 } @else if (user(); as u) {
   <div class="tenant-page">
     <div class="tenant-page__grid" aria-hidden="true"></div>
-    <div class="tenant-page__noise" aria-hidden="true"></div>
 
     <div class="tenant-page__inner">
       <div class="tenant-page__top">

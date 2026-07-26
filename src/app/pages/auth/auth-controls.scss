@@ -1,0 +1,88 @@
+/* Shared form controls used by auth pages and tenant-select (keep lean for style budgets). */
+
+.auth-alert {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.auth-alert--error {
+  border-color: rgb(220 38 38 / 25%);
+  background: rgb(254 226 226 / 70%);
+  color: #991b1b;
+}
+
+.auth-alert--info {
+  border-color: rgb(37 99 235 / 20%);
+  background: rgb(219 234 254 / 70%);
+  color: #1e3a8a;
+}
+
+.auth-alert--success {
+  border-color: rgb(5 150 105 / 25%);
+  background: rgb(209 250 229 / 70%);
+  color: #065f46;
+}
+
+.auth-alert--warn {
+  border-color: rgb(217 119 6 / 25%);
+  background: rgb(254 243 199 / 80%);
+  color: #92400e;
+}
+
+.auth-input-group {
+  border: 1px solid var(--auth-line) !important;
+  border-radius: var(--radius) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  color: var(--auth-ink) !important;
+
+  input,
+  [hlmInputGroupInput] {
+    color: var(--auth-ink) !important;
+    background: transparent !important;
+
+    &::placeholder {
+      color: rgb(90 101 115 / 55%) !important;
+    }
+  }
+}
+
+.auth-submit-btn {
+  display: inline-flex;
+  height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.35rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--auth-accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+
+  &:hover:not(:disabled) {
+    background: #c73226;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--auth-paper),
+      0 0 0 4px rgb(226 59 45 / 45%);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
