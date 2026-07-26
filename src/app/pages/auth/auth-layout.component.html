@@ -1,55 +1,37 @@
-<div
-  class="auth-shell text-foreground flex min-h-svh w-full flex-col md:grid md:min-h-screen md:grid-cols-[minmax(0,42%)_minmax(0,58%)]"
->
-  <!-- Brand / visual column -->
-  <aside
-    class="auth-brand relative hidden min-h-[220px] overflow-hidden md:flex md:min-h-svh md:flex-col md:justify-end"
-    aria-hidden="true"
-  >
-    <div class="auth-brand__glow" aria-hidden="true"></div>
-    <div class="auth-brand__noise" aria-hidden="true"></div>
+<div class="auth-shell">
+  <aside class="auth-brand" aria-hidden="true">
+    <div class="auth-brand__grid"></div>
+    <div class="auth-brand__noise"></div>
 
-    <div class="relative z-[1] p-10 lg:p-14">
-      <div class="flex items-center gap-3">
-        <div
-          class="flex size-10 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-        >
-          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <span class="text-lg font-semibold tracking-tight text-white">Skemex</span>
-      </div>
-      <p class="mt-5 max-w-sm text-sm leading-relaxed text-slate-400">
-        AI automation for task segregation-split, classify, and route work automatically so your team stays focused on what
-        matters.
+    <div class="auth-brand__top">
+      <a routerLink="/" class="auth-brand__mark">
+        Skemex<span class="auth-brand__dot">.</span>
+      </a>
+    </div>
+
+    <div class="auth-brand__bottom">
+      <h2 class="auth-brand__headline">Big goals, split to ship.</h2>
+      <p class="auth-brand__lede">
+        AI decomposes work into clear subtasks and places them on your board — so teams plan less and deliver more.
       </p>
+      <div class="auth-brand__chips">
+        <span class="auth-brand__chip">Smart decomposition</span>
+        <span class="auth-brand__chip auth-brand__chip--accent">Board routing</span>
+        <span class="auth-brand__chip auth-brand__chip--signal">Team workspaces</span>
+      </div>
+      <p class="auth-brand__footnote">Clarity before code.</p>
     </div>
   </aside>
 
-  <!-- Form column -->
-  <main
-    class="relative flex flex-1 flex-col items-center justify-center bg-[#020817] px-6 py-12 md:px-10 md:py-16"
-  >
-    <div class="mb-10 w-full max-w-[400px] md:mb-0 md:hidden">
-      <div class="flex items-center gap-3">
-        <div
-          class="flex size-9 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-        >
-          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </div>
-        <span class="text-base font-semibold tracking-tight text-white">Skemex</span>
-      </div>
-      <p class="mt-3 text-sm leading-relaxed text-slate-400">
-        AI automation for task segregation-split, classify, and route work automatically so your team stays focused on what
-        matters.
-      </p>
+  <main class="auth-main">
+    <div class="auth-main__mobile-brand">
+      <a routerLink="/" class="auth-brand__mark">
+        Skemex<span class="auth-brand__dot">.</span>
+      </a>
+      <p class="auth-main__mobile-lede">Big goals, split to ship.</p>
     </div>
-    <div class="auth-form-panel w-full max-w-[400px] flex-1 md:flex-none">
+
+    <div class="auth-form-panel">
       <router-outlet />
     </div>
   </main>

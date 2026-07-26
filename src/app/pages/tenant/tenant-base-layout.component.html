@@ -1,18 +1,18 @@
-<div hlmSidebarWrapper class="min-h-svh">
-  <hlm-sidebar collapsible="icon" variant="inset" side="left">
-    <div hlmSidebarHeader class="border-sidebar-border border-b p-0">
+<div hlmSidebarWrapper class="app-shell min-h-svh">
+  <hlm-sidebar collapsible="icon" variant="sidebar" side="left">
+    <div hlmSidebarHeader class="app-shell__header">
+      <a routerLink="/" class="app-shell__brand">
+        Skemex<span class="app-shell__brand-dot">.</span>
+      </a>
+
       @if (auth.isSuperAdmin()) {
-        <div class="p-2">
-          <div class="flex w-full items-center gap-2 rounded-lg p-2">
-            <div
-              class="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
-            >
-              <ng-icon hlm name="lucideShield" class="size-4" />
-            </div>
-            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">Platform admin</span>
-              <span class="text-sidebar-foreground/70 truncate text-xs">Skemex console</span>
-            </div>
+        <div class="app-shell__switcher pointer-events-none">
+          <div class="app-shell__switcher-icon" aria-hidden="true">
+            <ng-icon hlm name="lucideShield" class="size-3.5" />
+          </div>
+          <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <span class="app-shell__switcher-title">Platform admin</span>
+            <span class="app-shell__switcher-meta">Console</span>
           </div>
         </div>
       } @else {
@@ -44,34 +44,36 @@
             </button>
           </div>
         </ng-template>
-        <div class="p-2">
-          <button
-            type="button"
-            hlmDropdownMenuTrigger
-            [hlmDropdownMenuTrigger]="companyMenu"
-            side="bottom"
-            align="start"
-            class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-2"
-          >
-            <div
-              class="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-md"
-            >
-              <ng-icon hlm name="lucideBuilding2" class="size-4" />
-            </div>
-            <div class="grid min-w-0 flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">{{ auth.workspaceContext()?.tenantName ?? 'Workspace' }}</span>
-              <span class="text-sidebar-foreground/70 truncate text-xs">Company</span>
-            </div>
-            <ng-icon hlm name="lucideChevronsUpDown" class="text-sidebar-foreground/70 size-4 shrink-0" />
-          </button>
-        </div>
+        <button
+          type="button"
+          class="app-shell__switcher"
+          hlmDropdownMenuTrigger
+          [hlmDropdownMenuTrigger]="companyMenu"
+          side="bottom"
+          align="start"
+        >
+          <div class="app-shell__switcher-icon" aria-hidden="true">
+            <ng-icon hlm name="lucideBuilding2" class="size-3.5" />
+          </div>
+          <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <span class="app-shell__switcher-title">{{
+              auth.workspaceContext()?.tenantName ?? 'Workspace'
+            }}</span>
+            <span class="app-shell__switcher-meta">Workspace</span>
+          </div>
+          <ng-icon
+            hlm
+            name="lucideChevronsUpDown"
+            class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+          />
+        </button>
       }
     </div>
 
-    <div hlmSidebarContent>
+    <div hlmSidebarContent class="app-shell__nav">
       @if (auth.isSuperAdmin()) {
         <div hlmSidebarGroup>
-          <div hlmSidebarGroupLabel>Super admin</div>
+          <div hlmSidebarGroupLabel>Platform</div>
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
               <li hlmSidebarMenuItem>
@@ -127,7 +129,7 @@
         </div>
       } @else {
         <div hlmSidebarGroup>
-          <div hlmSidebarGroupLabel>Menu</div>
+          <div hlmSidebarGroupLabel>Navigate</div>
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
               <li hlmSidebarMenuItem>
@@ -184,13 +186,13 @@
       }
     </div>
 
-    <div hlmSidebarFooter class="border-sidebar-border border-t p-0">
+    <div hlmSidebarFooter class="app-shell__footer">
       <ng-template #userAccountMenu>
         <div hlmDropdownMenu class="w-56">
           <div hlmDropdownMenuGroup class="border-border border-b">
             <div class="flex items-center gap-2 px-2 py-1.5">
               <div
-                class="border-border bg-muted/40 text-popover-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-border"
+                class="border-border bg-muted text-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold"
               >
                 @if (userAvatarUrl(); as avatarSrc) {
                   <img
@@ -215,21 +217,9 @@
             </div>
           </div>
           @if (!auth.isSuperAdmin()) {
-            <button type="button" hlmDropdownMenuItem>
-              <ng-icon hlm name="lucideSparkles" size="sm" />
-              Upgrade to Pro
-            </button>
             <button type="button" hlmDropdownMenuItem (click)="goUserProfile()">
               <ng-icon hlm name="lucideUserCircle" size="sm" />
               My profile
-            </button>
-            <button type="button" hlmDropdownMenuItem>
-              <ng-icon hlm name="lucideCreditCard" size="sm" />
-              Billing
-            </button>
-            <button type="button" hlmDropdownMenuItem>
-              <ng-icon hlm name="lucideBell" size="sm" />
-              Notifications
             </button>
             <div hlmDropdownMenuSeparator></div>
           }
@@ -240,46 +230,46 @@
         </div>
       </ng-template>
 
-      <div class="p-2">
-        <button
-          type="button"
-          hlmDropdownMenuTrigger
-          [hlmDropdownMenuTrigger]="userAccountMenu"
-          side="top"
-          align="start"
-          class="hover:bg-sidebar-accent ring-sidebar-ring flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
-        >
-          <div
-            class="border-sidebar-border text-sidebar-foreground relative size-8 shrink-0 overflow-hidden rounded-md border text-xs font-semibold ring-1 ring-sidebar-border"
+      <button
+        type="button"
+        class="app-shell__user"
+        hlmDropdownMenuTrigger
+        [hlmDropdownMenuTrigger]="userAccountMenu"
+        side="top"
+        align="start"
+      >
+        <div class="app-shell__avatar">
+          @if (userAvatarUrl(); as avatarSrc) {
+            <img
+              [src]="avatarSrc"
+              alt=""
+              class="absolute inset-0 size-full object-cover"
+              [class.hidden]="userAvatarLoadFailed()"
+              (error)="onUserAvatarImageError()"
+            />
+          }
+          <span
+            class="flex size-full items-center justify-center"
+            [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
+            aria-hidden="true"
+            >{{ userInitials() }}</span
           >
-            @if (userAvatarUrl(); as avatarSrc) {
-              <img
-                [src]="avatarSrc"
-                alt=""
-                class="absolute inset-0 size-full object-cover"
-                [class.hidden]="userAvatarLoadFailed()"
-                (error)="onUserAvatarImageError()"
-              />
-            }
-            <span
-              class="flex size-full items-center justify-center"
-              [class.hidden]="!!userAvatarUrl() && !userAvatarLoadFailed()"
-              aria-hidden="true"
-              >{{ userInitials() }}</span
-            >
-          </div>
-          <div class="min-w-0 flex-1 text-left leading-tight">
-            <span class="block truncate font-medium">{{ userDisplayName() }}</span>
-            <span class="text-sidebar-foreground/70 block truncate text-xs">{{ userEmail() }}</span>
-          </div>
-          <ng-icon hlm name="lucideChevronsUpDown" class="text-sidebar-foreground/70 size-4 shrink-0" />
-        </button>
-      </div>
+        </div>
+        <div class="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+          <span class="app-shell__user-name">{{ userDisplayName() }}</span>
+          <span class="app-shell__user-email">{{ userEmail() }}</span>
+        </div>
+        <ng-icon
+          hlm
+          name="lucideChevronsUpDown"
+          class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+        />
+      </button>
     </div>
   </hlm-sidebar>
 
   <main hlmSidebarInset class="min-w-0 overflow-x-hidden">
-    <header class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6">
+    <header class="app-shell__topbar">
       <button type="button" hlmSidebarTrigger class="md:hidden" aria-label="Toggle sidebar"></button>
       <div class="flex min-w-0 flex-1 items-center">
         <nav hlmBreadcrumb>
@@ -295,7 +285,7 @@
         </nav>
       </div>
     </header>
-    <div class="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+    <div class="app-shell__content">
       <router-outlet />
     </div>
   </main>

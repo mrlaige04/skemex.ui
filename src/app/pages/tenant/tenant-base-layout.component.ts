@@ -17,11 +17,9 @@ import {
 } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  lucideBell,
   lucideBuilding2,
   lucideCheck,
   lucideChevronsUpDown,
-  lucideCreditCard,
   lucideFolderKanban,
   lucideLayoutDashboard,
   lucideLogOut,
@@ -29,7 +27,6 @@ import {
   lucidePlus,
   lucideSettings,
   lucideShield,
-  lucideSparkles,
   lucideUserCircle,
   lucideUsers,
 } from '@ng-icons/lucide';
@@ -62,9 +59,6 @@ import { AuthService } from '../../services/auth/auth.service';
       lucideSettings,
       lucideUserCircle,
       lucideChevronsUpDown,
-      lucideSparkles,
-      lucideCreditCard,
-      lucideBell,
       lucideLogOut,
       lucideCheck,
       lucidePlus,

@@ -12,7 +12,7 @@ import type { ProjectTaskDto, ProjectTaskUserDto } from '../../models/projects/p
     @if (person(); as user) {
       <div class="flex min-w-0 items-center gap-2">
         <div
-          class="border-border bg-muted/40 text-muted-foreground relative size-6 shrink-0 overflow-hidden rounded-full border text-[10px] font-semibold"
+          class="border-border bg-muted/40 text-muted-foreground relative size-6 shrink-0 overflow-hidden rounded-md border text-[10px] font-semibold"
         >
           @if (avatarUrl(); as src) {
             <img

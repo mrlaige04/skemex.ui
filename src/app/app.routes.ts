@@ -11,7 +11,7 @@ export const routes: Routes = [
     pathMatch: 'full',
     loadComponent: () =>
       import('./pages/landing/landing-page.component').then((m) => m.LandingPageComponent),
-    title: 'Skemex — Project work, organized',
+    title: 'Skemex — Big goals, split to ship',
   },
   {
     path: 'pricing',

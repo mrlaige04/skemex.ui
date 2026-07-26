@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @layer theme, base, components, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
@@ -8,76 +6,109 @@
 
 @import '@spartan-ng/brain/hlm-tailwind-preset.css';
 
-/* Theme variables consumed by the preset’s @theme inline block */
+/* Lock all Tailwind radius steps to the APP corner — Spartan uses rounded-md/lg widely */
+@theme {
+  --radius-sm: 0.2rem;
+  --radius-md: 0.2rem;
+  --radius-lg: 0.2rem;
+  --radius-xl: 0.2rem;
+  --radius-2xl: 0.2rem;
+  --radius-3xl: 0.2rem;
+  --radius-4xl: 0.2rem;
+}
+
+/* Skemex design tokens — light product UI (matches landing/auth); .dark kept for a later switch */
 :root {
   color-scheme: light;
   --font-sans:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
-  /* Override Tailwind defaults (Georgia / system serif) — app uses Inter only */
   --font-serif:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
   --font-mono:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
+
+  --radius: 0.2rem;
+  /* Flatten scale so Spartan rounded-sm/md/lg/xl all match APP radius */
+  --radius-sm: 0.2rem;
+  --radius-md: 0.2rem;
+  --radius-lg: 0.2rem;
+  --radius-xl: 0.2rem;
+  --radius-2xl: 0.2rem;
+  --radius-3xl: 0.2rem;
+  --radius-4xl: 0.2rem;
+
+  /* Same palette as landing / auth / tenant-select */
+  --background: #e8edf2;
+  --foreground: #0c1219;
+  --card: #f4f7fa;
+  --card-foreground: #0c1219;
+  --popover: #ffffff;
+  --popover-foreground: #0c1219;
+  --primary: #0c1219;
+  --primary-foreground: #f4f7fa;
+  --secondary: #f4f7fa;
+  --secondary-foreground: #0c1219;
+  --muted: #f4f7fa;
+  --muted-foreground: #5a6573;
+  --accent: #f4f7fa;
+  --accent-foreground: #0c1219;
+  --destructive: #e23b2d;
+  --border: #c5ced8;
+  --input: #c5ced8;
+  --ring: #e23b2d;
+
+  /* Light rail — same family as mist/paper product UI */
+  --sidebar: #f4f7fa;
+  --sidebar-foreground: #0c1219;
+  --sidebar-primary: #e23b2d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8edf2;
+  --sidebar-accent-foreground: #0c1219;
+  --sidebar-border: #c5ced8;
+  --sidebar-ring: #e23b2d;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.205 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #111821;
+  --foreground: #f4f7fa;
+  --card: #1a2430;
+  --card-foreground: #f4f7fa;
+  --popover: #1a2430;
+  --popover-foreground: #f4f7fa;
+  --primary: #f4f7fa;
+  --primary-foreground: #0c1219;
+  --secondary: #1a2430;
+  --secondary-foreground: #f4f7fa;
+  --muted: #1a2430;
+  --muted-foreground: #9aa3b0;
+  --accent: #1a2430;
+  --accent-foreground: #f4f7fa;
+  --destructive: #e23b2d;
+  --border: rgb(244 247 250 / 12%);
+  --input: rgb(244 247 250 / 15%);
+  --ring: #e23b2d;
+
+  --sidebar: #0c1219;
+  --sidebar-foreground: #f4f7fa;
+  --sidebar-primary: #e23b2d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a2430;
+  --sidebar-accent-foreground: #f4f7fa;
+  --sidebar-border: rgb(244 247 250 / 12%);
+  --sidebar-ring: #e23b2d;
+
+  --radius-sm: 0.2rem;
+  --radius-md: 0.2rem;
+  --radius-lg: 0.2rem;
+  --radius-xl: 0.2rem;
+  --radius-2xl: 0.2rem;
+  --radius-3xl: 0.2rem;
+  --radius-4xl: 0.2rem;
 }
 
 @layer base {
@@ -88,11 +119,11 @@
   *,
   *::before,
   *::after {
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   html {
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   body {
