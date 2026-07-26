@@ -1,4 +1,4 @@
-@use '../auth-form';
+@use '../auth-controls';
 
 .tenant-page {
   --auth-bg: #e8edf2;
@@ -7,7 +7,6 @@
   --auth-muted: #5a6573;
   --auth-line: #c5ced8;
   --auth-accent: #e23b2d;
-  --auth-signal: #c8f04d;
   --auth-deep: #0c1219;
 
   position: relative;
@@ -31,14 +30,6 @@
     linear-gradient(90deg, rgb(12 18 25 / 5%) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 20%, transparent 75%);
-}
-
-.tenant-page__noise {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .tenant-page__inner {
@@ -389,4 +380,3 @@
   min-width: 10.5rem;
   padding-inline: 1.25rem;
 }
-
