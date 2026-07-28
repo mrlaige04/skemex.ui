@@ -4,3 +4,230 @@
   min-width: 0;
 }
 
+.profile-ready {
+  animation: profile-in 280ms ease both;
+}
+
+@keyframes profile-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgb(12 18 25 / 4%));
+}
+
+.profile-avatar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  transition: border-color 160ms ease;
+}
+
+.profile-identity:hover .profile-avatar {
+  border-color: var(--foreground);
+}
+
+.profile-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar__img--hidden,
+.profile-avatar__initials--hidden {
+  display: none;
+}
+
+.profile-avatar__initials {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-identity__body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-identity__name {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+.profile-identity__email {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.profile-identity__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.profile-identity__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* Loading skeleton */
+.profile-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-skel__identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.profile-skel__avatar {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  background: var(--muted);
+  animation: profile-pulse 1.2s ease-in-out infinite;
+}
+
+.profile-skel__meta {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.profile-skel__line {
+  height: 0.85rem;
+  border-radius: var(--radius);
+  background: var(--muted);
+  animation: profile-pulse 1.2s ease-in-out infinite;
+}
+
+.profile-skel__line--lg {
+  width: min(12rem, 55%);
+  height: 1.1rem;
+}
+
+.profile-skel__line--md {
+  width: min(10rem, 40%);
+  height: 1rem;
+}
+
+.profile-skel__line--sm {
+  width: min(16rem, 70%);
+}
+
+.profile-skel__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.profile-skel__btn {
+  width: 6.5rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  background: var(--muted);
+  animation: profile-pulse 1.2s ease-in-out infinite;
+}
+
+.profile-skel__card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.profile-skel__fields {
+  display: grid;
+  gap: 1rem;
+
+  @media (min-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-skel__field {
+  height: 2.5rem;
+  border-radius: var(--radius);
+  background: var(--muted);
+  animation: profile-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes profile-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 639px) {
+  .profile-identity,
+  .profile-skel__identity {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

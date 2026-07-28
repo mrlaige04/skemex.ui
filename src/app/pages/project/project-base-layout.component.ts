@@ -37,8 +37,11 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
 import type { ProjectDto } from '../../models/projects/projects.models';
 import { APP_PATHS, projectSectionPath } from '../../routing/app-paths';
+import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.component';
+
 @Component({
   selector: 'app-project-base-layout',
   imports: [
@@ -46,6 +49,7 @@ import { ProjectsService } from '../../services/projects/projects.service';
     RouterLinkActive,
     RouterOutlet,
     NgIcon,
+    AiChatPanelComponent,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmButtonImports,
@@ -74,6 +78,7 @@ import { ProjectsService } from '../../services/projects/projects.service';
 })
 export class ProjectBaseLayoutComponent implements OnInit {
   readonly auth = inject(AuthService);
+  readonly aiChat = inject(AiChatService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -192,16 +197,19 @@ export class ProjectBaseLayoutComponent implements OnInit {
     this.projectCode.set(code);
     if (!code) {
       this.project.set(null);
+      this.aiChat.setProjectContext(null, null);
       return;
     }
     try {
       const loaded = await this.projectsService.getByCode(code);
       this.project.set(loaded);
+      this.aiChat.setProjectContext(loaded?.id ?? null, loaded?.code ?? code);
       if (loaded && loaded.code !== code) {
         void this.router.navigateByUrl(`/${loaded.code}`, { replaceUrl: true });
       }
     } catch {
       this.project.set(null);
+      this.aiChat.setProjectContext(null, null);
     }
   }
 }

@@ -150,7 +150,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
+          import('./pages/tenant/dashboard/dashboard-page.component').then((m) => m.DashboardPageComponent),
         data: { breadcrumb: 'Dashboard' },
         title: 'Dashboard',
       },

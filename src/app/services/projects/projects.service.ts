@@ -5,6 +5,8 @@ import type {
   CreateProjectColumnRequest,
   CreateProjectRequest,
   CreateProjectTaskRequest,
+  EnqueueAiTaskDecompositionRequest,
+  AiDecompositionJobDto,
   ListProjectTasksParams,
   ProjectColumnDto,
   ProjectDocumentDto,
@@ -250,6 +252,24 @@ export class ProjectsService {
   deleteDocument(projectId: string, documentId: string): Promise<void> {
     return firstValueFrom(
       this.api.delete<void>(`api/projects/${projectId}/documents/${documentId}`),
+    );
+  }
+
+  enqueueAiDecompose(
+    projectId: string,
+    body: EnqueueAiTaskDecompositionRequest,
+  ): Promise<AiDecompositionJobDto> {
+    return firstValueFrom(
+      this.api.post<EnqueueAiTaskDecompositionRequest, AiDecompositionJobDto>(
+        `api/projects/${projectId}/ai/decompose`,
+        body,
+      ),
+    );
+  }
+
+  getAiDecomposeJob(projectId: string, jobId: string): Promise<AiDecompositionJobDto> {
+    return firstValueFrom(
+      this.api.get<AiDecompositionJobDto>(`api/projects/${projectId}/ai/decompose/${jobId}`),
     );
   }
 

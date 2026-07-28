@@ -208,4 +208,9 @@
       <router-outlet />
     </div>
   </main>
+
+  @if (aiChat.open()) {
+    <button type="button" class="ai-chat-backdrop" aria-label="Close AI chat" (click)="aiChat.setOpen(false)"></button>
+  }
+  <app-ai-chat-panel />
 </div>

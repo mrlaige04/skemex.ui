@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePlus, lucideSearch } from '@ng-icons/lucide';
+import { lucidePlus, lucideSearch, lucideSparkles } from '@ng-icons/lucide';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { HlmButtonImports } from 'spartan/button';
@@ -28,6 +28,7 @@ import type {
   ProjectUserDto,
 } from '../../models/projects/projects.models';
 import { APP_PATHS } from '../../routing/app-paths';
+import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import {
   RichTableComponent,
@@ -94,7 +95,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     ...HlmSelectImports,
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSearch }),
+    provideIcons({ lucidePlus, lucideSearch, lucideSparkles }),
     { provide: PROJECT_ISSUES_TABLE_HOST, useExisting: ProjectIssuesPageComponent },
   ],
   templateUrl: './project-issues-page.component.html',
@@ -105,6 +106,7 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   private readonly route = inject(ActivatedRoute);
   private readonly projectsService = inject(ProjectsService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly aiChat = inject(AiChatService);
   private readonly search$ = new Subject<string>();
 
   readonly loading = signal(true);

@@ -17,7 +17,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a
-      class="hover:text-primary text-sm font-bold text-white underline-offset-2 hover:underline"
+      class="text-foreground hover:text-primary text-sm font-bold underline-offset-2 hover:underline"
       [routerLink]="link()"
     >
       {{ code() }}

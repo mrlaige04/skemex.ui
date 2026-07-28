@@ -85,7 +85,7 @@
                     class="w-full max-w-56"
                     [value]="issue.projectColumnId"
                     [itemToString]="columnLabel"
-                    [disabled]="saving() || isSubtask()"
+                    [disabled]="saving()"
                     (valueChange)="onStatusChange($event)"
                   >
                     <hlm-select-trigger class="h-8 w-full">
@@ -99,9 +99,6 @@
                       </hlm-select-group>
                     </hlm-select-content>
                   </hlm-select>
-                  @if (isSubtask()) {
-                    <p class="text-muted-foreground mt-1 text-xs">Follows parent column</p>
-                  }
                 </div>
               </div>
 

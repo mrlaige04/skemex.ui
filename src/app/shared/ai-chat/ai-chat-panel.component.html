@@ -1,0 +1,262 @@
+<aside
+  class="ai-chat"
+  [class.ai-chat--open]="chat.open()"
+  [attr.aria-hidden]="!chat.open()"
+  role="complementary"
+  aria-label="Skemex AI chat"
+>
+  <div class="ai-chat__panel">
+    <header class="ai-chat__header">
+      <div class="ai-chat__brand">
+        <span class="ai-chat__mark" aria-hidden="true">
+          <ng-icon hlm name="lucideSparkles" size="sm" />
+        </span>
+        <div class="min-w-0">
+          <p class="ai-chat__title">{{ chat.historyOpen() ? 'Chat history' : 'Skemex AI' }}</p>
+          <p class="ai-chat__subtitle">
+            {{ chat.historyOpen() ? 'Past decompositions in this project' : 'Decompose goals into shippable work' }}
+          </p>
+        </div>
+      </div>
+      <div class="ai-chat__actions">
+        @if (!chat.historyOpen()) {
+          <button
+            hlmBtn
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="ai-chat__icon-btn"
+            aria-label="Chat history"
+            [attr.aria-pressed]="chat.historyOpen()"
+            (click)="chat.toggleHistory()"
+          >
+            <ng-icon hlm name="lucideHistory" size="sm" />
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="ai-chat__icon-btn"
+            aria-label="New chat"
+            (click)="chat.newChat()"
+          >
+            <ng-icon hlm name="lucidePlus" size="sm" />
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="ai-chat__icon-btn"
+            aria-label="Clear chat"
+            (click)="chat.clear()"
+          >
+            <ng-icon hlm name="lucideEraser" size="sm" />
+          </button>
+        } @else {
+          <button
+            hlmBtn
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="ai-chat__icon-btn"
+            aria-label="Back to chat"
+            (click)="chat.setHistoryOpen(false)"
+          >
+            <ng-icon hlm name="lucideArrowLeft" size="sm" />
+          </button>
+        }
+        <button
+          hlmBtn
+          type="button"
+          variant="ghost"
+          size="sm"
+          class="ai-chat__icon-btn"
+          aria-label="Close AI chat"
+          (click)="chat.setOpen(false)"
+        >
+          <ng-icon hlm name="lucideX" size="sm" />
+        </button>
+      </div>
+    </header>
+
+    @if (chat.historyOpen()) {
+      <div class="ai-chat__history">
+        <button type="button" class="ai-chat__history-new" (click)="chat.newChat()">
+          <ng-icon hlm name="lucidePlus" size="sm" />
+          New chat
+        </button>
+
+        @if (chat.historyThreads().length === 0) {
+          <p class="ai-chat__history-empty">No chats yet in this project.</p>
+        } @else {
+          <ul class="ai-chat__history-list">
+            @for (thread of chat.historyThreads(); track thread.id) {
+              <li class="ai-chat__history-row">
+                @if (editingId() === thread.id) {
+                  <form class="ai-chat__history-edit" (submit)="saveTitle(thread.id, $event)">
+                    <input
+                      class="ai-chat__history-input"
+                      type="text"
+                      maxlength="80"
+                      name="chatTitle"
+                      [ngModel]="editTitle()"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="editTitle.set($event)"
+                      (keydown.escape)="cancelEdit()"
+                      aria-label="Chat title"
+                      #titleInput
+                    />
+                    <button
+                      hlmBtn
+                      type="submit"
+                      variant="ghost"
+                      size="sm"
+                      class="ai-chat__icon-btn"
+                      aria-label="Save title"
+                    >
+                      <ng-icon hlm name="lucideCheck" size="sm" />
+                    </button>
+                    <button
+                      hlmBtn
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      class="ai-chat__icon-btn"
+                      aria-label="Cancel rename"
+                      (click)="cancelEdit()"
+                    >
+                      <ng-icon hlm name="lucideX" size="sm" />
+                    </button>
+                  </form>
+                } @else {
+                  <button
+                    type="button"
+                    class="ai-chat__history-item"
+                    [class.ai-chat__history-item--active]="thread.id === chat.activeThread()?.id"
+                    (click)="chat.openThread(thread.id)"
+                  >
+                    <span class="ai-chat__history-title">{{ thread.title }}</span>
+                    <span class="ai-chat__history-meta">{{ thread.updatedAt | date: 'mediumDate' }}</span>
+                  </button>
+                  <div class="ai-chat__history-ops">
+                    <button
+                      hlmBtn
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      class="ai-chat__icon-btn"
+                      aria-label="Rename chat"
+                      (click)="startEdit(thread.id, thread.title)"
+                    >
+                      <ng-icon hlm name="lucidePencil" size="sm" />
+                    </button>
+                    <button
+                      hlmBtn
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      class="ai-chat__icon-btn ai-chat__icon-btn--danger"
+                      aria-label="Delete chat"
+                      (click)="confirmDelete(thread.id)"
+                    >
+                      <ng-icon hlm name="lucideTrash2" size="sm" />
+                    </button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    } @else {
+      <div #scroller class="ai-chat__messages" tabindex="-1">
+        @for (msg of chat.messages(); track msg.id) {
+          <div
+            class="ai-msg"
+            [class.ai-msg--user]="msg.role === 'user'"
+            [class.ai-msg--assistant]="msg.role === 'assistant'"
+          >
+            @if (msg.role === 'assistant') {
+              <span class="ai-msg__avatar" aria-hidden="true">
+                <ng-icon hlm name="lucideSparkles" size="sm" />
+              </span>
+            }
+            <div class="ai-msg__bubble">
+              <p class="ai-msg__text">{{ msg.content }}</p>
+              @if (msg.linkHref; as href) {
+                <a class="ai-msg__link" [routerLink]="href">{{ msg.linkLabel || 'Open task' }}</a>
+              }
+            </div>
+          </div>
+        }
+
+        @if (chat.sending()) {
+          <div class="ai-msg ai-msg--assistant">
+            <span class="ai-msg__avatar" aria-hidden="true">
+              <ng-icon hlm name="lucideSparkles" size="sm" />
+            </span>
+            <div class="ai-msg__bubble ai-msg__bubble--typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+
+        @if (chat.messages().length <= 1 && !chat.sending()) {
+          <div class="ai-chat__prompts">
+            <p class="ai-chat__prompts-label">Try asking</p>
+            <button
+              type="button"
+              class="ai-chat__prompt"
+              (click)="usePrompt('Decompose: launch a mobile onboarding flow for new users')"
+            >
+              Launch mobile onboarding
+            </button>
+            <button
+              type="button"
+              class="ai-chat__prompt"
+              (click)="usePrompt('Split this epic: migrate billing to the new pricing model')"
+            >
+              Migrate billing pricing
+            </button>
+            <button
+              type="button"
+              class="ai-chat__prompt"
+              (click)="usePrompt('Break down a release checklist for v1.0')"
+            >
+              v1.0 release checklist
+            </button>
+          </div>
+        }
+      </div>
+
+      <form class="ai-chat__composer" (submit)="onSubmit($event)">
+        <label class="sr-only" for="ai-chat-input">Message Skemex AI</label>
+        <textarea
+          id="ai-chat-input"
+          name="aiChatMessage"
+          class="ai-chat__input"
+          rows="2"
+          maxlength="4000"
+          placeholder="Describe a goal to decompose…"
+          [ngModel]="draft()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="draft.set($event)"
+          (keydown)="onKeydown($event)"
+          [disabled]="chat.sending()"
+        ></textarea>
+        <button
+          hlmBtn
+          type="submit"
+          size="sm"
+          class="ai-chat__send"
+          [disabled]="chat.sending() || !draft().trim()"
+          aria-label="Send message"
+        >
+          <ng-icon hlm name="lucideArrowUp" size="sm" />
+        </button>
+      </form>
+    }
+  </div>
+</aside>

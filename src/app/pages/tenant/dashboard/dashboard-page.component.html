@@ -1,0 +1,404 @@
+<div class="dash flex w-full min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+  <header class="dash__header flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="min-w-0">
+      <p class="dash__kicker">{{ tenantName() }}</p>
+      <h1 class="text-2xl font-semibold tracking-tight">
+        {{ greeting() }}, {{ displayName() }}
+      </h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        A quick pulse on projects, tasks, and what needs attention.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        [disabled]="loading()"
+        (click)="refresh()"
+      >
+        <ng-icon hlm name="lucideRefreshCw" size="sm" [class.animate-spin]="loading()" />
+        Refresh
+      </button>
+      <a hlmBtn size="sm" variant="outline" [routerLink]="[paths.projects]">
+        <ng-icon hlm name="lucideFolderKanban" size="sm" />
+        Projects
+      </a>
+      <a hlmBtn size="sm" [routerLink]="[paths.projectsNew]">
+        <ng-icon hlm name="lucidePlus" size="sm" />
+        New project
+      </a>
+    </div>
+  </header>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  @if (loading()) {
+    <div class="dash-skel" aria-busy="true">
+      <div class="dash-skel__stats">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="dash-skel__card"></div>
+        }
+      </div>
+      <div class="dash-skel__grid">
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+      </div>
+    </div>
+  } @else {
+    <section class="dash-stats" aria-label="Workspace statistics">
+      <article class="dash-stat">
+        <div class="dash-stat__icon" aria-hidden="true">
+          <ng-icon hlm name="lucideFolderKanban" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Projects</p>
+          <p class="dash-stat__value">{{ projectCount() }}</p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon" aria-hidden="true">
+          <ng-icon hlm name="lucideClipboardList" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Open &amp; tracked tasks</p>
+          <p class="dash-stat__value">{{ taskCount() }}</p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon dash-stat__icon--warn" aria-hidden="true">
+          <ng-icon hlm name="lucideInbox" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Unassigned</p>
+          <p class="dash-stat__value">{{ unassignedCount() }}</p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon dash-stat__icon--team" aria-hidden="true">
+          <ng-icon hlm name="lucideUsers" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Team members</p>
+          <p class="dash-stat__value">{{ memberCount() }}</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="dash-decomp" aria-label="AI decomposition">
+      <article class="dash-panel dash-panel--decomp">
+        <div class="dash-panel__head">
+          <div>
+            <p class="dash__kicker">Smart decomposition</p>
+            <h2 class="dash-panel__title">Goals queued → tasks split</h2>
+            <p class="dash-panel__desc">
+              Root goals waiting for AI split vs subtasks produced after decomposition.
+            </p>
+          </div>
+          <span class="dash-chip">
+            {{ decomposition().avgSubtasksPerSplit || '—' }} avg subtasks / split
+          </span>
+        </div>
+
+        <div class="dash-decomp__stats">
+          <div class="dash-decomp__stat">
+            <span class="dash-decomp__stat-label">Goals queued</span>
+            <span class="dash-decomp__stat-value">{{ decomposition().goalsQueued }}</span>
+          </div>
+          <div class="dash-decomp__stat">
+            <span class="dash-decomp__stat-label">Goals split</span>
+            <span class="dash-decomp__stat-value">{{ decomposition().goalsSplit }}</span>
+          </div>
+          <div class="dash-decomp__stat">
+            <span class="dash-decomp__stat-label">Subtasks produced</span>
+            <span class="dash-decomp__stat-value dash-decomp__stat-value--signal">
+              {{ decomposition().subtasksProduced }}
+            </span>
+          </div>
+          <div class="dash-decomp__stat">
+            <span class="dash-decomp__stat-label">Still awaiting split</span>
+            <span class="dash-decomp__stat-value">{{ decomposition().goalsAwaiting }}</span>
+          </div>
+        </div>
+
+        @if (decomposition().goalsQueued === 0) {
+          <p class="dash-empty">
+            No root goals yet. Create a high-level task — once it has subtasks, it counts as split.
+          </p>
+        } @else if (isBrowser) {
+          <div class="dash-decomp__charts">
+            <div class="dash-chart dash-chart--decomp-bar">
+              <canvas
+                baseChart
+                [type]="'bar'"
+                [data]="decompositionChartData()"
+                [options]="verticalBarOptions"
+                [legend]="false"
+              ></canvas>
+            </div>
+            <div class="dash-chart dash-chart--donut">
+              <canvas
+                baseChart
+                [type]="'doughnut'"
+                [data]="splitProgressChartData()"
+                [options]="doughnutOptions"
+                [legend]="true"
+              ></canvas>
+            </div>
+          </div>
+          <p class="dash-footnote">
+            Queued = root tasks (no parent). Split = roots with children. Produced = all descendant
+            subtasks. Hierarchy is the current signal until a dedicated AI-job API exists.
+          </p>
+        }
+      </article>
+    </section>
+
+    <section class="dash-analytics" aria-label="Analytics charts">
+      <article class="dash-panel dash-panel--chart">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Queued vs produced</h2>
+            <p class="dash-panel__desc">Goals submitted and subtasks created over 8 weeks</p>
+          </div>
+        </div>
+        @if (decomposition().goalsQueued === 0 && decomposition().subtasksProduced === 0) {
+          <p class="dash-empty">No decomposition activity yet.</p>
+        } @else if (isBrowser) {
+          <div class="dash-chart">
+            <canvas
+              baseChart
+              [type]="'line'"
+              [data]="decompositionTrendData()"
+              [options]="lineOptions"
+              [legend]="true"
+            ></canvas>
+          </div>
+        }
+      </article>
+
+      <article class="dash-panel dash-panel--chart">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Task status</h2>
+            <p class="dash-panel__desc">Distribution across board columns</p>
+          </div>
+          <span class="dash-chip">{{ completionPct() }}% done*</span>
+        </div>
+        @if (statusBuckets().length === 0) {
+          <p class="dash-empty">No tasks yet. Create a project and add work to see status mix.</p>
+        } @else if (isBrowser) {
+          <div class="dash-chart dash-chart--donut">
+            <canvas
+              baseChart
+              [type]="'doughnut'"
+              [data]="statusChartData()"
+              [options]="doughnutOptions"
+              [legend]="true"
+            ></canvas>
+          </div>
+          <p class="dash-footnote">* Done matches columns named like Done / Complete / Closed.</p>
+        }
+      </article>
+
+      <article class="dash-panel dash-panel--chart">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Tasks by project</h2>
+            <p class="dash-panel__desc">Where work is concentrated</p>
+          </div>
+        </div>
+        @if (projectBuckets().length === 0) {
+          <p class="dash-empty">No projects yet.</p>
+          <a hlmBtn size="sm" class="mt-3" [routerLink]="[paths.projectsNew]">Create project</a>
+        } @else if (isBrowser) {
+          <div class="dash-chart">
+            <canvas
+              baseChart
+              [type]="'bar'"
+              [data]="projectChartData()"
+              [options]="barOptions"
+              [legend]="false"
+            ></canvas>
+          </div>
+        }
+      </article>
+
+      <article class="dash-panel dash-panel--chart">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Ownership</h2>
+            <p class="dash-panel__desc">Assigned vs unassigned vs done</p>
+          </div>
+        </div>
+        @if (!hasChartData()) {
+          <p class="dash-empty">No ownership data yet.</p>
+        } @else if (isBrowser) {
+          <div class="dash-chart dash-chart--donut">
+            <canvas
+              baseChart
+              [type]="'doughnut'"
+              [data]="ownershipChartData()"
+              [options]="doughnutOptions"
+              [legend]="true"
+            ></canvas>
+          </div>
+        }
+      </article>
+    </section>
+
+    <section class="dash-tasks" aria-label="Tasks">
+      <article class="dash-panel">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Assigned to you</h2>
+            <p class="dash-panel__desc">Open work on your plate</p>
+          </div>
+          <ng-icon hlm name="lucideUser" class="text-muted-foreground" size="sm" />
+        </div>
+        @if (myTasks().length === 0) {
+          <p class="dash-empty">Nothing assigned to you right now.</p>
+        } @else {
+          <ul class="dash-list">
+            @for (task of myTasks(); track task.id) {
+              <li>
+                <a class="dash-task" [routerLink]="issueLink(task)">
+                  <span class="dash-task__code">{{ task.code }}</span>
+                  <span class="dash-task__title">{{ task.title }}</span>
+                  <span class="dash-task__meta">
+                    <span class="dash-pill">{{ task.columnTitle }}</span>
+                    <span>{{ task.projectName }}</span>
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <article class="dash-panel">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Needs attention</h2>
+            <p class="dash-panel__desc">Unassigned open tasks</p>
+          </div>
+          <ng-icon hlm name="lucideAlertCircle" class="text-muted-foreground" size="sm" />
+        </div>
+        @if (unassignedTasks().length === 0) {
+          <p class="dash-empty">All open tasks have an owner. Nice.</p>
+        } @else {
+          <ul class="dash-list">
+            @for (task of unassignedTasks(); track task.id) {
+              <li>
+                <a class="dash-task" [routerLink]="issueLink(task)">
+                  <span class="dash-task__code">{{ task.code }}</span>
+                  <span class="dash-task__title">{{ task.title }}</span>
+                  <span class="dash-task__meta">
+                    <span class="dash-pill dash-pill--warn">Unassigned</span>
+                    <span>{{ task.projectName }}</span>
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+    </section>
+
+    <section class="dash-extra" aria-label="More workspace info">
+      <article class="dash-panel">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Recent activity</h2>
+            <p class="dash-panel__desc">Latest task updates across projects</p>
+          </div>
+          <ng-icon hlm name="lucideCircleDot" class="text-muted-foreground" size="sm" />
+        </div>
+        @if (recentTasks().length === 0) {
+          <p class="dash-empty">No recent task activity.</p>
+        } @else {
+          <ul class="dash-list">
+            @for (task of recentTasks(); track task.id) {
+              <li>
+                <a class="dash-task" [routerLink]="issueLink(task)">
+                  <span class="dash-task__code">{{ task.code }}</span>
+                  <span class="dash-task__title">{{ task.title }}</span>
+                  <span class="dash-task__meta">
+                    <span class="dash-pill">{{ task.columnTitle }}</span>
+                    @if (task.updatedAt; as updated) {
+                      <span>{{ updated | date: 'mediumDate' }}</span>
+                    } @else if (task.createdAt; as created) {
+                      <span>{{ created | date: 'mediumDate' }}</span>
+                    }
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <article class="dash-panel">
+        <div class="dash-panel__head">
+          <div>
+            <h2 class="dash-panel__title">Projects</h2>
+            <p class="dash-panel__desc">Jump back into active workspaces</p>
+          </div>
+          <a class="dash-link" [routerLink]="[paths.projects]">
+            View all
+            <ng-icon hlm name="lucideArrowRight" size="sm" />
+          </a>
+        </div>
+        @if (recentProjects().length === 0) {
+          <p class="dash-empty">Create your first project to start shipping.</p>
+          <a hlmBtn size="sm" class="mt-3" [routerLink]="[paths.projectsNew]">New project</a>
+        } @else {
+          <ul class="dash-projects">
+            @for (project of recentProjects(); track project.id) {
+              <li>
+                <a class="dash-project" [routerLink]="projectBoardLink(project.code)">
+                  <span class="dash-project__mark" aria-hidden="true">
+                    <ng-icon hlm name="lucideFolderKanban" size="sm" />
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="dash-project__name">{{ project.name }}</span>
+                    <span class="dash-project__meta">
+                      <span class="dash-code">{{ project.code }}</span>
+                      · {{ project.createdAt | date: 'mediumDate' }}
+                    </span>
+                  </span>
+                  <ng-icon hlm name="lucideArrowRight" class="text-muted-foreground shrink-0" size="sm" />
+                </a>
+              </li>
+            }
+          </ul>
+        }
+
+        <div class="dash-shortcuts">
+          <a class="dash-shortcut" [routerLink]="[paths.users]">
+            <ng-icon hlm name="lucideUsers" size="sm" />
+            Team
+          </a>
+          <a class="dash-shortcut" [routerLink]="[paths.settings]">
+            <ng-icon hlm name="lucideClipboardList" size="sm" />
+            Settings
+          </a>
+          <a class="dash-shortcut" [routerLink]="[paths.profile]">
+            <ng-icon hlm name="lucideUser" size="sm" />
+            Profile
+          </a>
+        </div>
+      </article>
+    </section>
+  }
+</div>

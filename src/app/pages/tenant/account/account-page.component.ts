@@ -6,12 +6,14 @@ import {
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormField, form, maxLength, submit } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideImagePlus, lucideMail, lucideTrash2, lucideUser } from '@ng-icons/lucide';
+import { lucideCamera, lucideMail, lucideTrash2, lucideUser } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
@@ -31,7 +33,7 @@ import { AuthService } from '../../../services/auth/auth.service';
     ...HlmInputGroupImports,
     ...HlmLabelImports,
   ],
-  providers: [provideIcons({ lucideUser, lucideImagePlus, lucideMail, lucideTrash2 })],
+  providers: [provideIcons({ lucideUser, lucideCamera, lucideMail, lucideTrash2 })],
   templateUrl: './account-page.component.html',
   styleUrl: './account-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +41,7 @@ import { AuthService } from '../../../services/auth/auth.service';
 export class AccountPageComponent {
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly imageInput = viewChild<ElementRef<HTMLInputElement>>('imageInput');
 
   readonly submitting = signal(false);
   readonly deletingAvatar = signal(false);
@@ -88,6 +91,18 @@ export class AccountPageComponent {
     });
   }
 
+  /** Live display name from the form, then email local-part as fallback. */
+  readonly displayName = computed(() => {
+    const m = this.model();
+    const full = `${m.firstName?.trim() ?? ''} ${m.lastName?.trim() ?? ''}`.trim();
+    if (full) {
+      return full;
+    }
+    const e = this.profileEmail() || this.auth.workspaceContext()?.userEmail || '';
+    const local = e.split('@')[0]?.trim();
+    return local || 'Your profile';
+  });
+
   /** Initials from first/last name (live from the form), then email local-part as fallback. */
   profileInitials(): string {
     const m = this.model();
@@ -114,6 +129,10 @@ export class AccountPageComponent {
     return local.slice(0, 2).toUpperCase();
   }
 
+  openImagePicker(): void {
+    this.imageInput()?.nativeElement.click();
+  }
+
   onAvatarPreviewError(): void {
     this.avatarPreviewFailed.set(true);
   }
@@ -130,7 +149,7 @@ export class AccountPageComponent {
     if (this.pendingImageUrl()) {
       this.clearPendingImagePreview();
       this.imageFile.set(null);
-      const input = document.getElementById('acc-image') as HTMLInputElement | null;
+      const input = this.imageInput()?.nativeElement;
       if (input) {
         input.value = '';
       }
@@ -237,7 +256,7 @@ export class AccountPageComponent {
           this.serverAvatarUrl.set(res.avatarUrl?.trim() || null);
           this.clearPendingImagePreview();
           this.imageFile.set(null);
-          const input = document.getElementById('acc-image') as HTMLInputElement | null;
+          const input = this.imageInput()?.nativeElement;
           if (input) {
             input.value = '';
           }
