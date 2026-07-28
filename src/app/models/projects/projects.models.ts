@@ -85,6 +85,26 @@ export interface ProjectDocumentDto {
   uploadedBy: ProjectDocumentUserDto;
 }
 
+export type AiDecompositionJobStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | string;
+
+export interface AiDecompositionJobDto {
+  id: string;
+  projectId: string;
+  status: AiDecompositionJobStatus;
+  userInput: string;
+  customInstructions?: string | null;
+  error?: string | null;
+  rootTaskId?: string | null;
+  rootTaskCode?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface EnqueueAiTaskDecompositionRequest {
+  userInput: string;
+  customInstructions?: string | null;
+}
+
 export interface ProjectTaskUserDto {
   id: string;
   firstName: string;

@@ -206,7 +206,7 @@ export class ProjectIssuePageComponent {
 
   async onStatusChange(columnId: string | null): Promise<void> {
     const current = this.task();
-    if (!current || !columnId || columnId === current.projectColumnId || this.isSubtask()) {
+    if (!current || !columnId || columnId === current.projectColumnId) {
       return;
     }
     await this.patchTask({ columnId });

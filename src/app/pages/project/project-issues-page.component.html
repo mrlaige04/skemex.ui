@@ -11,10 +11,24 @@
       </p>
     </div>
 
-    <a hlmBtn [routerLink]="createLink()" [class.pointer-events-none]="!createLink().length">
-      <ng-icon hlm name="lucidePlus" size="sm" />
-      Create issue
-    </a>
+    <div class="flex shrink-0 items-center gap-2">
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        class="px-2.5"
+        aria-label="Open Skemex AI to decompose a goal"
+        [attr.aria-pressed]="aiChat.open()"
+        [disabled]="!createLink().length"
+        (click)="aiChat.setOpen(true)"
+      >
+        <ng-icon hlm name="lucideSparkles" size="sm" />
+      </button>
+      <a hlmBtn [routerLink]="createLink()" [class.pointer-events-none]="!createLink().length">
+        <ng-icon hlm name="lucidePlus" size="sm" />
+        Create issue
+      </a>
+    </div>
   </div>
 
   <div hlmCard>

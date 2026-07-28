@@ -11,12 +11,13 @@ import { CdkScrollable } from '@angular/cdk/scrolling';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCircleDot, lucideLayers, lucidePlus } from '@ng-icons/lucide';
+import { lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { problemDetailMessage } from '../../http/problem-details';
 import type { ProjectColumnDto, ProjectTaskDto, ProjectTaskUserDto } from '../../models/projects/projects.models';
 import { projectSectionPath } from '../../routing/app-paths';
+import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 
 interface BoardTask {
@@ -87,7 +88,7 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
 @Component({
   selector: 'app-project-board-page',
   imports: [RouterLink, NgIcon, CdkDrag, CdkDropList, CdkDropListGroup, CdkScrollable, ...HlmButtonImports, ...HlmIconImports],
-  providers: [provideIcons({ lucideCircleDot, lucideLayers, lucidePlus })],
+  providers: [provideIcons({ lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles })],
   templateUrl: './project-board-page.component.html',
   styleUrl: './project-board-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -97,6 +98,7 @@ export class ProjectBoardPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly projectsService = inject(ProjectsService);
+  readonly aiChat = inject(AiChatService);
 
   readonly loading = signal(true);
   readonly moving = signal(false);
