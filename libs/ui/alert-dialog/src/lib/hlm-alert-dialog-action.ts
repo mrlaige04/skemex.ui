@@ -1,9 +1,13 @@
 import { Directive, input } from '@angular/core';
+import { BrnDialogClose } from '@spartan-ng/brain/dialog';
 import { HlmButton } from 'spartan/button';
 
 @Directive({
   selector: 'button[hlmAlertDialogAction]',
-  hostDirectives: [{ directive: HlmButton, inputs: ['variant', 'size'] }],
+  hostDirectives: [
+    { directive: BrnDialogClose, inputs: ['delay'] },
+    { directive: HlmButton, inputs: ['variant', 'size'] },
+  ],
   host: {
     '[type]': 'type()',
   },

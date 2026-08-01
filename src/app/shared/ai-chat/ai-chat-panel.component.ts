@@ -27,10 +27,19 @@ import {
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
+import { ConfirmAlertDialogComponent } from '../confirm-alert-dialog/confirm-alert-dialog.component';
 
 @Component({
   selector: 'app-ai-chat-panel',
-  imports: [DatePipe, FormsModule, RouterLink, NgIcon, ...HlmButtonImports, ...HlmIconImports],
+  imports: [
+    DatePipe,
+    FormsModule,
+    RouterLink,
+    NgIcon,
+    ConfirmAlertDialogComponent,
+    ...HlmButtonImports,
+    ...HlmIconImports,
+  ],
   providers: [
     provideIcons({
       lucideSparkles,
@@ -57,6 +66,11 @@ export class AiChatPanelComponent {
   readonly draft = signal('');
   readonly editingId = signal<string | null>(null);
   readonly editTitle = signal('');
+
+  readonly deleteDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingDeleteId = signal<string | null>(null);
+  readonly pendingDeleteTitle = signal('');
+  private deleteTargetId: string | null = null;
 
   constructor() {
     afterNextRender(() => this.scrollToBottom());
@@ -111,18 +125,28 @@ export class AiChatPanelComponent {
 
   saveTitle(threadId: string, event?: Event): void {
     event?.preventDefault();
-    this.chat.renameThread(threadId, this.editTitle());
-    this.cancelEdit();
+    void this.chat.renameThread(threadId, this.editTitle()).then(() => this.cancelEdit());
   }
 
-  confirmDelete(threadId: string): void {
-    if (typeof window !== 'undefined' && !window.confirm('Delete this chat? This cannot be undone.')) {
+  requestDelete(threadId: string, title: string): void {
+    this.deleteTargetId = threadId;
+    this.pendingDeleteId.set(threadId);
+    this.pendingDeleteTitle.set(title.trim() || 'Untitled chat');
+    this.deleteDialogState.set('open');
+  }
+
+  performDelete(): void {
+    const threadId = this.deleteTargetId ?? this.pendingDeleteId();
+    this.deleteTargetId = null;
+    this.pendingDeleteId.set(null);
+    this.pendingDeleteTitle.set('');
+    if (!threadId) {
       return;
     }
     if (this.editingId() === threadId) {
       this.cancelEdit();
     }
-    this.chat.deleteThread(threadId);
+    void this.chat.deleteThread(threadId);
   }
 
   private scrollToBottom(): void {

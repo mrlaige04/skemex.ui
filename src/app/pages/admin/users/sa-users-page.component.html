@@ -49,4 +49,15 @@
       </app-rich-table>
     </div>
   </div>
+
+  <app-confirm-alert-dialog
+    [(state)]="confirmDialogState"
+    title="Delete user?"
+    confirmLabel="Delete"
+    (confirmed)="confirmDeleteUser()"
+  >
+    Permanently delete
+    <span class="font-medium text-foreground">{{ pendingDeleteUserName() }}</span>.
+    This cannot be undone.
+  </app-confirm-alert-dialog>
 </div>

@@ -12,15 +12,21 @@
     </div>
 
     <div hlmTabsContent="main" class="pt-4">
-      <app-project-settings-main-info-tab />
+      @if (activeTab() === 'main') {
+        <app-project-settings-main-info-tab />
+      }
     </div>
 
     <div hlmTabsContent="users" class="pt-4">
-      <app-project-settings-users-tab />
+      @if (activeTab() === 'users') {
+        <app-project-settings-users-tab />
+      }
     </div>
 
     <div hlmTabsContent="columns" class="pt-4">
-      <app-project-settings-columns-tab />
+      @if (activeTab() === 'columns') {
+        <app-project-settings-columns-tab />
+      }
     </div>
   </div>
 </div>

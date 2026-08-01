@@ -2,30 +2,18 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { problemDetailMessage } from '../../http/problem-details';
+import type {
+  AiChatDto,
+  AiChatMessage,
+  AiChatMessageDto,
+  AiChatRole,
+  AiChatSummaryDto,
+  AiChatThread,
+} from '../../models/ai-chat/ai-chat.models';
 import { APP_PATHS } from '../../routing/app-paths';
 import { ProjectsService } from '../projects/projects.service';
 
-export type AiChatRole = 'user' | 'assistant' | 'system';
-
-export interface AiChatMessage {
-  id: string;
-  role: AiChatRole;
-  content: string;
-  createdAt: string;
-  linkHref?: string | null;
-  linkLabel?: string | null;
-}
-
-export interface AiChatThread {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  messages: AiChatMessage[];
-}
-
 const OPEN_KEY = 'skemex.aiChat.open';
-const threadsKey = (projectId: string) => `skemex.aiChat.threads.${projectId}`;
 const activeKey = (projectId: string) => `skemex.aiChat.active.${projectId}`;
 
 const POLL_INTERVAL_MS = 2500;
@@ -39,14 +27,19 @@ export class AiChatService {
   private readonly _open = signal(false);
   private readonly _historyOpen = signal(false);
   private readonly _sending = signal(false);
+  private readonly _loading = signal(false);
+  private readonly _error = signal<string | null>(null);
   private readonly _threads = signal<AiChatThread[]>([]);
   private readonly _activeThreadId = signal<string | null>(null);
   private readonly _projectId = signal<string | null>(null);
   private readonly _projectCode = signal<string | null>(null);
+  private loadToken = 0;
 
   readonly open = this._open.asReadonly();
   readonly historyOpen = this._historyOpen.asReadonly();
   readonly sending = this._sending.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
   readonly threads = this._threads.asReadonly();
 
   readonly activeThread = computed(() => {
@@ -54,7 +47,16 @@ export class AiChatService {
     return this._threads().find((t) => t.id === id) ?? null;
   });
 
-  readonly messages = computed(() => this.activeThread()?.messages ?? [this.welcomeMessage()]);
+  readonly messages = computed(() => {
+    const active = this.activeThread();
+    if (!active) {
+      return [this.welcomeMessage()];
+    }
+    if (!active.messagesLoaded || active.messages.length === 0) {
+      return [this.welcomeMessage()];
+    }
+    return active.messages;
+  });
 
   readonly historyThreads = computed(() =>
     [...this._threads()].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
@@ -68,23 +70,21 @@ export class AiChatService {
 
   setProjectContext(projectId: string | null, projectCode: string | null): void {
     const nextId = projectId?.trim() || null;
-    const prevId = this._projectId();
-    if (prevId && prevId !== nextId) {
-      this.persistProject(prevId);
-    }
-
     this._projectId.set(nextId);
     this._projectCode.set(projectCode?.trim() || null);
     this._historyOpen.set(false);
     this._sending.set(false);
+    this._error.set(null);
+    this.loadToken += 1;
 
     if (!nextId) {
       this._threads.set([]);
       this._activeThreadId.set(null);
+      this._loading.set(false);
       return;
     }
 
-    this.loadProject(nextId);
+    void this.loadProject(nextId, this.loadToken);
   }
 
   toggle(): void {
@@ -109,81 +109,107 @@ export class AiChatService {
     this._historyOpen.set(open);
   }
 
-  openThread(threadId: string): void {
+  async openThread(threadId: string): Promise<void> {
     if (!this._threads().some((t) => t.id === threadId)) {
       return;
     }
     this._activeThreadId.set(threadId);
     this._historyOpen.set(false);
-    this.persistProject(this._projectId());
+    this.rememberActive(this._projectId(), threadId);
+    await this.ensureMessagesLoaded(threadId);
   }
 
-  renameThread(threadId: string, rawTitle: string): void {
-    const title = rawTitle.trim() || 'Untitled chat';
-    const clipped = title.length > 80 ? `${title.slice(0, 77).trim()}…` : title;
-    this._threads.update((list) =>
-      list.map((t) =>
-        t.id === threadId
-          ? { ...t, title: clipped, updatedAt: new Date().toISOString() }
-          : t,
-      ),
-    );
-    this.persistProject(this._projectId());
-  }
-
-  deleteThread(threadId: string): void {
-    const remaining = this._threads().filter((t) => t.id !== threadId);
-    if (remaining.length === 0) {
-      const thread = this.createThread();
-      this._threads.set([thread]);
-      this._activeThreadId.set(thread.id);
-      this.persistProject(this._projectId());
+  async renameThread(threadId: string, rawTitle: string): Promise<void> {
+    const projectId = this._projectId();
+    if (!projectId) {
       return;
     }
 
-    this._threads.set(remaining);
-    if (this._activeThreadId() === threadId) {
-      const next =
-        [...remaining].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0] ??
-        remaining[0];
-      this._activeThreadId.set(next.id);
+    const title = rawTitle.trim() || 'Untitled chat';
+    const clipped = title.length > 80 ? `${title.slice(0, 77).trim()}…` : title;
+
+    try {
+      const updated = await this.projectsService.updateAiChat(projectId, threadId, {
+        title: clipped,
+      });
+      this._threads.update((list) =>
+        list.map((t) =>
+          t.id === threadId
+            ? {
+                ...t,
+                title: updated.title,
+                updatedAt: updated.updatedAt ?? updated.createdAt,
+              }
+            : t,
+        ),
+      );
+    } catch (err) {
+      this._error.set(problemDetailMessage(err as HttpErrorResponse));
     }
-    this.persistProject(this._projectId());
   }
 
-  /** Start a fresh conversation; keeps prior threads in history. */
-  newChat(): void {
-    const thread = this.createThread();
-    this._threads.update((list) => [thread, ...list]);
-    this._activeThreadId.set(thread.id);
-    this._historyOpen.set(false);
-    this.persistProject(this._projectId());
+  async deleteThread(threadId: string): Promise<void> {
+    const projectId = this._projectId();
+    if (!projectId) {
+      return;
+    }
+
+    try {
+      await this.projectsService.deleteAiChat(projectId, threadId);
+      let remaining = this._threads().filter((t) => t.id !== threadId);
+
+      if (remaining.length === 0) {
+        const created = await this.projectsService.createAiChat(projectId);
+        remaining = [this.summaryToThread(created)];
+        this._threads.set(remaining);
+        this._activeThreadId.set(created.id);
+        this.rememberActive(projectId, created.id);
+        return;
+      }
+
+      this._threads.set(remaining);
+      if (this._activeThreadId() === threadId) {
+        const next =
+          [...remaining].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0] ??
+          remaining[0];
+        this._activeThreadId.set(next.id);
+        this.rememberActive(projectId, next.id);
+        await this.ensureMessagesLoaded(next.id);
+      }
+    } catch (err) {
+      this._error.set(problemDetailMessage(err as HttpErrorResponse));
+    }
   }
 
-  clear(): void {
+  async newChat(): Promise<void> {
+    const projectId = this._projectId();
+    if (!projectId) {
+      return;
+    }
+
+    try {
+      const created = await this.projectsService.createAiChat(projectId);
+      const thread = this.summaryToThread(created);
+      this._threads.update((list) => [thread, ...list]);
+      this._activeThreadId.set(thread.id);
+      this._historyOpen.set(false);
+      this.rememberActive(projectId, thread.id);
+    } catch (err) {
+      this._error.set(problemDetailMessage(err as HttpErrorResponse));
+    }
+  }
+
+  async clear(): Promise<void> {
     const active = this.activeThread();
     if (!active) {
-      this.newChat();
+      await this.newChat();
       return;
     }
 
     const hasUser = active.messages.some((m) => m.role === 'user');
-    if (hasUser) {
-      this.newChat();
-      return;
+    if (hasUser || active.messagesLoaded) {
+      await this.newChat();
     }
-
-    this.patchActiveThread({
-      messages: [
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: 'Chat cleared. Drop in a new goal whenever you’re ready.',
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      updatedAt: new Date().toISOString(),
-    });
   }
 
   async send(raw: string): Promise<void> {
@@ -195,26 +221,37 @@ export class AiChatService {
     const projectId = this._projectId();
     const projectCode = this._projectCode();
     if (!projectId || !projectCode) {
-      this.appendAssistant(
+      this.appendLocalAssistant(
         'Open a project first — AI decomposition runs in the context of the current project.',
       );
       return;
     }
 
-    this.ensureActiveThread();
-    this.appendMessage({
-      id: crypto.randomUUID(),
-      role: 'user',
-      content,
-      createdAt: new Date().toISOString(),
-    });
-    this.maybeSetTitleFromUser(content);
     this._sending.set(true);
+    this._error.set(null);
 
     try {
-      this.appendAssistant('Got it — queuing decomposition for this project…');
+      let chatId = this._activeThreadId();
+      if (!chatId) {
+        const created = await this.projectsService.createAiChat(projectId);
+        const thread = this.summaryToThread(created);
+        this._threads.set([thread]);
+        chatId = created.id;
+        this._activeThreadId.set(chatId);
+        this.rememberActive(projectId, chatId);
+      }
 
-      const job = await this.projectsService.enqueueAiDecompose(projectId, {
+      await this.ensureMessagesLoaded(chatId);
+
+      this.appendLocalMessage({
+        id: `local-user-${Date.now()}`,
+        role: 'user',
+        content,
+        createdAt: new Date().toISOString(),
+      });
+      this.appendLocalAssistant('Got it — queuing decomposition for this project…');
+
+      const job = await this.projectsService.enqueueAiChatDecompose(projectId, chatId, {
         userInput: content,
       });
 
@@ -223,147 +260,195 @@ export class AiChatService {
       );
 
       const finished = await this.pollJob(projectId, job.id);
-      if (finished.status === 'Succeeded') {
-        const code = finished.rootTaskCode?.trim();
-        if (code) {
-          const path = APP_PATHS.projectIssue(projectCode, code);
-          this.replaceLastAssistant(
-            [
-              'Done — I created a task tree from your goal.',
-              '',
-              `Root task: ${code}`,
-              '',
-              'You can also find the new work on the board and in Issues.',
-            ].join('\n'),
-            path,
-            `Open ${code}`,
-          );
-        } else {
-          this.replaceLastAssistant(
-            'Done — the task tree was created. Refresh the board or Issues to see the new tasks.',
-          );
-        }
-        return;
-      }
+      await this.reloadActiveChat(projectId, chatId, projectCode);
 
-      this.replaceLastAssistant(
-        finished.error?.trim()
-          ? `Decomposition failed: ${finished.error}`
-          : 'Decomposition failed. Please try again with a clearer goal.',
-      );
+      if (finished.timedOut) {
+        this.appendLocalAssistant(
+          finished.error?.trim() ||
+            'Timed out waiting for AI decomposition. Check Issues later or try again.',
+        );
+      }
     } catch (err) {
       this.replaceLastAssistant(problemDetailMessage(err as HttpErrorResponse));
     } finally {
       this._sending.set(false);
-      this.persistProject(projectId);
     }
   }
 
-  private ensureActiveThread(): void {
-    if (this.activeThread()) {
-      return;
-    }
-    const thread = this.createThread();
-    this._threads.set([thread]);
-    this._activeThreadId.set(thread.id);
-  }
-
-  private createThread(): AiChatThread {
-    const now = new Date().toISOString();
-    return {
-      id: crypto.randomUUID(),
-      title: 'New chat',
-      createdAt: now,
-      updatedAt: now,
-      messages: [this.welcomeMessage()],
-    };
-  }
-
-  private maybeSetTitleFromUser(content: string): void {
-    const active = this.activeThread();
-    if (!active || active.title !== 'New chat') {
-      return;
-    }
-    const title = content.length > 48 ? `${content.slice(0, 45).trim()}…` : content;
-    this.patchActiveThread({ title });
-  }
-
-  private loadProject(projectId: string): void {
+  private async loadProject(projectId: string, token: number): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {
-      const thread = this.createThread();
-      this._threads.set([thread]);
-      this._activeThreadId.set(thread.id);
+      this._threads.set([]);
+      this._activeThreadId.set(null);
+      return;
+    }
+
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      let summaries = await this.projectsService.listAiChats(projectId);
+      if (token !== this.loadToken) {
+        return;
+      }
+
+      if (summaries.length === 0) {
+        const created = await this.projectsService.createAiChat(projectId);
+        if (token !== this.loadToken) {
+          return;
+        }
+        summaries = [created];
+      }
+
+      const threads = summaries.map((s) => this.summaryToThread(s));
+      this._threads.set(threads);
+
+      const savedActive = sessionStorage.getItem(activeKey(projectId));
+      const activeId =
+        (savedActive && threads.find((t) => t.id === savedActive)?.id) || threads[0]?.id || null;
+      this._activeThreadId.set(activeId);
+      if (activeId) {
+        this.rememberActive(projectId, activeId);
+        await this.ensureMessagesLoaded(activeId, token);
+      }
+    } catch (err) {
+      if (token !== this.loadToken) {
+        return;
+      }
+      this._error.set(problemDetailMessage(err as HttpErrorResponse));
+      this._threads.set([]);
+      this._activeThreadId.set(null);
+    } finally {
+      if (token === this.loadToken) {
+        this._loading.set(false);
+      }
+    }
+  }
+
+  private async ensureMessagesLoaded(threadId: string, token = this.loadToken): Promise<void> {
+    const projectId = this._projectId();
+    const projectCode = this._projectCode();
+    if (!projectId || !projectCode) {
+      return;
+    }
+
+    const thread = this._threads().find((t) => t.id === threadId);
+    if (!thread || thread.messagesLoaded) {
       return;
     }
 
     try {
-      const raw = localStorage.getItem(threadsKey(projectId));
-      const parsed = raw ? (JSON.parse(raw) as AiChatThread[]) : [];
-      const threads = Array.isArray(parsed) && parsed.length > 0 ? parsed : [this.createThread()];
-      this._threads.set(threads);
-
-      const savedActive = localStorage.getItem(activeKey(projectId));
-      const active =
-        (savedActive && threads.find((t) => t.id === savedActive)?.id) || threads[0]?.id || null;
-      this._activeThreadId.set(active);
-      this.persistProject(projectId);
-    } catch {
-      const thread = this.createThread();
-      this._threads.set([thread]);
-      this._activeThreadId.set(thread.id);
+      const detail = await this.projectsService.getAiChat(projectId, threadId);
+      if (token !== this.loadToken) {
+        return;
+      }
+      this.applyChatDetail(detail, projectCode);
+    } catch (err) {
+      if (token !== this.loadToken) {
+        return;
+      }
+      this._error.set(problemDetailMessage(err as HttpErrorResponse));
     }
   }
 
-  private persistProject(projectId: string | null): void {
+  private async reloadActiveChat(
+    projectId: string,
+    chatId: string,
+    projectCode: string,
+  ): Promise<void> {
+    const detail = await this.projectsService.getAiChat(projectId, chatId);
+    this.applyChatDetail(detail, projectCode);
+
+    // Refresh summary ordering/title from list cheaply
+    this._threads.update((list) =>
+      list.map((t) =>
+        t.id === chatId
+          ? {
+              ...t,
+              title: detail.title,
+              updatedAt: detail.updatedAt ?? detail.createdAt,
+            }
+          : t,
+      ),
+    );
+  }
+
+  private applyChatDetail(detail: AiChatDto, projectCode: string): void {
+    const messages = detail.messages.map((m) => this.mapMessage(m, projectCode));
+    this._threads.update((list) =>
+      list.map((t) =>
+        t.id === detail.id
+          ? {
+              ...t,
+              title: detail.title,
+              createdAt: detail.createdAt,
+              updatedAt: detail.updatedAt ?? detail.createdAt,
+              messages,
+              messagesLoaded: true,
+            }
+          : t,
+      ),
+    );
+  }
+
+  private mapMessage(dto: AiChatMessageDto, projectCode: string): AiChatMessage {
+    const role = dto.role.toLowerCase() as AiChatRole;
+    const code = dto.rootTaskCode?.trim();
+    return {
+      id: dto.id,
+      role: role === 'user' || role === 'system' ? role : 'assistant',
+      content: dto.content,
+      createdAt: dto.createdAt,
+      linkHref: code ? APP_PATHS.projectIssue(projectCode, code) : null,
+      linkLabel: code ? `Open ${code}` : null,
+    };
+  }
+
+  private summaryToThread(summary: AiChatSummaryDto | AiChatDto): AiChatThread {
+    return {
+      id: summary.id,
+      title: summary.title,
+      createdAt: summary.createdAt,
+      updatedAt: summary.updatedAt ?? summary.createdAt,
+      messages: [],
+      messagesLoaded: false,
+    };
+  }
+
+  private rememberActive(projectId: string | null, chatId: string): void {
     if (!projectId || !isPlatformBrowser(this.platformId)) {
       return;
     }
     try {
-      localStorage.setItem(threadsKey(projectId), JSON.stringify(this._threads()));
-      const active = this._activeThreadId();
-      if (active) {
-        localStorage.setItem(activeKey(projectId), active);
-      }
+      sessionStorage.setItem(activeKey(projectId), chatId);
     } catch {
-      // ignore quota / private mode
+      // ignore
     }
   }
 
-  private patchActiveThread(patch: Partial<AiChatThread>): void {
-    const id = this._activeThreadId();
-    if (!id) {
-      return;
-    }
-    this._threads.update((list) =>
-      list.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: patch.updatedAt ?? new Date().toISOString() } : t)),
-    );
-    this.persistProject(this._projectId());
-  }
-
-  private async pollJob(projectId: string, jobId: string) {
+  private async pollJob(
+    projectId: string,
+    jobId: string,
+  ): Promise<{ status: string; error?: string | null; timedOut: boolean }> {
     const started = Date.now();
     while (Date.now() - started < POLL_TIMEOUT_MS) {
       await delay(POLL_INTERVAL_MS);
       const job = await this.projectsService.getAiDecomposeJob(projectId, jobId);
       if (job.status === 'Succeeded' || job.status === 'Failed') {
-        return job;
+        return { status: job.status, error: job.error, timedOut: false };
       }
       this.replaceLastAssistant(`Still working… (status: ${job.status})`);
     }
 
     return {
-      id: jobId,
-      projectId,
       status: 'Failed',
-      userInput: '',
+      timedOut: true,
       error: 'Timed out waiting for AI decomposition. Check Issues later or try again.',
-      createdAt: new Date().toISOString(),
     };
   }
 
   private welcomeMessage(): AiChatMessage {
     return {
-      id: crypto.randomUUID(),
+      id: 'welcome',
       role: 'assistant',
       content:
         'Hi — I’m Skemex AI. Describe a goal or epic, and I’ll decompose it into clear subtasks on this project’s board.',
@@ -371,58 +456,60 @@ export class AiChatService {
     };
   }
 
-  private appendMessage(message: AiChatMessage): void {
-    const active = this.activeThread();
-    if (!active) {
+  private appendLocalMessage(message: AiChatMessage): void {
+    const id = this._activeThreadId();
+    if (!id) {
       return;
     }
-    this.patchActiveThread({
-      messages: [...active.messages, message],
-      updatedAt: new Date().toISOString(),
-    });
+    this._threads.update((list) =>
+      list.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              messages: [...t.messages, message],
+              messagesLoaded: true,
+              updatedAt: new Date().toISOString(),
+            }
+          : t,
+      ),
+    );
   }
 
-  private appendAssistant(content: string): void {
-    this.appendMessage({
-      id: crypto.randomUUID(),
+  private appendLocalAssistant(content: string): void {
+    this.appendLocalMessage({
+      id: `local-assistant-${Date.now()}`,
       role: 'assistant',
       content,
       createdAt: new Date().toISOString(),
     });
   }
 
-  private replaceLastAssistant(
-    content: string,
-    linkHref?: string | null,
-    linkLabel?: string | null,
-  ): void {
-    const active = this.activeThread();
-    if (!active) {
+  private replaceLastAssistant(content: string): void {
+    const id = this._activeThreadId();
+    if (!id) {
       return;
     }
-    const next = [...active.messages];
-    for (let i = next.length - 1; i >= 0; i -= 1) {
-      if (next[i].role === 'assistant') {
-        next[i] = {
-          ...next[i],
+    this._threads.update((list) =>
+      list.map((t) => {
+        if (t.id !== id) {
+          return t;
+        }
+        const next = [...t.messages];
+        for (let i = next.length - 1; i >= 0; i -= 1) {
+          if (next[i].role === 'assistant') {
+            next[i] = { ...next[i], content, createdAt: new Date().toISOString() };
+            return { ...t, messages: next, updatedAt: new Date().toISOString() };
+          }
+        }
+        next.push({
+          id: `local-assistant-${Date.now()}`,
+          role: 'assistant',
           content,
-          linkHref: linkHref ?? null,
-          linkLabel: linkLabel ?? null,
           createdAt: new Date().toISOString(),
-        };
-        this.patchActiveThread({ messages: next, updatedAt: new Date().toISOString() });
-        return;
-      }
-    }
-    next.push({
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content,
-      linkHref: linkHref ?? null,
-      linkLabel: linkLabel ?? null,
-      createdAt: new Date().toISOString(),
-    });
-    this.patchActiveThread({ messages: next, updatedAt: new Date().toISOString() });
+        });
+        return { ...t, messages: next, updatedAt: new Date().toISOString() };
+      }),
+    );
   }
 }
 

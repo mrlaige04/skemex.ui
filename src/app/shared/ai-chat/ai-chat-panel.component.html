@@ -39,7 +39,7 @@
             size="sm"
             class="ai-chat__icon-btn"
             aria-label="New chat"
-            (click)="chat.newChat()"
+            (click)="void chat.newChat()"
           >
             <ng-icon hlm name="lucidePlus" size="sm" />
           </button>
@@ -50,7 +50,7 @@
             size="sm"
             class="ai-chat__icon-btn"
             aria-label="Clear chat"
-            (click)="chat.clear()"
+            (click)="void chat.clear()"
           >
             <ng-icon hlm name="lucideEraser" size="sm" />
           </button>
@@ -83,12 +83,16 @@
 
     @if (chat.historyOpen()) {
       <div class="ai-chat__history">
-        <button type="button" class="ai-chat__history-new" (click)="chat.newChat()">
+        <button type="button" class="ai-chat__history-new" (click)="void chat.newChat()">
           <ng-icon hlm name="lucidePlus" size="sm" />
           New chat
         </button>
 
-        @if (chat.historyThreads().length === 0) {
+        @if (chat.loading()) {
+          <p class="ai-chat__history-empty">Loading chats…</p>
+        } @else if (chat.error(); as err) {
+          <p class="ai-chat__history-empty">{{ err }}</p>
+        } @else if (chat.historyThreads().length === 0) {
           <p class="ai-chat__history-empty">No chats yet in this project.</p>
         } @else {
           <ul class="ai-chat__history-list">
@@ -135,7 +139,7 @@
                     type="button"
                     class="ai-chat__history-item"
                     [class.ai-chat__history-item--active]="thread.id === chat.activeThread()?.id"
-                    (click)="chat.openThread(thread.id)"
+                    (click)="void chat.openThread(thread.id)"
                   >
                     <span class="ai-chat__history-title">{{ thread.title }}</span>
                     <span class="ai-chat__history-meta">{{ thread.updatedAt | date: 'mediumDate' }}</span>
@@ -159,7 +163,7 @@
                       size="sm"
                       class="ai-chat__icon-btn ai-chat__icon-btn--danger"
                       aria-label="Delete chat"
-                      (click)="confirmDelete(thread.id)"
+                      (click)="requestDelete(thread.id, thread.title)"
                     >
                       <ng-icon hlm name="lucideTrash2" size="sm" />
                     </button>
@@ -172,6 +176,14 @@
       </div>
     } @else {
       <div #scroller class="ai-chat__messages" tabindex="-1">
+        @if (chat.loading() && chat.messages().length <= 1) {
+          <p class="ai-chat__history-empty">Loading conversation…</p>
+        }
+
+        @if (chat.error(); as err) {
+          <p class="ai-chat__history-empty">{{ err }}</p>
+        }
+
         @for (msg of chat.messages(); track msg.id) {
           <div
             class="ai-msg"
@@ -259,4 +271,15 @@
       </form>
     }
   </div>
+
+  <app-confirm-alert-dialog
+    [(state)]="deleteDialogState"
+    title="Delete chat?"
+    confirmLabel="Delete"
+    (confirmed)="performDelete()"
+  >
+    This will permanently delete
+    <span class="font-medium text-foreground">“{{ pendingDeleteTitle() }}”</span>
+    and its messages. This cannot be undone.
+  </app-confirm-alert-dialog>
 </aside>

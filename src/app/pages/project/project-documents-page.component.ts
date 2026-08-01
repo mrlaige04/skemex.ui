@@ -22,7 +22,7 @@ import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
-import { problemDetailMessage } from '../../http/problem-details';
+import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import type { ProjectDocumentDto } from '../../models/projects/projects.models';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ProjectDocumentsTableActionsCellComponent } from './project-documents-table-actions-cell.component';
@@ -310,7 +310,9 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
       this.pagingEnabled = true;
       await this.refreshList();
     } catch (err) {
-      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      }
     } finally {
       this.loading.set(false);
     }
