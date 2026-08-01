@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HlmTabsImports } from 'spartan/tabs';
+import { ProjectSettingsAiTabComponent } from './project-settings-ai-tab.component';
 import { ProjectSettingsColumnsTabComponent } from './project-settings-columns-tab.component';
 import { ProjectSettingsMainInfoTabComponent } from './project-settings-main-info-tab.component';
 import { ProjectSettingsUsersTabComponent } from './project-settings-users-tab.component';
 
-const SETTINGS_TABS = new Set(['main', 'users', 'columns']);
+const SETTINGS_TABS = new Set(['main', 'users', 'columns', 'ai']);
 
 @Component({
   selector: 'app-project-settings-page',
@@ -13,6 +14,7 @@ const SETTINGS_TABS = new Set(['main', 'users', 'columns']);
     ProjectSettingsMainInfoTabComponent,
     ProjectSettingsUsersTabComponent,
     ProjectSettingsColumnsTabComponent,
+    ProjectSettingsAiTabComponent,
     ...HlmTabsImports,
   ],
   templateUrl: './project-settings-page.component.html',

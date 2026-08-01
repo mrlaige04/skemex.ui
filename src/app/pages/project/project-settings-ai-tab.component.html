@@ -1,0 +1,88 @@
+<section hlmCard>
+  <div hlmCardHeader>
+    <h2 hlmCardTitle>AI task decomposition</h2>
+    <p hlmCardDescription>
+      Control how deep and how large AI-generated task trees can be for this project.
+    </p>
+  </div>
+
+  <div hlmCardContent>
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading settings…</p>
+    } @else {
+      <form novalidate class="space-y-5" (submit)="onSubmit($event)">
+        @if (error(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        }
+
+        @if (savedMessage(); as msg) {
+          <p
+            class="rounded-md border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+            role="status"
+          >
+            {{ msg }}
+          </p>
+        }
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label hlmLabel for="ai-max-depth">Max tree depth</label>
+            <input
+              hlmInput
+              id="ai-max-depth"
+              type="number"
+              min="1"
+              max="8"
+              step="1"
+              [value]="model().maxTreeDepth"
+              (input)="updateDepth($event)"
+            />
+            <p class="text-muted-foreground text-xs">
+              1 = root only, 2 = root + subtasks, 3 = root + subtasks + nested subtasks. Range 1–8.
+            </p>
+            @if (submitted() && (model().maxTreeDepth < 1 || model().maxTreeDepth > 8)) {
+              <p class="text-destructive text-sm">Depth must be between 1 and 8.</p>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="ai-max-nodes">Max nodes</label>
+            <input
+              hlmInput
+              id="ai-max-nodes"
+              type="number"
+              min="1"
+              max="64"
+              step="1"
+              [value]="model().maxNodes"
+              (input)="updateNodes($event)"
+            />
+            <p class="text-muted-foreground text-xs">
+              Total tasks in one AI tree including the root. Range 1–64.
+            </p>
+            @if (submitted() && (model().maxNodes < 1 || model().maxNodes > 64)) {
+              <p class="text-destructive text-sm">Max nodes must be between 1 and 64.</p>
+            }
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button hlmBtn type="submit" [disabled]="!canSave()">
+            @if (saving()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              Saving…
+            } @else {
+              <ng-icon hlm name="lucideCheck" size="sm" />
+              Save
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

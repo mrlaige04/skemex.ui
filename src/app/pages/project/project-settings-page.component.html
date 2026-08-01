@@ -9,6 +9,7 @@
       <button type="button" hlmTabsTrigger="main">Main Info</button>
       <button type="button" hlmTabsTrigger="users">Users</button>
       <button type="button" hlmTabsTrigger="columns">Columns</button>
+      <button type="button" hlmTabsTrigger="ai">AI</button>
     </div>
 
     <div hlmTabsContent="main" class="pt-4">
@@ -26,6 +27,12 @@
     <div hlmTabsContent="columns" class="pt-4">
       @if (activeTab() === 'columns') {
         <app-project-settings-columns-tab />
+      }
+    </div>
+
+    <div hlmTabsContent="ai" class="pt-4">
+      @if (activeTab() === 'ai') {
+        <app-project-settings-ai-tab />
       }
     </div>
   </div>

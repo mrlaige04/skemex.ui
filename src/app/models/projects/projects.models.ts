@@ -49,10 +49,14 @@ export interface UpdateProjectColumnRequest {
 export interface ProjectSettingsDto {
   projectId: string;
   defaultTaskColumnId: string;
+  aiMaxTreeDepth: number;
+  aiMaxNodes: number;
 }
 
 export interface UpdateProjectSettingsRequest {
-  defaultTaskColumnId: string;
+  defaultTaskColumnId?: string;
+  aiMaxTreeDepth?: number;
+  aiMaxNodes?: number;
 }
 
 export interface CreateProjectRequest {
