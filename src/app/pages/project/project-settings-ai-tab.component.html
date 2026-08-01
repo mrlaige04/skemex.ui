@@ -2,7 +2,8 @@
   <div hlmCardHeader>
     <h2 hlmCardTitle>AI task decomposition</h2>
     <p hlmCardDescription>
-      Control how deep and how large AI-generated task trees can be for this project.
+      Set this project’s default model and limits for AI-generated task trees. The default model is
+      required for decomposition when a chat does not pick its own.
     </p>
   </div>
 
@@ -28,6 +29,42 @@
             {{ msg }}
           </p>
         }
+
+        <div class="space-y-2">
+          <label hlmLabel for="ai-default-model">Default AI model</label>
+          <hlm-select
+            class="w-full max-w-md"
+            [value]="model().defaultAiModelId ?? noneModelValue"
+            [itemToString]="modelLabel"
+            (valueChange)="updateDefaultModel($event)"
+          >
+            <hlm-select-trigger id="ai-default-model" class="w-full">
+              <hlm-select-value placeholder="Select a model" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                <hlm-select-item [value]="noneModelValue">No default</hlm-select-item>
+                @for (aiModel of models(); track aiModel.id) {
+                  <hlm-select-item [value]="aiModel.id">
+                    <span class="inline-flex items-center gap-2">
+                      <ng-icon hlm name="lucideBot" size="sm" />
+                      <span>{{ aiModel.displayName }}</span>
+                      <span class="text-muted-foreground text-xs">{{ aiModel.provider }}</span>
+                    </span>
+                  </hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+          <p class="text-muted-foreground text-xs">
+            Stored on this project and used for new AI chats unless a chat overrides it.
+          </p>
+          @if (!model().defaultAiModelId && models().length === 0) {
+            <p class="text-muted-foreground text-xs">
+              No models available yet. Check that the AI provider API key is configured on the server.
+            </p>
+          }
+        </div>
 
         <div class="grid gap-5 sm:grid-cols-2">
           <div class="space-y-2">

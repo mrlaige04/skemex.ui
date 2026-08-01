@@ -2,16 +2,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePlus, lucideSearch, lucideSparkles } from '@ng-icons/lucide';
+import { lucidePlus, lucideSearch, lucideSparkles, lucideTrash2 } from '@ng-icons/lucide';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { HlmButtonImports } from 'spartan/button';
@@ -30,6 +32,7 @@ import type {
 import { APP_PATHS } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import {
   RichTableComponent,
   type RichTableColumn,
@@ -37,6 +40,7 @@ import {
 } from '../../shared/rich-table';
 import { IssuesKeyCellComponent } from './issues-key-cell.component';
 import { IssuesPersonCellComponent } from './issues-person-cell.component';
+import { IssuesTableActionsCellComponent } from './issues-table-actions-cell.component';
 import {
   PROJECT_ISSUES_TABLE_HOST,
   type ProjectIssuesTableHost,
@@ -87,6 +91,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     RouterLink,
     NgIcon,
     RichTableComponent,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -95,7 +100,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     ...HlmSelectImports,
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSearch, lucideSparkles }),
+    provideIcons({ lucidePlus, lucideSearch, lucideSparkles, lucideTrash2 }),
     { provide: PROJECT_ISSUES_TABLE_HOST, useExisting: ProjectIssuesPageComponent },
   ],
   templateUrl: './project-issues-page.component.html',
@@ -108,6 +113,7 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   private readonly destroyRef = inject(DestroyRef);
   readonly aiChat = inject(AiChatService);
   private readonly search$ = new Subject<string>();
+  private readonly richTable = viewChild(RichTableComponent);
 
   readonly loading = signal(true);
   readonly listError = signal<string | null>(null);
@@ -126,6 +132,14 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   readonly totalItems = signal(0);
   readonly createLink = signal<string[]>([]);
 
+  readonly selectedIds = signal<string[]>([]);
+  readonly deletingId = signal<string | null>(null);
+  readonly bulkDeleting = signal(false);
+
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly confirmMode = signal<'single' | 'bulk'>('single');
+  readonly pendingDeleteIssue = signal<ProjectTaskDto | null>(null);
+
   readonly allValue = ALL_VALUE;
   readonly unassignedValue = UNASSIGNED_VALUE;
   readonly sortOptions = SORT_OPTIONS;
@@ -133,6 +147,25 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   private projectId: string | null = null;
   private pagingEnabled = false;
   private suppressPagingEffect = false;
+
+  readonly selectedCount = computed(() => this.selectedIds().length);
+  readonly hasSelection = computed(() => this.selectedCount() > 0);
+
+  readonly confirmTitle = computed(() =>
+    this.confirmMode() === 'bulk' ? 'Delete selected issues?' : 'Delete issue?',
+  );
+
+  readonly confirmLabel = computed(() =>
+    this.confirmMode() === 'bulk' ? 'Delete selected' : 'Delete',
+  );
+
+  readonly pendingDeleteLabel = computed(() => {
+    const issue = this.pendingDeleteIssue();
+    if (!issue) {
+      return '';
+    }
+    return issue.code ? `${issue.code} — ${issue.title}` : issue.title;
+  });
 
   readonly tableColumns: RichTableColumn<ProjectTaskDto>[] = [
     {
@@ -176,6 +209,13 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
       label: 'Created',
       render: (row) =>
         `<span class="text-muted-foreground text-sm">${escapeHtml(formatDate(row.createdAt))}</span>`,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      header: '<span class="sr-only">Actions</span>',
+      component: IssuesTableActionsCellComponent,
+      enableHiding: false,
     },
   ];
 
@@ -231,6 +271,33 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
     this.pageSize.set(change.page);
   }
 
+  onRowSelectionChange(ids: string[]): void {
+    this.selectedIds.set(ids);
+  }
+
+  deleteIssue(issue: ProjectTaskDto): void {
+    this.confirmMode.set('single');
+    this.pendingDeleteIssue.set(issue);
+    this.confirmDialogState.set('open');
+  }
+
+  requestBulkDelete(): void {
+    if (!this.hasSelection()) {
+      return;
+    }
+    this.confirmMode.set('bulk');
+    this.pendingDeleteIssue.set(null);
+    this.confirmDialogState.set('open');
+  }
+
+  async confirmDelete(): Promise<void> {
+    if (this.confirmMode() === 'bulk') {
+      await this.performBulkDelete();
+      return;
+    }
+    await this.performSingleDelete();
+  }
+
   columnLabel = (value: unknown): string => {
     if (value === ALL_VALUE || value == null) {
       return 'All statuses';
@@ -254,6 +321,46 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
     const option = SORT_OPTIONS.find((o) => o.value === value);
     return option?.label ?? 'Newest first';
   };
+
+  private async performSingleDelete(): Promise<void> {
+    const issue = this.pendingDeleteIssue();
+    if (!this.projectId || !issue) {
+      return;
+    }
+
+    this.deletingId.set(issue.id);
+    this.listError.set(null);
+    try {
+      await this.projectsService.deleteTask(this.projectId, issue.projectColumnId, issue.id);
+      this.pendingDeleteIssue.set(null);
+      this.selectedIds.update((ids) => ids.filter((id) => id !== issue.id));
+      await this.refreshList();
+    } catch (err) {
+      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.deletingId.set(null);
+    }
+  }
+
+  private async performBulkDelete(): Promise<void> {
+    const ids = this.selectedIds();
+    if (!this.projectId || ids.length === 0) {
+      return;
+    }
+
+    this.bulkDeleting.set(true);
+    this.listError.set(null);
+    try {
+      await this.projectsService.bulkDeleteTasks(this.projectId, ids);
+      this.selectedIds.set([]);
+      this.richTable()?.clearRowSelection();
+      await this.refreshList();
+    } catch (err) {
+      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.bulkDeleting.set(false);
+    }
+  }
 
   private async loadProject(): Promise<void> {
     const code = this.route.parent?.snapshot.paramMap.get('projectCode')?.trim() ?? '';

@@ -373,10 +373,35 @@
 
 .ai-chat__composer {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
   flex-shrink: 0;
   padding: 0.75rem 0.95rem 1rem;
   border-top: 1px solid var(--ai-line);
   background: rgb(244 247 250 / 94%);
+}
+
+.ai-chat__model {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.ai-chat__model-select {
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-chat__model-trigger {
+  height: 2rem;
+  min-height: 2rem;
+  border-color: var(--ai-line);
+  background: #fff;
+  color: var(--ai-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .ai-chat__input {
