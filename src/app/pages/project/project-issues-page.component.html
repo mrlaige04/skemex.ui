@@ -131,6 +131,23 @@
         </div>
       </div>
 
+      @if (hasSelection()) {
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-muted-foreground text-sm">{{ selectedCount() }} selected</span>
+          <button
+            hlmBtn
+            type="button"
+            variant="destructive"
+            size="sm"
+            [disabled]="bulkDeleting()"
+            (click)="requestBulkDelete()"
+          >
+            <ng-icon hlm name="lucideTrash2" size="sm" />
+            Delete selected
+          </button>
+        </div>
+      }
+
       <app-rich-table
         [data]="issues()"
         [columns]="tableColumns"
@@ -138,11 +155,32 @@
         emptyMessage="No issues match your filters."
         [showPagination]="true"
         [showColumnsSelection]="false"
+        [enableRowSelection]="true"
         [pageNumber]="currentPage()"
         [page]="pageSize()"
         [totalItems]="totalItems()"
         (paginationChange)="onPaginationChange($event)"
+        (rowSelectionChange)="onRowSelectionChange($event)"
       />
     </div>
   </div>
 </div>
+
+<app-confirm-alert-dialog
+  [(state)]="confirmDialogState"
+  [title]="confirmTitle()"
+  [confirmLabel]="confirmLabel()"
+  (confirmed)="confirmDelete()"
+>
+  @if (confirmMode() === 'bulk') {
+    Permanently delete
+    <span class="font-medium text-foreground">{{ selectedCount() }}</span>
+    selected
+    {{ selectedCount() === 1 ? 'issue' : 'issues' }}? Sub-tasks of deleted issues are removed
+    too. This cannot be undone.
+  } @else {
+    Permanently delete
+    <span class="font-medium text-foreground">“{{ pendingDeleteLabel() }}”</span>? Sub-tasks of
+    this issue are removed too. This cannot be undone.
+  }
+</app-confirm-alert-dialog>

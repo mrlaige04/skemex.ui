@@ -9,6 +9,7 @@ const RETRY_HEADER = 'X-Skemex-Transient-Retry';
 /**
  * Retries once on HTTP status 0 (aborted/cancelled), which often flashes during
  * page load/hydration when duplicate navigations cancel in-flight fetch requests.
+ * Skips intentional SSR short-circuits.
  */
 export const transientRetryInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
@@ -16,6 +17,7 @@ export const transientRetryInterceptor: HttpInterceptorFn = (req, next) => {
       if (
         !(err instanceof HttpErrorResponse) ||
         err.status !== 0 ||
+        err.statusText === 'SSR' ||
         req.headers.has(RETRY_HEADER)
       ) {
         return throwError(() => err);

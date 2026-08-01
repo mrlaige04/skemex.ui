@@ -1,5 +1,14 @@
 export type AiChatRole = 'user' | 'assistant' | 'system';
 
+export interface AiModelDto {
+  id: string;
+  provider: string;
+  externalId: string;
+  displayName: string;
+  iconKey?: string | null;
+  isActive: boolean;
+}
+
 export interface AiChatMessageDto {
   id: string;
   chatId: string;
@@ -16,6 +25,8 @@ export interface AiChatSummaryDto {
   id: string;
   projectId: string;
   title: string;
+  aiModelId?: string | null;
+  aiModel?: AiModelDto | null;
   createdAt: string;
   updatedAt?: string | null;
 }
@@ -24,6 +35,8 @@ export interface AiChatDto {
   id: string;
   projectId: string;
   title: string;
+  aiModelId?: string | null;
+  aiModel?: AiModelDto | null;
   createdAt: string;
   updatedAt?: string | null;
   messages: AiChatMessageDto[];
@@ -31,10 +44,13 @@ export interface AiChatDto {
 
 export interface CreateAiChatRequest {
   title?: string | null;
+  aiModelId?: string | null;
 }
 
 export interface UpdateAiChatRequest {
-  title: string;
+  title?: string | null;
+  aiModelId?: string | null;
+  clearAiModel?: boolean;
 }
 
 export interface CreateAiChatMessageRequest {
@@ -60,6 +76,8 @@ export interface AiChatMessage {
 export interface AiChatThread {
   id: string;
   title: string;
+  aiModelId: string | null;
+  aiModel: AiModelDto | null;
   createdAt: string;
   updatedAt: string;
   messages: AiChatMessage[];

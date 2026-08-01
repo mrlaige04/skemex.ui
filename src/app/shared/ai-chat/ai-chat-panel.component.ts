@@ -15,6 +15,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
   lucideArrowUp,
+  lucideBot,
   lucideCheck,
   lucideEraser,
   lucideHistory,
@@ -26,8 +27,11 @@ import {
 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
+import { HlmSelectImports } from 'spartan/select';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ConfirmAlertDialogComponent } from '../confirm-alert-dialog/confirm-alert-dialog.component';
+
+const PROJECT_DEFAULT_MODEL = '__project_default__';
 
 @Component({
   selector: 'app-ai-chat-panel',
@@ -39,10 +43,12 @@ import { ConfirmAlertDialogComponent } from '../confirm-alert-dialog/confirm-ale
     ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmIconImports,
+    ...HlmSelectImports,
   ],
   providers: [
     provideIcons({
       lucideSparkles,
+      lucideBot,
       lucideX,
       lucideArrowUp,
       lucideEraser,
@@ -63,6 +69,7 @@ export class AiChatPanelComponent {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
 
+  readonly projectDefaultModelValue = PROJECT_DEFAULT_MODEL;
   readonly draft = signal('');
   readonly editingId = signal<string | null>(null);
   readonly editTitle = signal('');
@@ -71,6 +78,20 @@ export class AiChatPanelComponent {
   readonly pendingDeleteId = signal<string | null>(null);
   readonly pendingDeleteTitle = signal('');
   private deleteTargetId: string | null = null;
+
+  readonly modelLabel = (value: unknown): string => {
+    if (value === PROJECT_DEFAULT_MODEL || value == null || value === '') {
+      return 'Project default';
+    }
+    const id = String(value);
+    return this.chat.models().find((m) => m.id === id)?.displayName ?? id;
+  };
+
+  onModelChange(value: unknown): void {
+    const id =
+      value === PROJECT_DEFAULT_MODEL || value == null || value === '' ? null : String(value);
+    void this.chat.setSelectedModel(id);
+  }
 
   constructor() {
     afterNextRender(() => this.scrollToBottom());

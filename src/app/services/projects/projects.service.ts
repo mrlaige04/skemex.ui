@@ -205,6 +205,14 @@ export class ProjectsService {
     );
   }
 
+  bulkDeleteTasks(projectId: string, taskIds: string[]): Promise<void> {
+    return firstValueFrom(
+      this.api.post<{ taskIds: string[] }, void>(`api/projects/${projectId}/tasks/bulk-delete`, {
+        taskIds,
+      }),
+    );
+  }
+
   updateTask(
     projectId: string,
     taskId: string,

@@ -244,6 +244,36 @@
       </div>
 
       <form class="ai-chat__composer" (submit)="onSubmit($event)">
+        @if (chat.models().length > 0) {
+          <div class="ai-chat__model">
+            <label class="sr-only" for="ai-chat-model">AI model</label>
+            <hlm-select
+              class="ai-chat__model-select w-full"
+              [value]="chat.selectedModelId() ?? projectDefaultModelValue"
+              [itemToString]="modelLabel"
+              [disabled]="chat.sending() || !chat.activeThread()"
+              (valueChange)="onModelChange($event)"
+            >
+              <hlm-select-trigger id="ai-chat-model" class="ai-chat__model-trigger w-full">
+                <hlm-select-value placeholder="Project default" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                <hlm-select-group>
+                  <hlm-select-item [value]="projectDefaultModelValue">Project default</hlm-select-item>
+                  @for (m of chat.models(); track m.id) {
+                    <hlm-select-item [value]="m.id">
+                      <span class="inline-flex min-w-0 items-center gap-2">
+                        <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
+                        <span class="truncate">{{ m.displayName }}</span>
+                        <span class="text-muted-foreground shrink-0 text-xs">{{ m.provider }}</span>
+                      </span>
+                    </hlm-select-item>
+                  }
+                </hlm-select-group>
+              </hlm-select-content>
+            </hlm-select>
+          </div>
+        }
         <label class="sr-only" for="ai-chat-input">Message Skemex AI</label>
         <textarea
           id="ai-chat-input"

@@ -5,6 +5,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { authInterceptor } from './http/auth.interceptor';
+import { ssrSkipHttpInterceptor } from './http/ssr-skip-http.interceptor';
 import { transientRetryInterceptor } from './http/transient-retry.interceptor';
 import { apiConfigProvider } from './config/api.config';
 import { tokenStorageEncryptionKeyProvider } from './config/token-storage.config';
@@ -17,7 +18,10 @@ export const appConfig: ApplicationConfig = {
     apiConfigProvider,
     tokenStorageEncryptionKeyProvider,
     provideAppInitializer(() => inject(AuthTokenStore).whenHydrated),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, transientRetryInterceptor])),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([ssrSkipHttpInterceptor, authInterceptor, transientRetryInterceptor]),
+    ),
     provideClientHydration(withEventReplay())
   ]
 };

@@ -1,5 +1,9 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
+/**
+ * Public marketing pages can SSR. Authenticated / API-backed shells use Client
+ * so Node does not wait on backend HTTP (which hangs SSR stability).
+ */
 export const serverRoutes: ServerRoute[] = [
   {
     path: '',
@@ -10,27 +14,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'dashboard',
-    renderMode: RenderMode.Server,
-  },
-  {
-    path: 'users/**',
-    renderMode: RenderMode.Server,
-  },
-  {
-    path: 'projects/**',
-    renderMode: RenderMode.Server,
-  },
-  {
-    path: 'settings',
-    renderMode: RenderMode.Server,
-  },
-  {
-    path: 'admin/**',
-    renderMode: RenderMode.Server,
-  },
-  {
     path: '**',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
 ];
