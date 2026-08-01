@@ -1,6 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 import { problemDetailMessage } from '../../http/problem-details';
 import type {
   AiChatDto,
@@ -38,6 +40,7 @@ export class AiChatService {
   private readonly _projectCode = signal<string | null>(null);
   private readonly _models = signal<AiModelDto[]>([]);
   private readonly _selectedModelId = signal<string | null>(null);
+  private readonly _projectDefaultModelId = signal<string | null>(null);
   private loadToken = 0;
 
   readonly open = this._open.asReadonly();
@@ -81,6 +84,28 @@ export class AiChatService {
     if (isPlatformBrowser(this.platformId)) {
       this._open.set(sessionStorage.getItem(OPEN_KEY) === '1');
     }
+
+    // Close the side panel when navigating to another page (layout stays mounted within a project).
+    const router = inject(Router);
+    let lastUrl = router.url;
+    let seenFirstNav = false;
+    router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        const nextUrl = event.urlAfterRedirects;
+        if (!seenFirstNav) {
+          seenFirstNav = true;
+          lastUrl = nextUrl;
+          return;
+        }
+        if (nextUrl === lastUrl) {
+          return;
+        }
+        lastUrl = nextUrl;
+        if (this._open()) {
+          this.setOpen(false);
+        }
+      });
   }
 
   setProjectContext(projectId: string | null, projectCode: string | null): void {
@@ -96,6 +121,7 @@ export class AiChatService {
       this._threads.set([]);
       this._activeThreadId.set(null);
       this._selectedModelId.set(null);
+      this._projectDefaultModelId.set(null);
       this._models.set([]);
       this._loading.set(false);
       return;
@@ -140,19 +166,23 @@ export class AiChatService {
   async setSelectedModel(modelId: string | null): Promise<void> {
     const projectId = this._projectId();
     const threadId = this._activeThreadId();
-    const nextId = modelId?.trim() || null;
+    const nextId = modelId?.trim() || this.resolveFallbackModelId();
+    if (!nextId) {
+      this._selectedModelId.set(null);
+      return;
+    }
     if (!projectId || !threadId || this._selectedModelId() === nextId) {
       this._selectedModelId.set(nextId);
       return;
     }
 
     this._selectedModelId.set(nextId);
-    const model = nextId ? (this._models().find((m) => m.id === nextId) ?? null) : null;
+    const model = this._models().find((m) => m.id === nextId) ?? null;
 
     try {
-      const updated = await this.projectsService.updateAiChat(projectId, threadId, nextId
-        ? { aiModelId: nextId }
-        : { clearAiModel: true });
+      const updated = await this.projectsService.updateAiChat(projectId, threadId, {
+        aiModelId: nextId,
+      });
       this._threads.update((list) =>
         list.map((t) =>
           t.id === threadId
@@ -166,7 +196,7 @@ export class AiChatService {
             : t,
         ),
       );
-      this._selectedModelId.set(updated.aiModelId ?? null);
+      this._selectedModelId.set(updated.aiModelId ?? nextId);
     } catch (err) {
       this.syncSelectedModelFromThread(threadId);
       this._error.set(problemDetailMessage(err as HttpErrorResponse));
@@ -216,7 +246,7 @@ export class AiChatService {
 
       if (remaining.length === 0) {
         const created = await this.projectsService.createAiChat(projectId, {
-          aiModelId: this._selectedModelId(),
+          aiModelId: this.resolveFallbackModelId(),
         });
         remaining = [this.summaryToThread(created)];
         this._threads.set(remaining);
@@ -249,7 +279,7 @@ export class AiChatService {
 
     try {
       const created = await this.projectsService.createAiChat(projectId, {
-        aiModelId: this._selectedModelId(),
+        aiModelId: this.resolveFallbackModelId(),
       });
       const thread = this.summaryToThread(created);
       this._threads.update((list) => [thread, ...list]);
@@ -297,7 +327,7 @@ export class AiChatService {
       let chatId = this._activeThreadId();
       if (!chatId) {
         const created = await this.projectsService.createAiChat(projectId, {
-          aiModelId: this._selectedModelId(),
+          aiModelId: this.resolveFallbackModelId(),
         });
         const thread = this.summaryToThread(created);
         this._threads.set([thread]);
@@ -353,9 +383,10 @@ export class AiChatService {
     this._error.set(null);
 
     try {
-      const [summariesResult, modelsResult] = await Promise.allSettled([
+      const [summariesResult, modelsResult, settingsResult] = await Promise.allSettled([
         this.projectsService.listAiChats(projectId),
         this.aiService.listAiModels(),
+        this.projectsService.getSettings(projectId),
       ]);
 
       if (token !== this.loadToken) {
@@ -366,6 +397,12 @@ export class AiChatService {
         this._models.set(modelsResult.value.filter((m) => m.isActive));
       }
 
+      if (settingsResult.status === 'fulfilled') {
+        this._projectDefaultModelId.set(settingsResult.value.defaultAiModelId ?? null);
+      } else {
+        this._projectDefaultModelId.set(null);
+      }
+
       if (summariesResult.status === 'rejected') {
         throw summariesResult.reason;
       }
@@ -373,7 +410,7 @@ export class AiChatService {
       let summaries = summariesResult.value;
       if (summaries.length === 0) {
         const created = await this.projectsService.createAiChat(projectId, {
-          aiModelId: this._selectedModelId(),
+          aiModelId: this.resolveFallbackModelId(),
         });
         if (token !== this.loadToken) {
           return;
@@ -393,7 +430,7 @@ export class AiChatService {
         this.rememberActive(projectId, activeId);
         await this.ensureMessagesLoaded(activeId, token);
       } else {
-        this._selectedModelId.set(null);
+        this._selectedModelId.set(this.resolveFallbackModelId());
       }
     } catch (err) {
       if (token !== this.loadToken) {
@@ -513,7 +550,51 @@ export class AiChatService {
 
   private syncSelectedModelFromThread(threadId: string): void {
     const thread = this._threads().find((t) => t.id === threadId);
-    this._selectedModelId.set(thread?.aiModelId ?? null);
+    const resolved =
+      thread?.aiModelId ??
+      this.resolveFallbackModelId();
+    this._selectedModelId.set(resolved);
+
+    // Persist project default onto chats that still have no model.
+    if (thread && !thread.aiModelId && resolved) {
+      void this.persistResolvedModel(threadId, resolved);
+    }
+  }
+
+  private resolveFallbackModelId(): string | null {
+    const projectDefault = this._projectDefaultModelId();
+    if (projectDefault && this._models().some((m) => m.id === projectDefault)) {
+      return projectDefault;
+    }
+    return this._models()[0]?.id ?? null;
+  }
+
+  private async persistResolvedModel(threadId: string, modelId: string): Promise<void> {
+    const projectId = this._projectId();
+    if (!projectId) {
+      return;
+    }
+
+    try {
+      const updated = await this.projectsService.updateAiChat(projectId, threadId, {
+        aiModelId: modelId,
+      });
+      const model = this._models().find((m) => m.id === modelId) ?? null;
+      this._threads.update((list) =>
+        list.map((t) =>
+          t.id === threadId
+            ? {
+                ...t,
+                aiModelId: updated.aiModelId ?? modelId,
+                aiModel: updated.aiModel ?? model,
+                updatedAt: updated.updatedAt ?? updated.createdAt,
+              }
+            : t,
+        ),
+      );
+    } catch {
+      // Non-fatal: UI still uses the resolved model for this session.
+    }
   }
 
   private rememberActive(projectId: string | null, chatId: string): void {

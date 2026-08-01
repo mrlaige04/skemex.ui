@@ -101,6 +101,33 @@ export const routes: Routes = [
         title: 'Tenants',
       },
       {
+        path: 'ai-providers/new',
+        loadComponent: () =>
+          import('./pages/admin/ai-providers/create-ai-provider-page.component').then(
+            (m) => m.CreateAiProviderPageComponent,
+          ),
+        data: { breadcrumb: 'Add AI provider' },
+        title: 'Add AI provider',
+      },
+      {
+        path: 'ai-providers/:providerId/edit',
+        loadComponent: () =>
+          import('./pages/admin/ai-providers/edit-ai-provider-page.component').then(
+            (m) => m.EditAiProviderPageComponent,
+          ),
+        data: { breadcrumb: 'Edit AI provider' },
+        title: 'Edit AI provider',
+      },
+      {
+        path: 'ai-providers',
+        loadComponent: () =>
+          import('./pages/admin/ai-providers/ai-providers-page.component').then(
+            (m) => m.AiProvidersPageComponent,
+          ),
+        data: { breadcrumb: 'AI Providers' },
+        title: 'AI Providers',
+      },
+      {
         path: 'users/new',
         loadComponent: () =>
           import('./pages/admin/users/create-sa-user-page.component').then((m) => m.CreateSaUserPageComponent),

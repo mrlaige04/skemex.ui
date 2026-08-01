@@ -1,0 +1,105 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">AI Providers</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        OpenAI-compatible providers used for chat and task decomposition. Secrets are encrypted at rest.
+      </p>
+    </div>
+    <a hlmBtn [routerLink]="providersNewLink">
+      <ng-icon hlm name="lucidePlus" size="sm" />
+      Add provider
+    </a>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="pt-6">
+      @if (listError(); as err) {
+        <p
+          class="mb-4 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      @if (loading()) {
+        <p class="text-muted-foreground text-sm">Loading providers…</p>
+      } @else if (providers().length === 0) {
+        <div class="flex flex-col items-center gap-3 py-10 text-center">
+          <ng-icon hlm name="lucideBot" size="lg" class="text-muted-foreground" />
+          <p class="text-muted-foreground text-sm">No AI providers yet. Add Groq, Gemini, OpenAI, or any OpenAI-compatible API.</p>
+          <a hlmBtn [routerLink]="providersNewLink">Add provider</a>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b text-muted-foreground">
+                <th class="pb-3 pr-4 font-medium">Name</th>
+                <th class="pb-3 pr-4 font-medium">Key</th>
+                <th class="pb-3 pr-4 font-medium">Base URL</th>
+                <th class="pb-3 pr-4 font-medium">Enabled</th>
+                <th class="pb-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (provider of providers(); track provider.id) {
+                <tr class="border-b last:border-0">
+                  <td class="py-3 pr-4 font-medium">{{ provider.name }}</td>
+                  <td class="text-muted-foreground py-3 pr-4 font-mono text-xs">{{ provider.key }}</td>
+                  <td class="text-muted-foreground max-w-xs truncate py-3 pr-4" [title]="provider.baseUrl">
+                    {{ provider.baseUrl }}
+                  </td>
+                  <td class="py-3 pr-4">
+                    @if (provider.isEnabled) {
+                      <span class="text-emerald-600 dark:text-emerald-400">Yes</span>
+                    } @else {
+                      <span class="text-muted-foreground">No</span>
+                    }
+                  </td>
+                  <td class="py-3">
+                    <div class="flex justify-end gap-0.5">
+                      <a
+                        hlmBtn
+                        variant="ghost"
+                        size="icon"
+                        [routerLink]="editLink(provider.id)"
+                        [attr.aria-label]="'Edit ' + provider.name"
+                      >
+                        <ng-icon hlm name="lucidePencil" size="sm" />
+                      </a>
+                      <button
+                        type="button"
+                        hlmBtn
+                        variant="ghost"
+                        size="icon"
+                        class="text-destructive hover:text-destructive"
+                        [attr.aria-label]="'Delete ' + provider.name"
+                        [disabled]="deletingId() === provider.id"
+                        (click)="deleteProvider(provider)"
+                      >
+                        <ng-icon hlm name="lucideTrash2" size="sm" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
+  <app-confirm-alert-dialog
+    [(state)]="confirmDialogState"
+    title="Delete AI provider?"
+    confirmLabel="Delete"
+    (confirmed)="confirmDelete()"
+  >
+    Permanently delete
+    <span class="font-medium text-foreground">“{{ pendingDeleteName() }}”</span>
+    and deactivate its catalog models. This cannot be undone.
+  </app-confirm-alert-dialog>
+</div>

@@ -17,7 +17,7 @@ import { HlmInputImports } from 'spartan/input';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
 import { isTransientHttpFailure, problemDetailMessage } from '../../http/problem-details';
-import type { AiModelDto } from '../../models/ai-chat/ai-chat.models';
+import { groupAiModelsByProvider, aiAuthorIconSrc, type AiModelDto } from '../../models/ai-chat/ai-chat.models';
 import type { ProjectSettingsDto } from '../../models/projects/projects.models';
 import { AiService } from '../../services/ai/ai.service';
 import { ProjectsService } from '../../services/projects/projects.service';
@@ -80,12 +80,30 @@ export class ProjectSettingsAiTabComponent implements OnInit {
     );
   });
 
+  readonly modelsByProvider = computed(() => groupAiModelsByProvider(this.models()));
+  readonly authorIconSrc = aiAuthorIconSrc;
+
+  readonly selectedDefaultModel = computed(() => {
+    const id = this.model().defaultAiModelId;
+    if (!id) {
+      return null;
+    }
+    return this.models().find((m) => m.id === id) ?? null;
+  });
+
+  modelById(value: unknown) {
+    if (value === NONE_MODEL || value == null || value === '') {
+      return null;
+    }
+    const id = String(value);
+    return this.models().find((m) => m.id === id) ?? null;
+  }
+
   readonly modelLabel = (value: unknown): string => {
     if (value === NONE_MODEL || value == null || value === '') {
       return 'No default';
     }
-    const id = String(value);
-    return this.models().find((m) => m.id === id)?.displayName ?? id;
+    return this.modelById(value)?.displayName ?? String(value);
   };
 
   ngOnInit(): void {
