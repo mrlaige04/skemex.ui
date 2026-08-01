@@ -103,6 +103,18 @@
               <li hlmSidebarMenuItem>
                 <a
                   hlmSidebarMenuButton
+                  [routerLink]="adminSection('ai-providers')"
+                  routerLinkActive
+                  #adminAiProvidersRla="routerLinkActive"
+                  [isActive]="adminAiProvidersRla.isActive"
+                >
+                  <ng-icon hlm name="lucideBot" />
+                  <span>AI Providers</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
                   [routerLink]="adminSection('users')"
                   routerLinkActive
                   #adminUsersRla="routerLinkActive"

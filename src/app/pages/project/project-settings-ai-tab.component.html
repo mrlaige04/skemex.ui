@@ -39,21 +39,52 @@
             (valueChange)="updateDefaultModel($event)"
           >
             <hlm-select-trigger id="ai-default-model" class="w-full">
-              <hlm-select-value placeholder="Select a model" />
+              @if (selectedDefaultModel(); as selected) {
+                <span class="inline-flex min-w-0 flex-1 items-center gap-2">
+                  @if (authorIconSrc(selected.author); as iconSrc) {
+                    <img
+                      [src]="iconSrc"
+                      [alt]="selected.author ?? ''"
+                      width="16"
+                      height="16"
+                      class="size-4 shrink-0 object-contain"
+                    />
+                  } @else {
+                    <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
+                  }
+                  <span class="truncate">{{ selected.displayName }}</span>
+                </span>
+              } @else {
+                <span class="text-muted-foreground">No default</span>
+              }
             </hlm-select-trigger>
             <hlm-select-content *hlmSelectPortal>
               <hlm-select-group>
                 <hlm-select-item [value]="noneModelValue">No default</hlm-select-item>
-                @for (aiModel of models(); track aiModel.id) {
-                  <hlm-select-item [value]="aiModel.id">
-                    <span class="inline-flex items-center gap-2">
-                      <ng-icon hlm name="lucideBot" size="sm" />
-                      <span>{{ aiModel.displayName }}</span>
-                      <span class="text-muted-foreground text-xs">{{ aiModel.provider }}</span>
-                    </span>
-                  </hlm-select-item>
-                }
               </hlm-select-group>
+              @for (group of modelsByProvider(); track group.provider) {
+                <hlm-select-group>
+                  <hlm-select-label>{{ group.providerName }}</hlm-select-label>
+                  @for (aiModel of group.models; track aiModel.id) {
+                    <hlm-select-item [value]="aiModel.id">
+                      <span class="inline-flex items-center gap-2">
+                        @if (authorIconSrc(aiModel.author); as iconSrc) {
+                          <img
+                            [src]="iconSrc"
+                            [alt]="aiModel.author ?? ''"
+                            width="16"
+                            height="16"
+                            class="size-4 shrink-0 object-contain"
+                          />
+                        } @else {
+                          <ng-icon hlm name="lucideBot" size="sm" />
+                        }
+                        <span>{{ aiModel.displayName }}</span>
+                      </span>
+                    </hlm-select-item>
+                  }
+                </hlm-select-group>
+              }
             </hlm-select-content>
           </hlm-select>
           <p class="text-muted-foreground text-xs">

@@ -17,6 +17,7 @@ import {
 } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideBot,
   lucideBuilding2,
   lucideCheck,
   lucideChevronsUpDown,
@@ -52,6 +53,7 @@ import { AuthService } from '../../services/auth/auth.service';
   ],
   providers: [
     provideIcons({
+      lucideBot,
       lucideBuilding2,
       lucideLayoutDashboard,
       lucideUsers,

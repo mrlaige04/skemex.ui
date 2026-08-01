@@ -1,0 +1,160 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="providersListLink"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to AI providers
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Add AI provider</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Configure an OpenAI-compatible endpoint. Chat models are synced after create.
+      </p>
+    </div>
+  </div>
+
+  <div hlmCard class="w-full">
+    <div hlmCardHeader>
+      <h2 hlmCardTitle>Provider details</h2>
+      <p hlmCardDescription>Key is immutable after create and is stored on synced models.</p>
+    </div>
+
+    <div hlmCardContent>
+      <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+        @for (err of providerForm().errorSummary(); track err.kind + (err.message ?? '')) {
+          @if (err.kind === 'server') {
+            <p
+              class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ err.message }}
+            </p>
+          }
+        }
+
+        <div class="space-y-2">
+          <label hlmLabel for="provider-name">Display name</label>
+          <input
+            hlmInput
+            id="provider-name"
+            type="text"
+            placeholder="Groq"
+            [formField]="providerForm.name"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="provider-key">Key</label>
+          <input
+            hlmInput
+            id="provider-key"
+            type="text"
+            placeholder="Groq"
+            class="font-mono"
+            [formField]="providerForm.key"
+          />
+          <p class="text-muted-foreground text-xs">Letters, digits, underscores, and hyphens only.</p>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="provider-base-url">Base URL</label>
+          <input
+            hlmInput
+            id="provider-base-url"
+            type="url"
+            placeholder="https://api.groq.com/openai/v1"
+            [formField]="providerForm.baseUrl"
+          />
+        </div>
+
+        <label class="flex items-start gap-2 text-sm">
+          <hlm-checkbox
+            class="mt-0.5"
+            [checked]="model().isEnabled"
+            (checkedChange)="onEnabledChange($event === true)"
+            aria-label="Enabled"
+          />
+          <span>
+            <span class="font-medium">Enabled</span>
+            <span class="text-muted-foreground block text-xs"
+              >Disabled providers are skipped for catalog sync and chat.</span
+            >
+          </span>
+        </label>
+
+        <div class="space-y-3 border-t pt-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-medium">Authorization</h3>
+              <p class="text-muted-foreground text-xs">
+                Add header or query credentials (e.g. Authorization / Bearer …, or x-goog-api-key).
+              </p>
+            </div>
+            <button type="button" hlmBtn variant="outline" size="sm" (click)="addAuthRow()">
+              <ng-icon hlm name="lucidePlus" size="sm" />
+              Add entry
+            </button>
+          </div>
+
+          @for (row of authRows(); track $index; let i = $index) {
+            <div class="grid gap-2 sm:grid-cols-[9rem_1fr_1fr_auto] sm:items-start">
+              <hlm-select
+                [value]="row.type"
+                (valueChange)="onAuthTypeChange(i, $event)"
+              >
+                <hlm-select-trigger class="w-full">
+                  <hlm-select-value placeholder="Type" />
+                </hlm-select-trigger>
+                <hlm-select-content *hlmSelectPortal>
+                  <hlm-select-group>
+                    @for (opt of authTypes; track opt.value) {
+                      <hlm-select-item [value]="opt.value">{{ opt.label }}</hlm-select-item>
+                    }
+                  </hlm-select-group>
+                </hlm-select-content>
+              </hlm-select>
+              <input
+                hlmInput
+                type="text"
+                placeholder="Name"
+                [value]="row.name"
+                (input)="updateAuthRow(i, { name: $any($event.target).value })"
+              />
+              <input
+                hlmInput
+                type="text"
+                placeholder="Value"
+                [value]="row.value"
+                (input)="updateAuthRow(i, { value: $any($event.target).value })"
+              />
+              <button
+                type="button"
+                hlmBtn
+                variant="ghost"
+                size="icon"
+                class="text-destructive hover:text-destructive"
+                (click)="removeAuthRow(i)"
+                aria-label="Remove auth entry"
+              >
+                <ng-icon hlm name="lucideTrash2" size="sm" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+          <a hlmBtn variant="outline" [routerLink]="providersListLink" [class.pointer-events-none]="saving()"
+            >Cancel</a
+          >
+          <button type="submit" hlmBtn [disabled]="saving()">
+            {{ saving() ? 'Creating…' : 'Create provider' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

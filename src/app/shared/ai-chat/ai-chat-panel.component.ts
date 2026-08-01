@@ -3,6 +3,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   ElementRef,
   inject,
@@ -28,10 +29,9 @@ import {
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSelectImports } from 'spartan/select';
+import { groupAiModelsByProvider, aiAuthorIconSrc } from '../../models/ai-chat/ai-chat.models';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ConfirmAlertDialogComponent } from '../confirm-alert-dialog/confirm-alert-dialog.component';
-
-const PROJECT_DEFAULT_MODEL = '__project_default__';
 
 @Component({
   selector: 'app-ai-chat-panel',
@@ -69,7 +69,6 @@ export class AiChatPanelComponent {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
 
-  readonly projectDefaultModelValue = PROJECT_DEFAULT_MODEL;
   readonly draft = signal('');
   readonly editingId = signal<string | null>(null);
   readonly editTitle = signal('');
@@ -79,18 +78,29 @@ export class AiChatPanelComponent {
   readonly pendingDeleteTitle = signal('');
   private deleteTargetId: string | null = null;
 
-  readonly modelLabel = (value: unknown): string => {
-    if (value === PROJECT_DEFAULT_MODEL || value == null || value === '') {
-      return 'Project default';
+  readonly modelsByProvider = computed(() => groupAiModelsByProvider(this.chat.models()));
+  readonly authorIconSrc = aiAuthorIconSrc;
+
+  modelById(value: unknown) {
+    if (value == null || value === '') {
+      return null;
     }
     const id = String(value);
-    return this.chat.models().find((m) => m.id === id)?.displayName ?? id;
+    return this.chat.models().find((m) => m.id === id) ?? null;
+  }
+
+  readonly modelLabel = (value: unknown): string => {
+    if (value == null || value === '') {
+      return 'Select model';
+    }
+    return this.modelById(value)?.displayName ?? String(value);
   };
 
   onModelChange(value: unknown): void {
-    const id =
-      value === PROJECT_DEFAULT_MODEL || value == null || value === '' ? null : String(value);
-    void this.chat.setSelectedModel(id);
+    if (value == null || value === '') {
+      return;
+    }
+    void this.chat.setSelectedModel(String(value));
   }
 
   constructor() {

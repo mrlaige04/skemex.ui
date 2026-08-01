@@ -1,0 +1,262 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="providersListLink"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to AI providers
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">{{ pageTitle() }}</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Update connection settings. Leave auth values blank to keep existing secrets.
+      </p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="text-muted-foreground text-sm">Loading…</p>
+  } @else if (loadError(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  } @else {
+    <div hlmCard class="w-full">
+      <div hlmCardHeader>
+        <h2 hlmCardTitle>Provider details</h2>
+        <p hlmCardDescription>
+          Key
+          <span class="font-mono">{{ providerKey() }}</span>
+          cannot be changed.
+        </p>
+      </div>
+
+      <div hlmCardContent>
+        <form novalidate (submit)="onSubmit($event)" class="space-y-5">
+          @for (err of providerForm().errorSummary(); track err.kind + (err.message ?? '')) {
+            @if (err.kind === 'server') {
+              <p
+                class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                role="alert"
+              >
+                {{ err.message }}
+              </p>
+            }
+          }
+
+          <div class="space-y-2">
+            <label hlmLabel for="provider-name">Display name</label>
+            <input hlmInput id="provider-name" type="text" [formField]="providerForm.name" />
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="provider-key">Key</label>
+            <input
+              hlmInput
+              id="provider-key"
+              type="text"
+              class="font-mono"
+              [value]="providerKey()"
+              disabled
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="provider-base-url">Base URL</label>
+            <input hlmInput id="provider-base-url" type="url" [formField]="providerForm.baseUrl" />
+          </div>
+
+          <label class="flex items-start gap-2 text-sm">
+            <hlm-checkbox
+              class="mt-0.5"
+              [checked]="model().isEnabled"
+              (checkedChange)="onEnabledChange($event === true)"
+              aria-label="Enabled"
+            />
+            <span>
+              <span class="font-medium">Enabled</span>
+              <span class="text-muted-foreground block text-xs"
+                >Disabled providers are skipped for catalog sync and chat.</span
+              >
+            </span>
+          </label>
+
+          <div class="space-y-3 border-t pt-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-medium">Authorization</h3>
+                <p class="text-muted-foreground text-xs">
+                  Leave value blank to keep the existing secret for that entry.
+                </p>
+              </div>
+              <button type="button" hlmBtn variant="outline" size="sm" (click)="addAuthRow()">
+                <ng-icon hlm name="lucidePlus" size="sm" />
+                Add entry
+              </button>
+            </div>
+
+            @for (row of authRows(); track $index; let i = $index) {
+              <div class="grid gap-2 sm:grid-cols-[9rem_1fr_1fr_auto] sm:items-start">
+                <hlm-select
+                  [value]="row.type"
+                  (valueChange)="onAuthTypeChange(i, $event)"
+                >
+                  <hlm-select-trigger class="w-full">
+                    <hlm-select-value placeholder="Type" />
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    <hlm-select-group>
+                      @for (opt of authTypes; track opt.value) {
+                        <hlm-select-item [value]="opt.value">{{ opt.label }}</hlm-select-item>
+                      }
+                    </hlm-select-group>
+                  </hlm-select-content>
+                </hlm-select>
+                <input
+                  hlmInput
+                  type="text"
+                  placeholder="Name"
+                  [value]="row.name"
+                  (input)="updateAuthRow(i, { name: $any($event.target).value })"
+                />
+                <input
+                  hlmInput
+                  type="text"
+                  [placeholder]="row.hasValue ? 'Leave blank to keep' : 'Value'"
+                  [value]="row.value"
+                  (input)="updateAuthRow(i, { value: $any($event.target).value })"
+                />
+                <button
+                  type="button"
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  class="text-destructive hover:text-destructive"
+                  (click)="removeAuthRow(i)"
+                  aria-label="Remove auth entry"
+                >
+                  <ng-icon hlm name="lucideTrash2" size="sm" />
+                </button>
+              </div>
+            }
+          </div>
+
+          <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0">
+            <a
+              hlmBtn
+              variant="outline"
+              [routerLink]="providersListLink"
+              [class.pointer-events-none]="saving()"
+              >Cancel</a
+            >
+            <button type="submit" hlmBtn [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div hlmCard class="w-full">
+      <div hlmCardHeader>
+        <h2 hlmCardTitle>Models</h2>
+        <p hlmCardDescription>
+          Enable or disable models for this provider and rename how they appear in the app. External
+          id and other catalog fields are read-only.
+        </p>
+      </div>
+      <div hlmCardContent>
+        @if (modelsLoading()) {
+          <p class="text-muted-foreground text-sm">Loading models…</p>
+        } @else if (modelsError(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        } @else if (modelRows().length === 0) {
+          <p class="text-muted-foreground text-sm">
+            No models synced yet. Save provider settings with a valid URL and auth to fetch the
+            catalog.
+          </p>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="text-muted-foreground border-b">
+                  <th class="pb-3 pr-3 font-medium">Display name</th>
+                  <th class="pb-3 pr-3 font-medium">External id</th>
+                  <th class="pb-3 pr-3 font-medium">Author</th>
+                  <th class="pb-3 pr-3 font-medium">Icon</th>
+                  <th class="pb-3 pr-3 font-medium">Active</th>
+                  <th class="pb-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of modelRows(); track row.id) {
+                  <tr class="border-b last:border-0 align-top">
+                    <td class="py-3 pr-3">
+                      <input
+                        hlmInput
+                        type="text"
+                        class="min-w-[10rem]"
+                        [value]="row.displayName"
+                        [disabled]="row.saving"
+                        (input)="
+                          updateModelRow(row.id, { displayName: $any($event.target).value })
+                        "
+                        [attr.aria-label]="'Display name for ' + row.externalId"
+                      />
+                      @if (row.error; as modelErr) {
+                        <p class="mt-1 text-xs text-red-700 dark:text-red-300">{{ modelErr }}</p>
+                      }
+                    </td>
+                    <td class="text-muted-foreground max-w-[14rem] truncate py-3 pr-3 font-mono text-xs" [title]="row.externalId">
+                      {{ row.externalId }}
+                    </td>
+                    <td class="text-muted-foreground py-3 pr-3">
+                      {{ row.author || '—' }}
+                    </td>
+                    <td class="text-muted-foreground py-3 pr-3 font-mono text-xs">
+                      {{ row.iconKey || '—' }}
+                    </td>
+                    <td class="py-3 pr-3">
+                      <hlm-checkbox
+                        class="mt-1"
+                        [checked]="row.isActive"
+                        [disabled]="row.saving"
+                        (checkedChange)="updateModelRow(row.id, { isActive: $event === true })"
+                        [attr.aria-label]="'Active ' + row.externalId"
+                      />
+                    </td>
+                    <td class="py-3">
+                      <div class="flex justify-end">
+                        <button
+                          type="button"
+                          hlmBtn
+                          size="sm"
+                          variant="outline"
+                          [disabled]="row.saving || !isModelDirty(row)"
+                          (click)="saveModel(row.id)"
+                        >
+                          {{ row.saving ? 'Saving…' : 'Save' }}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
