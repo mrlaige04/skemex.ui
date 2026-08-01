@@ -293,3 +293,14 @@
     }
   </div>
 </section>
+
+<app-confirm-alert-dialog
+  [(state)]="confirmDialogState"
+  title="Delete column?"
+  confirmLabel="Delete"
+  (confirmed)="confirmDeleteColumn()"
+>
+  Delete
+  <span class="font-medium text-foreground">“{{ pendingDeleteColumnTitle() }}”</span>?
+  This may affect projects that use it.
+</app-confirm-alert-dialog>

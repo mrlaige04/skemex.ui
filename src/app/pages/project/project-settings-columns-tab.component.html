@@ -636,3 +636,14 @@
   </div>
 </section>
 
+<app-confirm-alert-dialog
+  [(state)]="confirmDialogState"
+  title="Remove column?"
+  confirmLabel="Remove"
+  (confirmed)="confirmDeleteColumn()"
+>
+  Remove
+  <span class="font-medium text-foreground">“{{ pendingDeleteColumnTitle() }}”</span>
+  from this project?
+</app-confirm-alert-dialog>
+

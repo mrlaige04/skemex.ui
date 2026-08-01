@@ -22,6 +22,7 @@ import { problemDetailMessage } from '../../../http/problem-details';
 import type { TenantUserDto } from '../../../models/users/users.models';
 import { APP_PATHS } from '../../../routing/app-paths';
 import { UsersService } from '../../../services/users/users.service';
+import { ConfirmAlertDialogComponent } from '../../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import {
   RichTableComponent,
   type RichTableColumn,
@@ -45,6 +46,7 @@ function formatUserDate(iso: string): string {
     RouterLink,
     NgIcon,
     RichTableComponent,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -68,6 +70,8 @@ export class UsersPageComponent implements OnInit, UsersTableHost {
   readonly listError = signal<string | null>(null);
   readonly users = signal<TenantUserDto[]>([]);
   readonly searchInput = signal('');
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingDeleteUser = signal<TenantUserDto | null>(null);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly totalItems = signal(0);
@@ -154,9 +158,23 @@ export class UsersPageComponent implements OnInit, UsersTableHost {
     this.pageSize.set(change.page);
   }
 
-  async deleteUser(user: TenantUserDto): Promise<void> {
-    const name = this.fullName(user) || user.email;
-    if (!confirm(`Remove ${name} from this workspace?`)) {
+  deleteUser(user: TenantUserDto): void {
+    this.pendingDeleteUser.set(user);
+    this.confirmDialogState.set('open');
+  }
+
+  pendingDeleteUserName(): string {
+    const user = this.pendingDeleteUser();
+    if (!user) {
+      return '';
+    }
+    return this.fullName(user) || user.email;
+  }
+
+  async confirmDeleteUser(): Promise<void> {
+    const user = this.pendingDeleteUser();
+    this.pendingDeleteUser.set(null);
+    if (!user) {
       return;
     }
 

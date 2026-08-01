@@ -122,3 +122,14 @@
     </app-rich-table>
   </div>
 </section>
+
+<app-confirm-alert-dialog
+  [(state)]="confirmDialogState"
+  title="Remove user?"
+  confirmLabel="Remove"
+  (confirmed)="confirmRemoveUser()"
+>
+  Remove
+  <span class="font-medium text-foreground">{{ pendingRemoveUserName() }}</span>
+  from this project?
+</app-confirm-alert-dialog>

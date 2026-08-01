@@ -22,6 +22,7 @@ import { problemDetailMessage } from '../../../http/problem-details';
 import type { SaTenantDto } from '../../../models/admin/tenants.models';
 import { adminAbsolutePath } from '../../../routing/app-paths';
 import { SaTenantsService } from '../../../services/admin/sa-tenants.service';
+import { ConfirmAlertDialogComponent } from '../../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import {
   RichTableComponent,
   type RichTableColumn,
@@ -45,6 +46,7 @@ function formatTenantDate(iso: string): string {
     RouterLink,
     NgIcon,
     RichTableComponent,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -68,6 +70,8 @@ export class TenantsPageComponent implements OnInit, TenantsTableHost {
   readonly listError = signal<string | null>(null);
   readonly tenants = signal<SaTenantDto[]>([]);
   readonly searchInput = signal('');
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingDeleteTenant = signal<SaTenantDto | null>(null);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
   readonly totalItems = signal(0);
@@ -152,9 +156,20 @@ export class TenantsPageComponent implements OnInit, TenantsTableHost {
     this.pageSize.set(change.page);
   }
 
-  async deleteTenant(tenant: SaTenantDto): Promise<void> {
-    const name = this.displayName(tenant);
-    if (!confirm(`Delete workspace "${name}"? This cannot be undone.`)) {
+  deleteTenant(tenant: SaTenantDto): void {
+    this.pendingDeleteTenant.set(tenant);
+    this.confirmDialogState.set('open');
+  }
+
+  pendingDeleteTenantName(): string {
+    const tenant = this.pendingDeleteTenant();
+    return tenant ? this.displayName(tenant) : '';
+  }
+
+  async confirmDeleteTenant(): Promise<void> {
+    const tenant = this.pendingDeleteTenant();
+    this.pendingDeleteTenant.set(null);
+    if (!tenant) {
       return;
     }
 

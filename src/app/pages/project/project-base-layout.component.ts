@@ -124,7 +124,6 @@ export class ProjectBaseLayoutComponent implements OnInit {
       .subscribe(() => refreshCrumb());
   }
   ngOnInit(): void {
-    void this.loadProject();
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       void this.loadProject();
     });

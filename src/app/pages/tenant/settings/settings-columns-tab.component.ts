@@ -28,6 +28,7 @@ import { HlmLabelImports } from 'spartan/label';
 import { problemDetailMessage } from '../../../http/problem-details';
 import type { TenantColumnDto } from '../../../models/tenant-columns/tenant-columns.models';
 import { TenantColumnsService } from '../../../services/tenant-columns/tenant-columns.service';
+import { ConfirmAlertDialogComponent } from '../../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 
 function slugifyKey(value: string): string {
   return value
@@ -53,6 +54,7 @@ const DEFAULT_KANBAN_COLUMNS = [
     NgIcon,
     CdkDrag,
     CdkDropList,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmCheckboxImports,
@@ -86,6 +88,8 @@ export class SettingsColumnsTabComponent implements OnInit {
   readonly columns = signal<TenantColumnDto[]>([]);
   readonly editingColumnId = signal<string | null>(null);
   readonly deletingColumnId = signal<string | null>(null);
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingDeleteColumn = signal<TenantColumnDto | null>(null);
   readonly showCreateForm = signal(false);
   readonly createSubmitted = signal(false);
   readonly editSubmitted = signal(false);
@@ -245,8 +249,19 @@ export class SettingsColumnsTabComponent implements OnInit {
     }
   }
 
-  async deleteColumn(column: TenantColumnDto): Promise<void> {
-    if (!confirm(`Delete column "${column.title}"?`)) {
+  deleteColumn(column: TenantColumnDto): void {
+    this.pendingDeleteColumn.set(column);
+    this.confirmDialogState.set('open');
+  }
+
+  pendingDeleteColumnTitle(): string {
+    return this.pendingDeleteColumn()?.title ?? '';
+  }
+
+  async confirmDeleteColumn(): Promise<void> {
+    const column = this.pendingDeleteColumn();
+    this.pendingDeleteColumn.set(null);
+    if (!column) {
       return;
     }
 

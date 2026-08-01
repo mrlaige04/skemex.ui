@@ -20,7 +20,7 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
-import { problemDetailMessage } from '../../http/problem-details';
+import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import type {
   ProjectColumnDto,
   ProjectTaskDto,
@@ -286,7 +286,9 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
       this.members.set(members.items);
       await this.refreshList();
     } catch (err) {
-      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      }
       this.projectId = null;
     } finally {
       this.loading.set(false);

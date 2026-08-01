@@ -25,10 +25,11 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputImports } from 'spartan/input';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
-import { problemDetailMessage } from '../../http/problem-details';
+import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import type { ProjectColumnDto, ProjectSettingsDto } from '../../models/projects/projects.models';
 import type { TenantColumnDto } from '../../models/tenant-columns/tenant-columns.models';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import {
   computeProjectColumnSortOrders,
   formatSortOrder,
@@ -52,6 +53,7 @@ function slugifyKey(value: string): string {
     NgIcon,
     CdkDrag,
     CdkDropList,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -87,6 +89,8 @@ export class ProjectSettingsColumnsTabComponent implements OnInit {
   readonly columns = signal<ProjectColumnDto[]>([]);
   readonly availableColumns = signal<TenantColumnDto[]>([]);
   readonly deletingColumnId = signal<string | null>(null);
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingDeleteColumn = signal<ProjectColumnDto | null>(null);
   readonly editingColumnId = signal<string | null>(null);
   readonly showAddForm = signal(false);
   readonly addSubmitted = signal(false);
@@ -322,12 +326,23 @@ export class ProjectSettingsColumnsTabComponent implements OnInit {
     }
   }
 
-  async deleteColumn(column: ProjectColumnDto): Promise<void> {
+  deleteColumn(column: ProjectColumnDto): void {
     if (!this.canDelete(column) || !this.projectId) {
       return;
     }
 
-    if (!confirm(`Remove column "${column.title}" from this project?`)) {
+    this.pendingDeleteColumn.set(column);
+    this.confirmDialogState.set('open');
+  }
+
+  pendingDeleteColumnTitle(): string {
+    return this.pendingDeleteColumn()?.title ?? '';
+  }
+
+  async confirmDeleteColumn(): Promise<void> {
+    const column = this.pendingDeleteColumn();
+    this.pendingDeleteColumn.set(null);
+    if (!column || !this.projectId) {
       return;
     }
 
@@ -424,7 +439,9 @@ export class ProjectSettingsColumnsTabComponent implements OnInit {
       this.defaultTaskColumnId.set(settings.defaultTaskColumnId);
       this.selectedTenantColumnId.set(available[0]?.id ?? null);
     } catch (err) {
-      this.error.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.error.set(problemDetailMessage(err as HttpErrorResponse));
+      }
       this.columns.set([]);
       this.availableColumns.set([]);
       this.projectId = null;

@@ -20,11 +20,12 @@ import { HlmCardImports } from 'spartan/card';
 import { HlmDialogImports } from 'spartan/dialog';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
-import { problemDetailMessage } from '../../http/problem-details';
+import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import type { ProjectUserDto } from '../../models/projects/projects.models';
 import type { TenantUserDto } from '../../models/users/users.models';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { UsersService } from '../../services/users/users.service';
+import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import {
   RichTableComponent,
   type RichTableColumn,
@@ -56,6 +57,7 @@ function isActiveTenantUser(user: TenantUserDto): boolean {
     BrnDialogContent,
     NgIcon,
     RichTableComponent,
+    ConfirmAlertDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmDialogImports,
@@ -87,6 +89,8 @@ export class ProjectSettingsUsersTabComponent implements OnInit, ProjectUsersTab
   readonly deletingId = signal<string | null>(null);
 
   readonly addDialogState = signal<'open' | 'closed'>('closed');
+  readonly confirmDialogState = signal<'open' | 'closed'>('closed');
+  readonly pendingRemoveUser = signal<ProjectUserDto | null>(null);
   readonly candidateLoading = signal(false);
   readonly candidateError = signal<string | null>(null);
   readonly candidateSearch = signal('');
@@ -203,13 +207,15 @@ export class ProjectSettingsUsersTabComponent implements OnInit, ProjectUsersTab
     }
   }
 
-  async removeUser(user: ProjectUserDto): Promise<void> {
-    if (!this.projectId) {
-      return;
-    }
+  removeUser(user: ProjectUserDto): void {
+    this.pendingRemoveUser.set(user);
+    this.confirmDialogState.set('open');
+  }
 
-    const name = this.fullName(user) || user.email;
-    if (!confirm(`Remove ${name} from this project?`)) {
+  async confirmRemoveUser(): Promise<void> {
+    const user = this.pendingRemoveUser();
+    this.pendingRemoveUser.set(null);
+    if (!user || !this.projectId) {
       return;
     }
 
@@ -223,6 +229,14 @@ export class ProjectSettingsUsersTabComponent implements OnInit, ProjectUsersTab
     } finally {
       this.deletingId.set(null);
     }
+  }
+
+  pendingRemoveUserName(): string {
+    const user = this.pendingRemoveUser();
+    if (!user) {
+      return '';
+    }
+    return this.fullName(user) || user.email;
   }
 
   private async loadProject(): Promise<void> {
@@ -250,7 +264,9 @@ export class ProjectSettingsUsersTabComponent implements OnInit, ProjectUsersTab
       this.projectId = project.id;
       await this.refreshList();
     } catch (err) {
-      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      }
       this.users.set([]);
       this.totalItems.set(0);
       this.projectId = null;
@@ -282,7 +298,9 @@ export class ProjectSettingsUsersTabComponent implements OnInit, ProjectUsersTab
       this.pagingEnabled = true;
       await this.refreshMemberIds();
     } catch (err) {
-      this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.listError.set(problemDetailMessage(err as HttpErrorResponse));
+      }
       this.users.set([]);
       this.totalItems.set(0);
       this.pagingEnabled = true;

@@ -59,7 +59,8 @@
   --destructive: #e23b2d;
   --border: #c5ced8;
   --input: #c5ced8;
-  --ring: #e23b2d;
+  /* Spartan default focus ring (neutral gray, not destructive) */
+  --ring: oklch(0.708 0 0);
 
   /* Light rail — same family as mist/paper product UI */
   --sidebar: #f4f7fa;
@@ -69,7 +70,7 @@
   --sidebar-accent: #e8edf2;
   --sidebar-accent-foreground: #0c1219;
   --sidebar-border: #c5ced8;
-  --sidebar-ring: #e23b2d;
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -91,7 +92,7 @@
   --destructive: #e23b2d;
   --border: rgb(244 247 250 / 12%);
   --input: rgb(244 247 250 / 15%);
-  --ring: #e23b2d;
+  --ring: oklch(0.556 0 0);
 
   --sidebar: #0c1219;
   --sidebar-foreground: #f4f7fa;
@@ -100,7 +101,7 @@
   --sidebar-accent: #1a2430;
   --sidebar-accent-foreground: #f4f7fa;
   --sidebar-border: rgb(244 247 250 / 12%);
-  --sidebar-ring: #e23b2d;
+  --sidebar-ring: oklch(0.556 0 0);
 
   --radius-sm: 0.2rem;
   --radius-md: 0.2rem;

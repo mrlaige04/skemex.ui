@@ -20,7 +20,7 @@ import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmLabelImports } from 'spartan/label';
-import { problemDetailMessage } from '../../http/problem-details';
+import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import { ProjectsService } from '../../services/projects/projects.service';
 
 type MainInfoField = 'name' | 'description';
@@ -120,7 +120,9 @@ export class ProjectSettingsMainInfoTabComponent implements OnInit {
         description,
       });
     } catch (err) {
-      this.formError.set(problemDetailMessage(err as HttpErrorResponse));
+      if (!isTransientHttpFailure(err)) {
+        this.formError.set(problemDetailMessage(err as HttpErrorResponse));
+      }
       this.projectId = null;
     } finally {
       this.loading.set(false);

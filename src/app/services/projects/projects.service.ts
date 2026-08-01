@@ -20,12 +20,23 @@ import type {
   UpdateProjectSettingsRequest,
   UpdateProjectTaskRequest,
 } from '../../models/projects/projects.models';
+import type {
+  AiChatDto,
+  AiChatMessageDto,
+  AiChatSummaryDto,
+  CreateAiChatRequest,
+  UpdateAiChatRequest,
+  CreateAiChatMessageRequest,
+  UpdateAiChatMessageRequest,
+} from '../../models/ai-chat/ai-chat.models';
 import type { TenantColumnDto } from '../../models/tenant-columns/tenant-columns.models';
 import { BaseHttp } from '../http/base-http.service';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
   private readonly api = inject(BaseHttp);
+  /** Dedupes concurrent resolve-by-code lookups (guard + layout + tabs). */
+  private readonly byCodeInflight = new Map<string, Promise<ProjectDto | null>>();
 
   list(search?: string, page = 1, pageSize = 10): Promise<PaginatedList<ProjectDto>> {
     const params: Record<string, string | number> = { page, pageSize };
@@ -53,8 +64,22 @@ export class ProjectsService {
       return null;
     }
 
-    const page = await this.list(normalized, 1, 100);
-    return page.items.find((project) => project.code.toUpperCase() === normalized) ?? null;
+    const inflight = this.byCodeInflight.get(normalized);
+    if (inflight) {
+      return inflight;
+    }
+
+    const request = this.list(normalized, 1, 100)
+      .then(
+        (page) =>
+          page.items.find((project) => project.code.toUpperCase() === normalized) ?? null,
+      )
+      .finally(() => {
+        this.byCodeInflight.delete(normalized);
+      });
+
+    this.byCodeInflight.set(normalized, request);
+    return request;
   }
 
   listColumns(projectId: string): Promise<ProjectColumnDto[]> {
@@ -267,9 +292,90 @@ export class ProjectsService {
     );
   }
 
+  enqueueAiChatDecompose(
+    projectId: string,
+    chatId: string,
+    body: EnqueueAiTaskDecompositionRequest,
+  ): Promise<AiDecompositionJobDto> {
+    return firstValueFrom(
+      this.api.post<EnqueueAiTaskDecompositionRequest, AiDecompositionJobDto>(
+        `api/projects/${projectId}/ai/chats/${chatId}/decompose`,
+        body,
+      ),
+    );
+  }
+
   getAiDecomposeJob(projectId: string, jobId: string): Promise<AiDecompositionJobDto> {
     return firstValueFrom(
       this.api.get<AiDecompositionJobDto>(`api/projects/${projectId}/ai/decompose/${jobId}`),
+    );
+  }
+
+  listAiChats(projectId: string): Promise<AiChatSummaryDto[]> {
+    return firstValueFrom(this.api.get<AiChatSummaryDto[]>(`api/projects/${projectId}/ai/chats`));
+  }
+
+  createAiChat(projectId: string, body: CreateAiChatRequest = {}): Promise<AiChatDto> {
+    return firstValueFrom(
+      this.api.post<CreateAiChatRequest, AiChatDto>(`api/projects/${projectId}/ai/chats`, body),
+    );
+  }
+
+  getAiChat(projectId: string, chatId: string): Promise<AiChatDto> {
+    return firstValueFrom(
+      this.api.get<AiChatDto>(`api/projects/${projectId}/ai/chats/${chatId}`),
+    );
+  }
+
+  updateAiChat(
+    projectId: string,
+    chatId: string,
+    body: UpdateAiChatRequest,
+  ): Promise<AiChatSummaryDto> {
+    return firstValueFrom(
+      this.api.put<UpdateAiChatRequest, AiChatSummaryDto>(
+        `api/projects/${projectId}/ai/chats/${chatId}`,
+        body,
+      ),
+    );
+  }
+
+  deleteAiChat(projectId: string, chatId: string): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(`api/projects/${projectId}/ai/chats/${chatId}`),
+    );
+  }
+
+  createAiChatMessage(
+    projectId: string,
+    chatId: string,
+    body: CreateAiChatMessageRequest,
+  ): Promise<AiChatMessageDto> {
+    return firstValueFrom(
+      this.api.post<CreateAiChatMessageRequest, AiChatMessageDto>(
+        `api/projects/${projectId}/ai/chats/${chatId}/messages`,
+        body,
+      ),
+    );
+  }
+
+  updateAiChatMessage(
+    projectId: string,
+    chatId: string,
+    messageId: string,
+    body: UpdateAiChatMessageRequest,
+  ): Promise<AiChatMessageDto> {
+    return firstValueFrom(
+      this.api.put<UpdateAiChatMessageRequest, AiChatMessageDto>(
+        `api/projects/${projectId}/ai/chats/${chatId}/messages/${messageId}`,
+        body,
+      ),
+    );
+  }
+
+  deleteAiChatMessage(projectId: string, chatId: string, messageId: string): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(`api/projects/${projectId}/ai/chats/${chatId}/messages/${messageId}`),
     );
   }
 
