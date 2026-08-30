@@ -288,6 +288,12 @@ export class ProjectsService {
     );
   }
 
+  getDocument(projectId: string, documentId: string): Promise<ProjectDocumentDto> {
+    return firstValueFrom(
+      this.api.get<ProjectDocumentDto>(`api/projects/${projectId}/documents/${documentId}`),
+    );
+  }
+
   enqueueAiDecompose(
     projectId: string,
     body: EnqueueAiTaskDecompositionRequest,

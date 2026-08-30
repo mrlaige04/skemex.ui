@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   injectFlexRenderContext,
   type CellContext,
 } from '@tanstack/angular-table';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideDownload, lucideLoaderCircle, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideDownload, lucideEye, lucideLoaderCircle, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import type { ProjectDocumentDto } from '../../models/projects/projects.models';
@@ -15,11 +16,21 @@ import {
 
 @Component({
   selector: 'app-project-documents-table-actions-cell',
-  imports: [NgIcon, ...HlmButtonImports, ...HlmIconImports],
-  providers: [provideIcons({ lucideDownload, lucideLoaderCircle, lucideTrash2 })],
+  imports: [RouterLink, NgIcon, ...HlmButtonImports, ...HlmIconImports],
+  providers: [provideIcons({ lucideDownload, lucideEye, lucideLoaderCircle, lucideTrash2 })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex justify-end gap-2">
+      <a
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        class="h-8 px-2"
+        [routerLink]="host.documentDetailsLink(document.id)"
+      >
+        <ng-icon hlm name="lucideEye" size="sm" />
+        Details
+      </a>
       @if (downloadUrl; as url) {
         <a hlmBtn variant="ghost" size="sm" class="h-8 px-2" [href]="url" target="_blank" rel="noopener noreferrer">
           <ng-icon hlm name="lucideDownload" size="sm" />

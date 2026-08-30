@@ -16,6 +16,8 @@ export const APP_PATHS = {
   projectIssues: (projectCode: string) => `/${projectCode}/issues`,
   projectIssue: (projectCode: string, issueCode: string) => `/${projectCode}/issues/${issueCode}`,
   projectDocuments: (projectCode: string) => `/${projectCode}/documents`,
+  projectDocument: (projectCode: string, documentId: string) =>
+    `/${projectCode}/documents/${documentId}`,
   projectUsers: (projectCode: string) => `/${projectCode}/settings?tab=users`,
   projectSettings: (projectCode: string) => `/${projectCode}/settings`,
   settings: '/settings',

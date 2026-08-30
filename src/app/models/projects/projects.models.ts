@@ -88,6 +88,9 @@ export interface ProjectDocumentDto {
   contentType: string;
   fileSizeBytes: number;
   createdAt: string;
+  vectorizationStatus: string;
+  vectorizationError?: string | null;
+  vectorizedChunkCount?: number | null;
   downloadUrl?: string | null;
   uploadedBy: ProjectDocumentUserDto;
 }
