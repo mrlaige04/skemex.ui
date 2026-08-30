@@ -310,6 +310,15 @@ export const routes: Routes = [
         data: { breadcrumb: 'Documents' },
         title: 'Documents',
       },
+      {
+        path: 'documents/:documentId',
+        loadComponent: () =>
+          import('./pages/project/project-document-page.component').then(
+            (m) => m.ProjectDocumentPageComponent,
+          ),
+        data: { breadcrumb: 'Document' },
+        title: 'Document',
+      },
     ],
   },
   { path: 'home', pathMatch: 'full', redirectTo: 'dashboard' },

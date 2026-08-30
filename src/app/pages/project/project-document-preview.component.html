@@ -1,0 +1,88 @@
+@if (loading()) {
+  <p class="text-muted-foreground mb-3 text-sm">Loading preview…</p>
+}
+
+@if (error(); as err) {
+  <p
+    class="mb-3 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+    role="alert"
+  >
+    {{ err }}
+  </p>
+}
+
+@if (!error()) {
+  @switch (previewKind()) {
+    @case ('pdf') {
+      @if (pdfViewerUrl(); as src) {
+        <iframe
+          class="document-preview-pdf"
+          [src]="src"
+          [title]="document().fileName"
+        ></iframe>
+      }
+    }
+    @case ('docx') {
+      <div class="document-preview-docx">
+        <div class="document-preview-docx__toolbar" role="toolbar" aria-label="Document zoom controls">
+          <div class="document-preview-docx__toolbar-group">
+            <button
+              type="button"
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Zoom out"
+              (click)="zoomDocxOut()"
+            >
+              <ng-icon hlm name="lucideZoomOut" size="sm" />
+            </button>
+            <span class="document-preview-docx__zoom-label">{{ docxZoom() }}%</span>
+            <button
+              type="button"
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Zoom in"
+              (click)="zoomDocxIn()"
+            >
+              <ng-icon hlm name="lucideZoomIn" size="sm" />
+            </button>
+          </div>
+          <div class="document-preview-docx__toolbar-divider" aria-hidden="true"></div>
+          <button
+            type="button"
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Reset zoom"
+            (click)="resetDocxZoom()"
+          >
+            <ng-icon hlm name="lucideRotateCcw" size="sm" />
+          </button>
+        </div>
+        <div class="document-preview-docx__viewport">
+          <div #docxStyles hidden aria-hidden="true"></div>
+          <div
+            #docxBody
+            class="document-preview-docx__body"
+            [style.transform]="'scale(' + docxZoom() / 100 + ')'"
+          ></div>
+        </div>
+      </div>
+    }
+    @case ('image') {
+      @if (imageUrl(); as src) {
+        <img
+          [src]="src"
+          [alt]="document().fileName"
+          class="document-preview-image max-h-[65vh] max-w-full rounded-md border object-contain"
+        />
+      }
+    }
+    @case ('text') {
+      @if (textContent(); as content) {
+        <pre class="document-preview-text">{{ content }}</pre>
+      }
+    }
+  }
+}

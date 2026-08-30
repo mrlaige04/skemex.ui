@@ -1,0 +1,130 @@
+<div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="documentsListLink()"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to documents
+    </a>
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-semibold tracking-tight break-all">
+          @if (document(); as doc) {
+            {{ doc.fileName }}
+          } @else {
+            Document
+          }
+        </h1>
+        <p class="text-muted-foreground mt-1 text-sm">Document details and RAG processing status.</p>
+      </div>
+
+      @if (document(); as doc) {
+        @if (doc.downloadUrl; as url) {
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <button type="button" hlmBtn variant="outline" size="sm" (click)="openPreview()">
+              <ng-icon hlm name="lucideEye" size="sm" />
+              Preview
+            </button>
+            <a
+              hlmBtn
+              variant="outline"
+              size="sm"
+              [href]="url"
+              [attr.download]="doc.fileName"
+              rel="noopener noreferrer"
+            >
+              <ng-icon hlm name="lucideDownload" size="sm" />
+              Download
+            </a>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="text-muted-foreground text-sm">Loading document…</p>
+  } @else if (loadError(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  } @else if (document(); as doc) {
+    <div class="flex flex-col gap-6">
+      <div hlmCard class="w-full">
+        <div hlmCardHeader>
+          <h2 hlmCardTitle>Main info</h2>
+          <p hlmCardDescription>File metadata and upload details.</p>
+        </div>
+        <div hlmCardContent class="text-sm">
+          <dl class="grid gap-3 sm:grid-cols-[10rem_1fr]">
+            <dt class="text-muted-foreground">File name</dt>
+            <dd class="font-medium break-all">{{ doc.fileName }}</dd>
+
+            <dt class="text-muted-foreground">Content type</dt>
+            <dd>{{ doc.contentType }}</dd>
+
+            <dt class="text-muted-foreground">Size</dt>
+            <dd>{{ formatFileSize(doc.fileSizeBytes) }}</dd>
+
+            <dt class="text-muted-foreground">Uploaded</dt>
+            <dd>{{ formatDateTime(doc.createdAt) }}</dd>
+
+            <dt class="text-muted-foreground">Uploaded by</dt>
+            <dd>{{ personName(doc.uploadedBy) }}</dd>
+          </dl>
+        </div>
+      </div>
+
+      @if (showRagInfo()) {
+        <div hlmCard class="w-full">
+          <div hlmCardHeader>
+            <h2 hlmCardTitle>RAG info</h2>
+            <p hlmCardDescription>Vectorization status for retrieval-augmented generation.</p>
+          </div>
+          <div hlmCardContent>
+            <dl class="grid gap-3 text-sm sm:grid-cols-[10rem_1fr]">
+              <dt class="text-muted-foreground">Status</dt>
+              <dd>{{ formatVectorizationStatus(doc.vectorizationStatus) }}</dd>
+
+              @if (doc.vectorizedChunkCount != null) {
+                <dt class="text-muted-foreground">Chunks</dt>
+                <dd>{{ doc.vectorizedChunkCount }}</dd>
+              }
+
+              @if (doc.vectorizationError) {
+                <dt class="text-muted-foreground">Error</dt>
+                <dd class="text-red-700 dark:text-red-300">{{ doc.vectorizationError }}</dd>
+              }
+            </dl>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (document(); as doc) {
+  <hlm-dialog [state]="previewDialogState()" (stateChanged)="onPreviewDialogStateChanged($event)">
+    <hlm-dialog-content *hlmDialogPortal class="flex max-h-[90vh] w-[min(100vw-2rem,56rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+      <hlm-dialog-header class="border-b px-6 py-4">
+        <h2 hlmDialogTitle class="break-all">{{ doc.fileName }}</h2>
+        <p hlmDialogDescription>Document preview</p>
+      </hlm-dialog-header>
+
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-4">
+        <app-project-document-preview [document]="doc" [active]="previewDialogState() === 'open'" />
+      </div>
+
+      <hlm-dialog-footer class="border-t px-6 py-4">
+        <button type="button" hlmBtn variant="ghost" hlmDialogClose>Close</button>
+      </hlm-dialog-footer>
+    </hlm-dialog-content>
+  </hlm-dialog>
+}

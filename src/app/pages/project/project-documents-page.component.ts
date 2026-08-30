@@ -24,6 +24,7 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
 import type { ProjectDocumentDto } from '../../models/projects/projects.models';
+import { projectSectionPath } from '../../routing/app-paths';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ProjectDocumentsTableActionsCellComponent } from './project-documents-table-actions-cell.component';
 import {
@@ -73,6 +74,23 @@ function personName(user: ProjectDocumentDto['uploadedBy']): string {
   return full || user.email || '—';
 }
 
+function formatVectorizationStatus(status?: string | null): string {
+  switch (status) {
+    case 'Pending':
+      return 'Pending';
+    case 'Processing':
+      return 'Processing';
+    case 'Ready':
+      return 'Ready';
+    case 'Failed':
+      return 'Failed';
+    case 'Skipped':
+      return 'Skipped';
+    default:
+      return status?.trim() || '—';
+  }
+}
+
 @Component({
   selector: 'app-project-documents-page',
   imports: [
@@ -108,6 +126,7 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
   readonly totalItems = signal(0);
   readonly deletingId = signal<string | null>(null);
   readonly dragActive = signal(false);
+  readonly projectCode = signal('');
 
   private projectId: string | null = null;
   private dragDepth = 0;
@@ -139,6 +158,12 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
       label: 'Uploaded',
       render: (row) =>
         `<span class="text-muted-foreground text-sm">${escapeHtml(formatDate(row.createdAt))}</span>`,
+    },
+    {
+      key: 'vectorizationStatus',
+      label: 'RAG status',
+      render: (row) =>
+        `<span class="text-muted-foreground text-sm">${escapeHtml(formatVectorizationStatus(row.vectorizationStatus))}</span>`,
     },
     {
       key: 'actions',
@@ -259,6 +284,11 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
     }
   }
 
+  documentDetailsLink(documentId: string): string[] {
+    const code = this.projectCode();
+    return code ? projectSectionPath(code, `documents/${documentId}`) : ['/'];
+  }
+
   private async uploadFile(file: File): Promise<void> {
     if (!this.projectId || this.uploading()) {
       return;
@@ -307,6 +337,7 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
       }
 
       this.projectId = project.id;
+      this.projectCode.set(code);
       this.pagingEnabled = true;
       await this.refreshList();
     } catch (err) {
