@@ -62,22 +62,38 @@
                 {{ issue.title }}
               </h1>
             </button>
-            @if (isSubtask()) {
-              <span
-                class="border-border text-muted-foreground rounded-md border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase"
-              >
-                Sub-task
-              </span>
-            }
+            <app-task-type-badge [type]="issue.type" />
           </div>
         }
       </div>
 
-      <div hlmAccordion type="multiple" class="w-full">
-        <div hlmAccordionItem [isOpened]="true" class="border-border border-b">
-          <hlm-accordion-trigger>Details</hlm-accordion-trigger>
-          <hlm-accordion-content>
-            <div class="issue-details-grid gap-x-8 gap-y-3 pt-1">
+      <section class="border-border space-y-3 border-b pb-6">
+        <h2 class="text-sm font-semibold">Details</h2>
+        <div class="issue-details-grid gap-x-8 gap-y-3">
+              <div class="issue-detail-row">
+                <span class="text-muted-foreground text-sm">Type</span>
+                <div class="min-w-0">
+                  <hlm-select
+                    class="w-full max-w-56"
+                    [value]="issue.type ?? 'Task'"
+                    [itemToString]="typeLabel"
+                    [disabled]="saving()"
+                    (valueChange)="onTypeChange($event)"
+                  >
+                    <hlm-select-trigger class="h-8 w-full">
+                      <hlm-select-value placeholder="Select type" />
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        @for (taskType of availableTaskTypes(); track taskType) {
+                          <hlm-select-item [value]="taskType">{{ taskType }}</hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                </div>
+              </div>
+
               <div class="issue-detail-row">
                 <span class="text-muted-foreground text-sm">Status</span>
                 <div class="min-w-0">
@@ -151,10 +167,8 @@
                 <span class="text-muted-foreground text-sm">Updated</span>
                 <span class="text-sm">{{ updatedLabel() }}</span>
               </div>
-            </div>
-          </hlm-accordion-content>
         </div>
-      </div>
+      </section>
 
       <section class="space-y-3">
         <div class="flex items-end justify-between gap-3">
@@ -180,26 +194,465 @@
         ></textarea>
       </section>
 
-      @if (subtasks().length > 0) {
-        <section class="space-y-3">
-          <h2 class="text-sm font-semibold">Sub-tasks</h2>
-          <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
-            @for (sub of subtasks(); track sub.id) {
-              <li>
-                <a
-                  class="hover:bg-muted/40 flex items-center gap-3 px-3 py-2.5 transition-colors"
-                  [routerLink]="issueLink(sub.code)"
+      <section class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-sm font-semibold">Attachments</h2>
+          <div>
+            <input
+              #attachmentInput
+              type="file"
+              class="sr-only"
+              [disabled]="attachmentUploading()"
+              (change)="onAttachmentFileSelected($event)"
+            />
+            <button
+              type="button"
+              hlmBtn
+              size="sm"
+              variant="outline"
+              [disabled]="attachmentUploading()"
+              (click)="attachmentInput.click()"
+            >
+              @if (attachmentUploading()) {
+                <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              } @else {
+                <ng-icon hlm name="lucideUpload" size="sm" />
+              }
+              Upload file
+            </button>
+          </div>
+        </div>
+
+        @if (attachmentError(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        }
+
+        @if (attachmentsLoading()) {
+          <p class="text-muted-foreground text-sm">Loading attachments…</p>
+        } @else if (attachments().length === 0) {
+          <p class="text-muted-foreground text-sm">No attachments yet.</p>
+        } @else {
+          <ul class="divide-border border-border divide-y rounded-md border">
+            @for (file of attachments(); track file.id) {
+              <li class="flex items-center gap-3 px-3 py-2.5">
+                <ng-icon
+                  hlm
+                  name="lucidePaperclip"
+                  size="sm"
+                  class="text-muted-foreground shrink-0"
+                />
+                <div class="min-w-0 flex-1">
+                  @if (file.downloadUrl) {
+                    <a
+                      class="text-foreground hover:text-primary block truncate text-sm font-medium underline-offset-2 hover:underline"
+                      [href]="file.downloadUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ file.fileName }}
+                    </a>
+                  } @else {
+                    <p class="truncate text-sm font-medium">{{ file.fileName }}</p>
+                  }
+                  <p class="text-muted-foreground text-xs">
+                    {{ formatAttachmentSize(file.fileSizeBytes) }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  hlmBtn
+                  size="icon"
+                  variant="ghost"
+                  class="shrink-0"
+                  [disabled]="attachmentUploading()"
+                  title="Delete attachment"
+                  (click)="deleteAttachment(file)"
                 >
-                  <span class="text-muted-foreground shrink-0 font-mono text-xs font-semibold">{{
-                    sub.code
-                  }}</span>
-                  <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ sub.title }}</span>
-                </a>
+                  <ng-icon hlm name="lucideTrash2" size="sm" />
+                </button>
               </li>
             }
           </ul>
-        </section>
-      }
+        }
+      </section>
+
+      <div hlmTabs [tab]="activeTab()" (tabActivated)="onTabActivated($event)">
+        <div hlmTabsList variant="line" class="flex-wrap">
+          <button type="button" hlmTabsTrigger="acceptance">Acceptance criteria</button>
+          <button type="button" hlmTabsTrigger="tests">Test cases</button>
+          <button type="button" hlmTabsTrigger="time">Time tracking</button>
+          <button type="button" hlmTabsTrigger="subtasks">Sub-tasks</button>
+        </div>
+
+        <div hlmTabsContent="time" class="pt-4">
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold">Time tracking</h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <hlm-dialog
+                  [state]="estimateDialogState()"
+                  (stateChanged)="onEstimateDialogStateChanged($event)"
+                >
+                  <button type="button" hlmBtn size="sm" variant="outline" (click)="openEstimateDialog()">
+                    <ng-icon hlm name="lucidePencil" size="sm" />
+                    Edit
+                  </button>
+                  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+                    <hlm-dialog-header>
+                      <h2 hlmDialogTitle>Edit time tracking</h2>
+                      <p hlmDialogDescription>
+                        Set the original estimate. Remaining is recalculated from estimate minus logged
+                        time.
+                      </p>
+                    </hlm-dialog-header>
+
+                    <div class="space-y-4">
+                      @if (estimateError(); as err) {
+                        <p
+                          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                          role="alert"
+                        >
+                          {{ err }}
+                        </p>
+                      }
+
+                      <div class="space-y-1.5">
+                        <label class="text-sm font-medium" for="original-estimate">Estimate</label>
+                        <input
+                          id="original-estimate"
+                          hlmInput
+                          class="w-full"
+                          placeholder="e.g. 4h, 2h 30m, 90m"
+                          [value]="originalEstimateDraft()"
+                          (input)="onOriginalEstimateInput($event)"
+                        />
+                        <p class="text-muted-foreground text-xs">Leave empty to clear the estimate.</p>
+                      </div>
+
+                      <div class="space-y-1.5">
+                        <label class="text-sm font-medium" for="story-points">Story points</label>
+                        <input
+                          id="story-points"
+                          hlmInput
+                          class="w-full"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="Optional"
+                          [value]="storyPointsDraft()"
+                          (input)="onStoryPointsInput($event)"
+                        />
+                      </div>
+                    </div>
+
+                    <hlm-dialog-footer>
+                      <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="saving()">
+                        Cancel
+                      </button>
+                      <button type="button" hlmBtn [disabled]="saving()" (click)="saveEstimates()">
+                        @if (saving()) {
+                          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                        }
+                        Save
+                      </button>
+                    </hlm-dialog-footer>
+                  </hlm-dialog-content>
+                </hlm-dialog>
+
+                <hlm-dialog [state]="logDialogState()" (stateChanged)="onLogDialogStateChanged($event)">
+                  <button type="button" hlmBtn size="sm" hlmDialogTrigger>
+                    <ng-icon hlm name="lucidePlus" size="sm" />
+                    Log time
+                  </button>
+                  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+                    <hlm-dialog-header>
+                      <h2 hlmDialogTitle>
+                        {{ editingWorkLogId() ? 'Edit work log' : 'Log time' }}
+                      </h2>
+                      <p hlmDialogDescription>
+                        Pick the work date and start/end times. Duration is calculated automatically.
+                      </p>
+                    </hlm-dialog-header>
+
+                    <div class="space-y-4">
+                      @if (logError(); as err) {
+                        <p
+                          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                          role="alert"
+                        >
+                          {{ err }}
+                        </p>
+                      }
+
+                      <div class="space-y-1.5">
+                        <label class="text-sm font-medium" for="log-date">Date</label>
+                        <input
+                          id="log-date"
+                          hlmInput
+                          class="w-full"
+                          type="date"
+                          [value]="logDateDraft()"
+                          (input)="onLogDateInput($event)"
+                        />
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                          <label class="text-sm font-medium" for="log-start-time">Start time</label>
+                          <input
+                            id="log-start-time"
+                            hlmInput
+                            class="w-full"
+                            type="time"
+                            [value]="logStartTimeDraft()"
+                            (input)="onLogStartTimeInput($event)"
+                          />
+                        </div>
+                        <div class="space-y-1.5">
+                          <label class="text-sm font-medium" for="log-end-time">End time</label>
+                          <input
+                            id="log-end-time"
+                            hlmInput
+                            class="w-full"
+                            type="time"
+                            [value]="logEndTimeDraft()"
+                            (input)="onLogEndTimeInput($event)"
+                          />
+                        </div>
+                      </div>
+
+                      @if (logDurationPreview(); as duration) {
+                        <p class="text-muted-foreground text-sm">
+                          Duration: <span class="text-foreground font-medium">{{ duration }}</span>
+                        </p>
+                      }
+
+                      <div class="space-y-1.5">
+                        <label class="text-sm font-medium" for="log-comment">Comment (optional)</label>
+                        <textarea
+                          id="log-comment"
+                          hlmInput
+                          class="min-h-20 w-full resize-y"
+                          rows="3"
+                          maxlength="2000"
+                          [value]="logCommentDraft()"
+                          (input)="onLogCommentInput($event)"
+                        ></textarea>
+                      </div>
+                    </div>
+
+                    <hlm-dialog-footer>
+                      <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="saving()">
+                        Cancel
+                      </button>
+                      <button type="button" hlmBtn [disabled]="saving()" (click)="submitWorkLog()">
+                        @if (saving()) {
+                          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                        }
+                        {{ editingWorkLogId() ? 'Save' : 'Log time' }}
+                      </button>
+                    </hlm-dialog-footer>
+                  </hlm-dialog-content>
+                </hlm-dialog>
+              </div>
+            </div>
+
+            <app-task-time-progress
+              [spentMinutes]="issue.spentMinutes ?? 0"
+              [originalEstimateMinutes]="issue.originalEstimateMinutes"
+              [remainingEstimateMinutes]="issue.remainingEstimateMinutes"
+              [storyPoints]="issue.storyPoints"
+            />
+
+            @if (
+              !(issue.spentMinutes ?? 0)
+              && issue.originalEstimateMinutes == null
+              && issue.remainingEstimateMinutes == null
+              && issue.storyPoints == null
+            ) {
+              <p class="text-muted-foreground text-sm">
+                No estimate yet. Use Edit to set one, or Log time to start tracking.
+              </p>
+            }
+
+            <section class="mt-6 space-y-3">
+              <h3 class="text-sm font-semibold">Work log</h3>
+              @if (workLogs().length === 0) {
+                <p class="text-muted-foreground text-sm">No time logged yet.</p>
+              } @else {
+                <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+                  @for (log of workLogs(); track log.id) {
+                    <li class="flex items-start justify-between gap-3 px-3 py-2.5">
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                          <span class="font-medium">{{ formatDuration(log.spentMinutes) }}</span>
+                          <span class="text-muted-foreground">·</span>
+                          <span class="text-muted-foreground">{{ formatWorkLogRange(log) }}</span>
+                          <span class="text-muted-foreground">·</span>
+                          <span>{{ workLogAuthor(log) }}</span>
+                        </div>
+                        @if (log.comment) {
+                          <p class="text-muted-foreground text-sm whitespace-pre-wrap">
+                            {{ log.comment }}
+                          </p>
+                        }
+                      </div>
+                      <div class="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          hlmBtn
+                          variant="ghost"
+                          size="sm"
+                          class="px-2"
+                          title="Edit"
+                          (click)="openLogDialog(log)"
+                        >
+                          <ng-icon hlm name="lucidePencil" size="sm" />
+                        </button>
+                        <button
+                          type="button"
+                          hlmBtn
+                          variant="ghost"
+                          size="sm"
+                          class="px-2"
+                          title="Delete"
+                          (click)="confirmDeleteWorkLog(log.id)"
+                        >
+                          <ng-icon hlm name="lucideTrash2" size="sm" />
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+          </div>
+        </div>
+
+        <div hlmTabsContent="acceptance" class="pt-4">
+          @if (acceptanceCriteria().length === 0) {
+            <p class="text-muted-foreground text-sm">No acceptance criteria for this task.</p>
+          } @else {
+            <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+              @for (criterion of acceptanceCriteria(); track $index) {
+                <li class="flex items-start gap-3 px-3 py-2.5">
+                  <span
+                    class="border-border mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-sm border"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="min-w-0 flex-1 text-sm leading-relaxed whitespace-pre-wrap">{{
+                    criterion
+                  }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <div hlmTabsContent="tests" class="pt-4">
+          @if (positiveTestCases().length === 0 && negativeTestCases().length === 0) {
+            <p class="text-muted-foreground text-sm">No test cases for this task.</p>
+          } @else {
+            <div class="space-y-4">
+              @if (positiveTestCases().length > 0) {
+                <div class="space-y-2">
+                  <h3 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    Positive
+                  </h3>
+                  <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+                    @for (testCase of positiveTestCases(); track $index) {
+                      <li class="space-y-1.5 px-3 py-2.5">
+                        <p class="text-sm font-medium">{{ testCase.description }}</p>
+                        <p class="text-muted-foreground text-sm">
+                          <span class="font-medium">Expected:</span>
+                          {{ testCase.expectedResult }}
+                        </p>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (negativeTestCases().length > 0) {
+                <div class="space-y-2">
+                  <h3 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    Negative
+                  </h3>
+                  <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+                    @for (testCase of negativeTestCases(); track $index) {
+                      <li class="space-y-1.5 px-3 py-2.5">
+                        <p class="text-sm font-medium">{{ testCase.description }}</p>
+                        <p class="text-muted-foreground text-sm">
+                          <span class="font-medium">Expected:</span>
+                          {{ testCase.expectedResult }}
+                        </p>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div hlmTabsContent="subtasks" class="pt-4">
+          @if (subtasks().length === 0) {
+            <p class="text-muted-foreground text-sm">No sub-tasks for this task.</p>
+          } @else {
+            <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+              @for (sub of subtasks(); track sub.id) {
+                <li>
+                  <a
+                    class="hover:bg-muted/40 flex items-center gap-3 px-3 py-2.5 transition-colors"
+                    [routerLink]="issueLink(sub.code)"
+                  >
+                    <span class="text-muted-foreground shrink-0 font-mono text-xs font-semibold">{{
+                      sub.code
+                    }}</span>
+                    <app-task-type-badge [type]="sub.type" />
+                    <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ sub.title }}</span>
+                    @if (sub.originalEstimateMinutes != null) {
+                      <span class="text-muted-foreground shrink-0 text-xs tabular-nums">{{
+                        formatDuration(sub.originalEstimateMinutes)
+                      }}</span>
+                    }
+                  </a>
+                  @if (
+                    (sub.spentMinutes ?? 0) > 0
+                    || sub.originalEstimateMinutes != null
+                    || sub.remainingEstimateMinutes != null
+                  ) {
+                    <div class="px-3 pb-2.5">
+                      <app-task-time-progress
+                        [compact]="true"
+                        [spentMinutes]="sub.spentMinutes ?? 0"
+                        [originalEstimateMinutes]="sub.originalEstimateMinutes"
+                        [remainingEstimateMinutes]="sub.remainingEstimateMinutes"
+                        [storyPoints]="sub.storyPoints"
+                      />
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+
+      <app-confirm-alert-dialog
+        [(state)]="deleteDialogState"
+        title="Delete work log?"
+        confirmLabel="Delete"
+        (confirmed)="deletePendingWorkLog()"
+      >
+        This removes the logged time. Remaining estimate is recalculated from the estimate and
+        remaining logged work.
+      </app-confirm-alert-dialog>
     </div>
   }
 </div>

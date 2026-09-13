@@ -178,12 +178,7 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
       key: 'title',
       label: 'Title',
       accessorFn: (row) => row.title,
-      render: (row) =>
-        `<span class="font-medium">${escapeHtml(row.title)}</span>${
-          row.parentId
-            ? '<span class="text-muted-foreground ml-2 text-xs">Sub-task</span>'
-            : ''
-        }`,
+      render: (row) => `<span class="font-medium">${escapeHtml(row.title)}</span>`,
       enableHiding: false,
     },
     {

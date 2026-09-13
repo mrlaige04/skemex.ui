@@ -95,6 +95,25 @@ export interface ProjectDocumentDto {
   uploadedBy: ProjectDocumentUserDto;
 }
 
+export interface ProjectTaskAttachmentUserDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface ProjectTaskAttachmentDto {
+  id: string;
+  projectId: string;
+  taskId: string;
+  fileName: string;
+  contentType: string;
+  fileSizeBytes: number;
+  createdAt: string;
+  downloadUrl?: string | null;
+  uploadedBy: ProjectTaskAttachmentUserDto;
+}
+
 export type AiDecompositionJobStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | string;
 
 export interface AiDecompositionJobDto {
@@ -123,6 +142,25 @@ export interface ProjectTaskUserDto {
   avatarUrl?: string | null;
 }
 
+export interface ProjectTaskTestCaseDto {
+  type: 'positive' | 'negative' | string;
+  description: string;
+  expectedResult: string;
+}
+
+export interface ProjectTaskWorkLogDto {
+  id: string;
+  taskId: string;
+  projectId: string;
+  startedAt: string;
+  endedAt: string;
+  spentMinutes: number;
+  comment?: string | null;
+  createdAt?: string;
+  updatedAt?: string | null;
+  user: ProjectTaskUserDto;
+}
+
 export interface ProjectTaskDto {
   id: string;
   projectId: string;
@@ -131,8 +169,16 @@ export interface ProjectTaskDto {
   columnTitle?: string;
   parentId?: string | null;
   code: string;
+  type?: string;
   title: string;
   description?: string | null;
+  acceptanceCriteria?: string[];
+  testCases?: ProjectTaskTestCaseDto[];
+  originalEstimateMinutes?: number | null;
+  remainingEstimateMinutes?: number | null;
+  storyPoints?: number | null;
+  spentMinutes?: number;
+  workLogs?: ProjectTaskWorkLogDto[];
   createdAt?: string;
   updatedAt?: string | null;
   assignee?: ProjectTaskUserDto | null;
@@ -165,11 +211,32 @@ export interface UpdateProjectTaskRequest {
   clearDescription?: boolean;
   assigneeId?: string | null;
   clearAssignee?: boolean;
+  originalEstimateMinutes?: number | null;
+  clearOriginalEstimate?: boolean;
+  remainingEstimateMinutes?: number | null;
+  clearRemainingEstimate?: boolean;
+  storyPoints?: number | null;
+  clearStoryPoints?: boolean;
+  type?: string | null;
+}
+
+export interface CreateProjectTaskWorkLogRequest {
+  startedAt: string;
+  endedAt: string;
+  comment?: string | null;
+}
+
+export interface UpdateProjectTaskWorkLogRequest {
+  startedAt?: string | null;
+  endedAt?: string | null;
+  comment?: string | null;
+  clearComment?: boolean;
 }
 
 export interface CreateProjectTaskRequest {
   title: string;
   description?: string | null;
+  type?: string | null;
   assigneeId?: string | null;
   parentId?: string | null;
 }

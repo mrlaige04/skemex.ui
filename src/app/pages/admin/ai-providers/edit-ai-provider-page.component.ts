@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormField, form, maxLength, required, submit } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideBot, lucidePlus, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideBot, lucidePlus, lucideRefreshCw, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
 import { HlmCheckboxImports } from 'spartan/checkbox';
@@ -58,7 +58,7 @@ interface ModelEditRow {
     ...HlmLabelImports,
     ...HlmSelectImports,
   ],
-  providers: [provideIcons({ lucideArrowLeft, lucideBot, lucidePlus, lucideTrash2 })],
+  providers: [provideIcons({ lucideArrowLeft, lucideBot, lucidePlus, lucideRefreshCw, lucideTrash2 })],
   templateUrl: './edit-ai-provider-page.component.html',
   styleUrl: './edit-ai-provider-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,6 +72,7 @@ export class EditAiProviderPageComponent implements OnInit {
   readonly saving = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly modelsLoading = signal(false);
+  readonly modelsRefetching = signal(false);
   readonly modelsError = signal<string | null>(null);
   readonly modelRows = signal<ModelEditRow[]>([]);
   readonly providersListLink = adminAbsolutePath('ai-providers');
@@ -139,6 +140,24 @@ export class EditAiProviderPageComponent implements OnInit {
   onSubmit(event: SubmitEvent): void {
     event.preventDefault();
     void this.commit();
+  }
+
+  async refetchModels(): Promise<void> {
+    if (!this.providerId || this.modelsRefetching() || this.modelsLoading()) {
+      return;
+    }
+
+    this.modelsRefetching.set(true);
+    this.modelsError.set(null);
+
+    try {
+      const models = await this.providersService.syncModels(this.providerId);
+      this.modelRows.set(models.map((m) => this.toModelRow(m)));
+    } catch (err) {
+      this.modelsError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.modelsRefetching.set(false);
+    }
   }
 
   updateModelRow(modelId: string, patch: Partial<Pick<ModelEditRow, 'displayName' | 'isActive'>>): void {
