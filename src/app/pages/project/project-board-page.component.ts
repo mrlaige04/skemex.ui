@@ -19,10 +19,12 @@ import type { ProjectColumnDto, ProjectTaskDto, ProjectTaskUserDto } from '../..
 import { projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
 
 interface BoardTask {
   id: string;
   code: string;
+  type: string;
   title: string;
   description?: string | null;
   assigneeInitials?: string;
@@ -62,6 +64,7 @@ function mapTask(task: ProjectTaskDto): BoardTask {
   return {
     id: task.id,
     code: task.code,
+    type: task.type?.trim() || 'Task',
     title: task.title,
     description: task.description,
     assigneeInitials: initials(task.assignee),
@@ -87,7 +90,17 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
 
 @Component({
   selector: 'app-project-board-page',
-  imports: [RouterLink, NgIcon, CdkDrag, CdkDropList, CdkDropListGroup, CdkScrollable, ...HlmButtonImports, ...HlmIconImports],
+  imports: [
+    RouterLink,
+    NgIcon,
+    CdkDrag,
+    CdkDropList,
+    CdkDropListGroup,
+    CdkScrollable,
+    TaskTypeBadgeComponent,
+    ...HlmButtonImports,
+    ...HlmIconImports,
+  ],
   providers: [provideIcons({ lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles })],
   templateUrl: './project-board-page.component.html',
   styleUrl: './project-board-page.component.scss',

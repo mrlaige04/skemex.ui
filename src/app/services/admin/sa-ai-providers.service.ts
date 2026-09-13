@@ -27,6 +27,15 @@ export class SaAiProvidersService {
     );
   }
 
+  syncModels(providerId: string): Promise<SaAiProviderModelDto[]> {
+    return firstValueFrom(
+      this.api.post<Record<string, never>, SaAiProviderModelDto[]>(
+        `api/sa/ai-providers/${providerId}/models/sync`,
+        {},
+      ),
+    );
+  }
+
   updateModel(
     providerId: string,
     modelId: string,

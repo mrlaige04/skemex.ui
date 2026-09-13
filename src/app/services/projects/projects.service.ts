@@ -5,6 +5,7 @@ import type {
   CreateProjectColumnRequest,
   CreateProjectRequest,
   CreateProjectTaskRequest,
+  CreateProjectTaskWorkLogRequest,
   EnqueueAiTaskDecompositionRequest,
   AiDecompositionJobDto,
   ListProjectTasksParams,
@@ -12,13 +13,16 @@ import type {
   ProjectDocumentDto,
   ProjectDto,
   ProjectSettingsDto,
+  ProjectTaskAttachmentDto,
   ProjectTaskDto,
+  ProjectTaskWorkLogDto,
   ProjectUserDto,
   ReorderProjectColumnsRequest,
   UpdateProjectColumnRequest,
   UpdateProjectRequest,
   UpdateProjectSettingsRequest,
   UpdateProjectTaskRequest,
+  UpdateProjectTaskWorkLogRequest,
 } from '../../models/projects/projects.models';
 import type {
   AiChatDto,
@@ -226,6 +230,53 @@ export class ProjectsService {
     );
   }
 
+  listTaskWorkLogs(projectId: string, taskId: string): Promise<ProjectTaskWorkLogDto[]> {
+    return firstValueFrom(
+      this.api.get<ProjectTaskWorkLogDto[]>(
+        `api/projects/${projectId}/tasks/${taskId}/work-logs`,
+      ),
+    );
+  }
+
+  createTaskWorkLog(
+    projectId: string,
+    taskId: string,
+    body: CreateProjectTaskWorkLogRequest,
+  ): Promise<ProjectTaskWorkLogDto> {
+    return firstValueFrom(
+      this.api.post<CreateProjectTaskWorkLogRequest, ProjectTaskWorkLogDto>(
+        `api/projects/${projectId}/tasks/${taskId}/work-logs`,
+        body,
+      ),
+    );
+  }
+
+  updateTaskWorkLog(
+    projectId: string,
+    taskId: string,
+    workLogId: string,
+    body: UpdateProjectTaskWorkLogRequest,
+  ): Promise<ProjectTaskWorkLogDto> {
+    return firstValueFrom(
+      this.api.patch<UpdateProjectTaskWorkLogRequest, ProjectTaskWorkLogDto>(
+        `api/projects/${projectId}/tasks/${taskId}/work-logs/${workLogId}`,
+        body,
+      ),
+    );
+  }
+
+  deleteTaskWorkLog(
+    projectId: string,
+    taskId: string,
+    workLogId: string,
+  ): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(
+        `api/projects/${projectId}/tasks/${taskId}/work-logs/${workLogId}`,
+      ),
+    );
+  }
+
   listUsers(
     projectId: string,
     search?: string,
@@ -279,6 +330,41 @@ export class ProjectsService {
     fd.append('file', file, file.name);
     return firstValueFrom(
       this.api.postFormData<ProjectDocumentDto>(`api/projects/${projectId}/documents`, fd),
+    );
+  }
+
+  listTaskAttachments(projectId: string, taskId: string): Promise<ProjectTaskAttachmentDto[]> {
+    return firstValueFrom(
+      this.api.get<ProjectTaskAttachmentDto[]>(
+        `api/projects/${projectId}/tasks/${taskId}/attachments`,
+      ),
+    );
+  }
+
+  uploadTaskAttachment(
+    projectId: string,
+    taskId: string,
+    file: File,
+  ): Promise<ProjectTaskAttachmentDto> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return firstValueFrom(
+      this.api.postFormData<ProjectTaskAttachmentDto>(
+        `api/projects/${projectId}/tasks/${taskId}/attachments`,
+        fd,
+      ),
+    );
+  }
+
+  deleteTaskAttachment(
+    projectId: string,
+    taskId: string,
+    attachmentId: string,
+  ): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(
+        `api/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`,
+      ),
     );
   }
 
