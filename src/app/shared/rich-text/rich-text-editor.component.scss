@@ -1,0 +1,50 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.rich-text-editor ::ng-deep quill-editor {
+  display: block;
+}
+
+.rich-text-editor ::ng-deep .ql-toolbar.ql-snow {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 45%, transparent);
+  font-family: inherit;
+}
+
+.rich-text-editor ::ng-deep .ql-container.ql-snow {
+  border: 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.rich-text-editor ::ng-deep .ql-editor {
+  min-height: var(--rich-text-min-height, 10rem);
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.rich-text-editor ::ng-deep .ql-editor.ql-blank::before {
+  color: var(--muted-foreground);
+  font-style: normal;
+}
+
+.rich-text-editor ::ng-deep .ql-snow .ql-stroke {
+  stroke: var(--foreground);
+}
+
+.rich-text-editor ::ng-deep .ql-snow .ql-fill {
+  fill: var(--foreground);
+}
+
+.rich-text-editor ::ng-deep .ql-snow .ql-picker {
+  color: var(--foreground);
+}
+
+.rich-text-editor--disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}

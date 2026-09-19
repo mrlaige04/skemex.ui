@@ -2,13 +2,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   CdkDrag,
   CdkDragDrop,
+  CdkDragHandle,
+  CdkDragPlaceholder,
+  CdkDragStart,
   CdkDropList,
   CdkDropListGroup,
-  moveItemInArray,
-  transferArrayItem,
 } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles } from '@ng-icons/lucide';
@@ -20,13 +21,17 @@ import { projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
+import { TaskTagBadgeComponent } from '../../shared/task-tag-badge/task-tag-badge.component';
+import { stripHtmlToPlainText } from '../../shared/rich-text/rich-text.util';
 
 interface BoardTask {
   id: string;
+  parentId?: string | null;
   code: string;
   type: string;
   title: string;
   description?: string | null;
+  tags: string[];
   assigneeInitials?: string;
   assigneeAvatarUrl?: string | null;
   assigneeName?: string;
@@ -63,10 +68,12 @@ function assigneeDisplayName(user: ProjectTaskUserDto | null | undefined): strin
 function mapTask(task: ProjectTaskDto): BoardTask {
   return {
     id: task.id,
+    parentId: task.parentId ?? null,
     code: task.code,
     type: task.type?.trim() || 'Task',
     title: task.title,
-    description: task.description,
+    description: stripHtmlToPlainText(task.description),
+    tags: (task.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0),
     assigneeInitials: initials(task.assignee),
     assigneeAvatarUrl: task.assignee?.avatarUrl ?? null,
     assigneeName: assigneeDisplayName(task.assignee),
@@ -74,8 +81,69 @@ function mapTask(task: ProjectTaskDto): BoardTask {
   };
 }
 
+function cloneTask(task: BoardTask): BoardTask {
+  return {
+    ...task,
+    subtasks: task.subtasks.map(cloneTask),
+  };
+}
+
+function cloneColumns(columns: BoardColumn[]): BoardColumn[] {
+  return columns.map((column) => ({
+    ...column,
+    tasks: column.tasks.map(cloneTask),
+  }));
+}
+
 function countTasks(tasks: BoardTask[]): number {
   return tasks.reduce((total, task) => total + 1 + countTasks(task.subtasks), 0);
+}
+
+function collectTaskIds(task: BoardTask): string[] {
+  return [task.id, ...task.subtasks.flatMap(collectTaskIds)];
+}
+
+function removeTaskFromBoard(columns: BoardColumn[], taskId: string): BoardTask | null {
+  for (const column of columns) {
+    const rootIndex = column.tasks.findIndex((task) => task.id === taskId);
+    if (rootIndex >= 0) {
+      const [removed] = column.tasks.splice(rootIndex, 1);
+      return removed ?? null;
+    }
+
+    for (const parent of column.tasks) {
+      const subIndex = parent.subtasks.findIndex((task) => task.id === taskId);
+      if (subIndex >= 0) {
+        const [removed] = parent.subtasks.splice(subIndex, 1);
+        return removed ?? null;
+      }
+    }
+  }
+
+  return null;
+}
+
+function insertTaskIntoColumn(
+  columns: BoardColumn[],
+  columnId: string,
+  task: BoardTask,
+  index: number,
+): void {
+  const column = columns.find((entry) => entry.id === columnId);
+  if (!column) {
+    return;
+  }
+
+  if (task.parentId) {
+    const parent = column.tasks.find((entry) => entry.id === task.parentId);
+    if (parent) {
+      parent.subtasks = [...parent.subtasks, cloneTask({ ...task, subtasks: task.subtasks })];
+      return;
+    }
+  }
+
+  const insertAt = Math.max(0, Math.min(index, column.tasks.length));
+  column.tasks.splice(insertAt, 0, cloneTask(task));
 }
 
 function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<string, ProjectTaskDto[]>): BoardColumn[] {
@@ -94,10 +162,13 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
     RouterLink,
     NgIcon,
     CdkDrag,
+    CdkDragHandle,
+    CdkDragPlaceholder,
     CdkDropList,
     CdkDropListGroup,
     CdkScrollable,
     TaskTypeBadgeComponent,
+    TaskTagBadgeComponent,
     ...HlmButtonImports,
     ...HlmIconImports,
   ],
@@ -111,6 +182,7 @@ export class ProjectBoardPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly projectsService = inject(ProjectsService);
+  private readonly cdr = inject(ChangeDetectorRef);
   readonly aiChat = inject(AiChatService);
 
   readonly loading = signal(true);
@@ -119,6 +191,9 @@ export class ProjectBoardPageComponent implements OnInit {
   readonly moveError = signal<string | null>(null);
   readonly columns = signal<BoardColumn[]>([]);
   readonly createTaskLink = signal<string[]>(['/']);
+  /** Keeps a local white slot under the root card while a nested subtask is dragged. */
+  readonly draggingNestedSubtaskId = signal<string | null>(null);
+  readonly nestedSubtaskPlaceholderHeight = signal(0);
   private readonly failedAssigneeAvatarIds = signal<Set<string>>(new Set());
 
   private projectId: string | null = null;
@@ -154,60 +229,78 @@ export class ProjectBoardPageComponent implements OnInit {
     void this.router.navigate(projectSectionPath(this.projectCode, `issues/${issueCode}`));
   }
 
+  prepareNestedSubtaskDrag(event: Event): void {
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    const height = target.getBoundingClientRect().height;
+    if (height > 0) {
+      this.nestedSubtaskPlaceholderHeight.set(height);
+    }
+  }
+
+  onNestedSubtaskDragStarted(_event: CdkDragStart, subtaskId: string): void {
+    // Preview is already created by CDK. Reserve local space and hide the source in the
+    // same turn so the parent card does not collapse/flicker.
+    if (this.nestedSubtaskPlaceholderHeight() <= 0) {
+      this.nestedSubtaskPlaceholderHeight.set(44);
+    }
+    this.draggingNestedSubtaskId.set(subtaskId);
+    this.cdr.detectChanges();
+  }
+
+  onNestedSubtaskDragEnded(): void {
+    this.draggingNestedSubtaskId.set(null);
+    this.nestedSubtaskPlaceholderHeight.set(0);
+  }
+
   onDrop(event: CdkDragDrop<BoardTask[]>): void {
-    const taskId = event.previousContainer.data[event.previousIndex]?.id;
+    this.draggingNestedSubtaskId.set(null);
+    this.nestedSubtaskPlaceholderHeight.set(0);
+
+    const dragged = event.item.data as BoardTask | undefined;
+    if (!dragged?.id) {
+      return;
+    }
+
     const targetColumnId = event.container.id;
-    const previousSnapshot = this.columns();
-    const movedBetweenColumns = event.previousContainer !== event.container;
+    const sourceColumnId = event.previousContainer.id;
+    const previousSnapshot = cloneColumns(this.columns());
+    const columns = cloneColumns(this.columns());
 
-    const columns = this.columns().map((column) => ({
-      ...column,
-      tasks: [...column.tasks],
-    }));
-
-    const tasksFor = (containerId: string): BoardTask[] | null => {
-      const column = columns.find((entry) => entry.id === containerId);
-      return column?.tasks ?? null;
-    };
-
-    const previousTasks = tasksFor(event.previousContainer.id);
-    const currentTasks = tasksFor(event.container.id);
-    if (!previousTasks || !currentTasks) {
+    const removed = removeTaskFromBoard(columns, dragged.id);
+    if (!removed) {
       return;
     }
 
-    if (movedBetweenColumns) {
-      transferArrayItem(previousTasks, currentTasks, event.previousIndex, event.currentIndex);
-    } else {
-      moveItemInArray(currentTasks, event.previousIndex, event.currentIndex);
-      this.columns.set(columns);
-      return;
-    }
-
+    insertTaskIntoColumn(columns, targetColumnId, removed, event.currentIndex);
     this.columns.set(columns);
     this.moveError.set(null);
 
-    if (!taskId || !this.projectId) {
+    if (sourceColumnId === targetColumnId || !this.projectId) {
       return;
     }
 
-    void this.persistColumnChange(taskId, targetColumnId, previousSnapshot);
+    void this.persistColumnChanges(collectTaskIds(removed), targetColumnId, previousSnapshot);
   }
 
-  private async persistColumnChange(
-    taskId: string,
+  private async persistColumnChanges(
+    taskIds: string[],
     targetColumnId: string,
     previousSnapshot: BoardColumn[],
   ): Promise<void> {
-    if (!this.projectId) {
+    if (!this.projectId || taskIds.length === 0) {
       return;
     }
 
     this.moving.set(true);
     try {
-      await this.projectsService.updateTask(this.projectId, taskId, {
-        columnId: targetColumnId,
-      });
+      for (const taskId of taskIds) {
+        await this.projectsService.updateTask(this.projectId, taskId, {
+          columnId: targetColumnId,
+        });
+      }
     } catch (err) {
       this.columns.set(previousSnapshot);
       this.moveError.set(problemDetailMessage(err as HttpErrorResponse));

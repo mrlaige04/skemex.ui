@@ -1,0 +1,16 @@
+<div
+  class="rich-text-editor border-border bg-background overflow-hidden rounded-md border"
+  [class.rich-text-editor--disabled]="disabled()"
+  [style.--rich-text-min-height]="minHeight()"
+>
+  <quill-editor
+    theme="snow"
+    format="html"
+    [modules]="modules"
+    [placeholder]="placeholder()"
+    [readOnly]="disabled()"
+    [ngModel]="value()"
+    (ngModelChange)="onModelChange($event)"
+    (onBlur)="blurred.emit()"
+  />
+</div>

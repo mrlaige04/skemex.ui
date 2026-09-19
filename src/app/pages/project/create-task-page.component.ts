@@ -25,12 +25,15 @@ import { problemDetailMessage } from '../../http/problem-details';
 import type { ProjectUserDto } from '../../models/projects/projects.models';
 import { projectSectionPath } from '../../routing/app-paths';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { RichTextEditorComponent } from '../../shared/rich-text/rich-text-editor.component';
+import { normalizeRichHtml } from '../../shared/rich-text/rich-text.util';
 
 @Component({
   selector: 'app-create-task-page',
   imports: [
     RouterLink,
     NgIcon,
+    RichTextEditorComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -82,9 +85,13 @@ export class CreateTaskPageComponent implements OnInit {
     void this.loadPage();
   }
 
-  updateField(field: 'title' | 'description', event: Event): void {
-    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+  updateField(field: 'title', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
     this.model.update((current) => ({ ...current, [field]: value }));
+  }
+
+  onDescriptionChange(html: string): void {
+    this.model.update((current) => ({ ...current, description: html }));
   }
 
   onAssigneeChange(value: string | null): void {
@@ -111,7 +118,7 @@ export class CreateTaskPageComponent implements OnInit {
     try {
       await this.projectsService.createTask(this.projectId, {
         title: value.title.trim(),
-        description: value.description.trim() || null,
+        description: normalizeRichHtml(value.description) || null,
         type: value.type,
         assigneeId: value.assigneeId,
       });

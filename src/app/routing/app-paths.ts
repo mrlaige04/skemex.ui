@@ -12,7 +12,6 @@ export const APP_PATHS = {
   project: (projectCode: string) => `/${projectCode}`,
   projectBoard: (projectCode: string) => `/${projectCode}/board`,
   projectTaskNew: (projectCode: string) => `/${projectCode}/tasks/new`,
-  projectBacklog: (projectCode: string) => `/${projectCode}/backlog`,
   projectIssues: (projectCode: string) => `/${projectCode}/issues`,
   projectIssue: (projectCode: string, issueCode: string) => `/${projectCode}/issues/${issueCode}`,
   projectDocuments: (projectCode: string) => `/${projectCode}/documents`,

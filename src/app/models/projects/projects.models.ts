@@ -174,6 +174,8 @@ export interface ProjectTaskDto {
   description?: string | null;
   acceptanceCriteria?: string[];
   testCases?: ProjectTaskTestCaseDto[];
+  tags?: string[];
+  risks?: string[];
   originalEstimateMinutes?: number | null;
   remainingEstimateMinutes?: number | null;
   storyPoints?: number | null;
@@ -211,6 +213,7 @@ export interface UpdateProjectTaskRequest {
   clearDescription?: boolean;
   assigneeId?: string | null;
   clearAssignee?: boolean;
+  reporterId?: string | null;
   originalEstimateMinutes?: number | null;
   clearOriginalEstimate?: boolean;
   remainingEstimateMinutes?: number | null;
@@ -218,6 +221,7 @@ export interface UpdateProjectTaskRequest {
   storyPoints?: number | null;
   clearStoryPoints?: boolean;
   type?: string | null;
+  tags?: string[] | null;
 }
 
 export interface CreateProjectTaskWorkLogRequest {

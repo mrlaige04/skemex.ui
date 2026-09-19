@@ -77,15 +77,14 @@
 
           <div class="space-y-2">
             <label hlmLabel for="task-description">Description</label>
-            <textarea
-              hlmInput
+            <app-rich-text-editor
               id="task-description"
-              rows="5"
-              maxlength="2000"
-              placeholder="Optional details"
               [value]="model().description"
-              (input)="updateField('description', $event)"
-            ></textarea>
+              [disabled]="saving()"
+              placeholder="Optional details"
+              minHeight="8rem"
+              (valueChange)="onDescriptionChange($event)"
+            />
           </div>
 
           <div class="space-y-2">

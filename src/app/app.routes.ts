@@ -256,13 +256,6 @@ export const routes: Routes = [
         title: 'New task',
       },
       {
-        path: 'backlog',
-        loadComponent: () =>
-          import('./pages/tenant/tenant-section-page.component').then((m) => m.TenantSectionPageComponent),
-        data: { breadcrumb: 'Backlog' },
-        title: 'Backlog',
-      },
-      {
         path: 'issues/:issueCode',
         loadComponent: () =>
           import('./pages/project/project-issue-page.component').then((m) => m.ProjectIssuePageComponent),
