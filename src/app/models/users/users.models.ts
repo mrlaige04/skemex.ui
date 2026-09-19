@@ -7,6 +7,14 @@ export interface TenantUserDto {
   roles: string[];
   status?: number | string;
   avatarUrl?: string | null;
+  skills?: string[];
+  specializations?: TenantSpecializationSummaryDto[];
+}
+
+export interface TenantSpecializationSummaryDto {
+  id: string;
+  title: string;
+  description?: string | null;
 }
 
 export interface TenantRoleDto {
@@ -34,4 +42,5 @@ export interface UpdateTenantUserRequest {
   firstName?: string;
   lastName?: string;
   roleName?: string;
+  skills?: string[];
 }

@@ -39,7 +39,10 @@ import { projectSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
+import { RichTextEditorComponent } from '../../shared/rich-text/rich-text-editor.component';
+import { normalizeRichHtml } from '../../shared/rich-text/rich-text.util';
 import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
+import { TaskTagsInputComponent } from '../../shared/task-tags-input/task-tags-input.component';
 import { TaskTimeProgressComponent } from '../../shared/time-tracking/task-time-progress.component';
 import {
   formatDurationMinutes,
@@ -50,7 +53,6 @@ import {
   splitIsoToDateAndTime,
   toDateInputValue,
 } from '../../shared/time-tracking/time-format.util';
-import { IssuePersonChipComponent } from './issue-person-chip.component';
 
 function formatDateTime(iso?: string | null): string {
   if (!iso) {
@@ -103,10 +105,11 @@ function formatAttachmentFileSize(bytes: number): string {
   imports: [
     RouterLink,
     NgIcon,
-    IssuePersonChipComponent,
     TaskTimeProgressComponent,
     TaskTypeBadgeComponent,
+    TaskTagsInputComponent,
     ConfirmAlertDialogComponent,
+    RichTextEditorComponent,
     ...HlmButtonImports,
     ...HlmDialogImports,
     ...HlmIconImports,
@@ -187,11 +190,17 @@ export class ProjectIssuePageComponent {
   readonly availableTaskTypes = computed(() =>
     this.isSubtask() ? (['Task', 'Bug'] as const) : this.taskTypes,
   );
+  readonly tags = computed(() =>
+    (this.task()?.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0),
+  );
   readonly formatAttachmentSize = formatAttachmentFileSize;
   readonly subtasks = computed(() => this.task()?.subtasks ?? []);
   readonly workLogs = computed(() => this.task()?.workLogs ?? []);
   readonly acceptanceCriteria = computed(() =>
     (this.task()?.acceptanceCriteria ?? []).filter((item) => item.trim().length > 0),
+  );
+  readonly risks = computed(() =>
+    (this.task()?.risks ?? []).filter((item) => item.trim().length > 0),
   );
   readonly positiveTestCases = computed(() =>
     (this.task()?.testCases ?? []).filter(
@@ -206,6 +215,7 @@ export class ProjectIssuePageComponent {
   readonly hasQualityArtifacts = computed(
     () =>
       this.acceptanceCriteria().length > 0
+      || this.risks().length > 0
       || this.positiveTestCases().length > 0
       || this.negativeTestCases().length > 0,
   );
@@ -270,6 +280,18 @@ export class ProjectIssuePageComponent {
     return member ? personLabel(member) : '';
   };
 
+  reporterLabel = (reporterId: string | null): string => {
+    if (!reporterId) {
+      return 'Reporter';
+    }
+    const member = this.members().find((entry) => entry.id === reporterId);
+    if (member) {
+      return personLabel(member);
+    }
+    const reporter = this.task()?.reporter;
+    return reporter && reporter.id === reporterId ? personLabel(reporter) : '';
+  };
+
   memberLabel(member: ProjectUserDto): string {
     return personLabel(member);
   }
@@ -296,8 +318,8 @@ export class ProjectIssuePageComponent {
     this.titleDraft.set((event.target as HTMLInputElement).value);
   }
 
-  onDescriptionInput(event: Event): void {
-    this.descriptionDraft.set((event.target as HTMLTextAreaElement).value);
+  onDescriptionChange(html: string): void {
+    this.descriptionDraft.set(html);
     this.descriptionDirty.set(true);
   }
 
@@ -354,8 +376,8 @@ export class ProjectIssuePageComponent {
       return;
     }
 
-    const next = this.descriptionDraft().trim();
-    const previous = (current.description ?? '').trim();
+    const next = normalizeRichHtml(this.descriptionDraft());
+    const previous = normalizeRichHtml(current.description);
     if (next === previous) {
       this.descriptionDirty.set(false);
       return;
@@ -444,6 +466,34 @@ export class ProjectIssuePageComponent {
     await this.patchTask({ type: next });
   }
 
+  async onTagsChange(nextTags: string[]): Promise<void> {
+    const current = this.task();
+    if (!current || this.saving()) {
+      return;
+    }
+
+    const normalized = nextTags.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    const existing = this.tags();
+    if (
+      normalized.length === existing.length
+      && normalized.every((tag, index) => tag === existing[index])
+    ) {
+      return;
+    }
+
+    if (normalized.some((tag) => tag.length > 40)) {
+      this.saveError.set('Each tag cannot exceed 40 characters.');
+      return;
+    }
+
+    if (normalized.length > 20) {
+      this.saveError.set('A task cannot have more than 20 tags.');
+      return;
+    }
+
+    await this.patchTask({ tags: normalized });
+  }
+
   async onAssigneeChange(assigneeId: string | null): Promise<void> {
     const current = this.task();
     if (!current) {
@@ -458,6 +508,14 @@ export class ProjectIssuePageComponent {
     } else {
       await this.patchTask({ assigneeId });
     }
+  }
+
+  async onReporterChange(reporterId: string | null): Promise<void> {
+    const current = this.task();
+    if (!current || !reporterId || reporterId === current.reporter.id) {
+      return;
+    }
+    await this.patchTask({ reporterId });
   }
 
   async assignToMe(): Promise<void> {

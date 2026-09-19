@@ -68,64 +68,83 @@
       </div>
 
       <section class="border-border space-y-3 border-b pb-6">
-        <h2 class="text-sm font-semibold">Details</h2>
-        <div class="issue-details-grid gap-x-8 gap-y-3">
-              <div class="issue-detail-row">
-                <span class="text-muted-foreground text-sm">Type</span>
-                <div class="min-w-0">
-                  <hlm-select
-                    class="w-full max-w-56"
-                    [value]="issue.type ?? 'Task'"
-                    [itemToString]="typeLabel"
-                    [disabled]="saving()"
-                    (valueChange)="onTypeChange($event)"
-                  >
-                    <hlm-select-trigger class="h-8 w-full">
-                      <hlm-select-value placeholder="Select type" />
-                    </hlm-select-trigger>
-                    <hlm-select-content *hlmSelectPortal>
-                      <hlm-select-group>
-                        @for (taskType of availableTaskTypes(); track taskType) {
-                          <hlm-select-item [value]="taskType">{{ taskType }}</hlm-select-item>
-                        }
-                      </hlm-select-group>
-                    </hlm-select-content>
-                  </hlm-select>
-                </div>
+        <div class="issue-details-grid gap-x-8 gap-y-6">
+          <div class="flex flex-col gap-3">
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Type</span>
+              <div class="min-w-0">
+                <hlm-select
+                  class="w-full max-w-56"
+                  [value]="issue.type ?? 'Task'"
+                  [itemToString]="typeLabel"
+                  [disabled]="saving()"
+                  (valueChange)="onTypeChange($event)"
+                >
+                  <hlm-select-trigger class="h-8 w-full">
+                    <hlm-select-value placeholder="Select type" />
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    <hlm-select-group>
+                      @for (taskType of availableTaskTypes(); track taskType) {
+                        <hlm-select-item [value]="taskType">{{ taskType }}</hlm-select-item>
+                      }
+                    </hlm-select-group>
+                  </hlm-select-content>
+                </hlm-select>
               </div>
+            </div>
 
-              <div class="issue-detail-row">
-                <span class="text-muted-foreground text-sm">Status</span>
-                <div class="min-w-0">
-                  <hlm-select
-                    class="w-full max-w-56"
-                    [value]="issue.projectColumnId"
-                    [itemToString]="columnLabel"
-                    [disabled]="saving()"
-                    (valueChange)="onStatusChange($event)"
-                  >
-                    <hlm-select-trigger class="h-8 w-full">
-                      <hlm-select-value placeholder="Select status" />
-                    </hlm-select-trigger>
-                    <hlm-select-content *hlmSelectPortal>
-                      <hlm-select-group>
-                        @for (column of columns(); track column.id) {
-                          <hlm-select-item [value]="column.id">{{ column.title }}</hlm-select-item>
-                        }
-                      </hlm-select-group>
-                    </hlm-select-content>
-                  </hlm-select>
-                </div>
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Status</span>
+              <div class="min-w-0">
+                <hlm-select
+                  class="w-full max-w-56"
+                  [value]="issue.projectColumnId"
+                  [itemToString]="columnLabel"
+                  [disabled]="saving()"
+                  (valueChange)="onStatusChange($event)"
+                >
+                  <hlm-select-trigger class="h-8 w-full">
+                    <hlm-select-value placeholder="Select status" />
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    <hlm-select-group>
+                      @for (column of columns(); track column.id) {
+                        <hlm-select-item [value]="column.id">{{ column.title }}</hlm-select-item>
+                      }
+                    </hlm-select-group>
+                  </hlm-select-content>
+                </hlm-select>
               </div>
+            </div>
 
-              <div class="issue-detail-row">
-                <span class="text-muted-foreground text-sm">Reporter</span>
-                <app-issue-person-chip [user]="issue.reporter" />
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Tags</span>
+              <div class="min-w-0">
+                <app-task-tags-input
+                  [tags]="tags()"
+                  [disabled]="saving()"
+                  (tagsChange)="onTagsChange($event)"
+                />
               </div>
+            </div>
 
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Updated</span>
+              <span class="text-sm">{{ updatedLabel() }}</span>
+            </div>
+
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Created</span>
+              <span class="text-sm">{{ createdLabel() }}</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <div class="space-y-1">
               <div class="issue-detail-row">
                 <span class="text-muted-foreground text-sm">Assignee</span>
-                <div class="min-w-0 space-y-1">
+                <div class="min-w-0">
                   <hlm-select
                     class="w-full max-w-56"
                     [value]="issue.assignee?.id ?? null"
@@ -145,28 +164,46 @@
                       </hlm-select-group>
                     </hlm-select-content>
                   </hlm-select>
-                  @if (canAssignToMe()) {
-                    <button
-                      type="button"
-                      class="text-muted-foreground hover:text-foreground text-xs hover:underline"
-                      [disabled]="saving()"
-                      (click)="assignToMe()"
-                    >
-                      Assign to me
-                    </button>
-                  }
                 </div>
               </div>
+              @if (canAssignToMe()) {
+                <div class="issue-detail-assignee-action">
+                  <button
+                    type="button"
+                    class="text-muted-foreground hover:text-foreground text-xs hover:underline"
+                    [disabled]="saving()"
+                    (click)="assignToMe()"
+                  >
+                    Assign to me
+                  </button>
+                </div>
+              }
+            </div>
 
-              <div class="issue-detail-row">
-                <span class="text-muted-foreground text-sm">Created</span>
-                <span class="text-sm">{{ createdLabel() }}</span>
+            <div class="issue-detail-row">
+              <span class="text-muted-foreground text-sm">Reporter</span>
+              <div class="min-w-0">
+                <hlm-select
+                  class="w-full max-w-56"
+                  [value]="issue.reporter.id"
+                  [itemToString]="reporterLabel"
+                  [disabled]="saving()"
+                  (valueChange)="onReporterChange($event)"
+                >
+                  <hlm-select-trigger class="h-8 w-full">
+                    <hlm-select-value placeholder="Select reporter" />
+                  </hlm-select-trigger>
+                  <hlm-select-content *hlmSelectPortal>
+                    <hlm-select-group>
+                      @for (member of members(); track member.id) {
+                        <hlm-select-item [value]="member.id">{{ memberLabel(member) }}</hlm-select-item>
+                      }
+                    </hlm-select-group>
+                  </hlm-select-content>
+                </hlm-select>
               </div>
-
-              <div class="issue-detail-row">
-                <span class="text-muted-foreground text-sm">Updated</span>
-                <span class="text-sm">{{ updatedLabel() }}</span>
-              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -182,16 +219,13 @@
             </button>
           }
         </div>
-        <textarea
-          hlmInput
-          class="min-h-40 w-full resize-y"
-          rows="8"
-          maxlength="2000"
-          placeholder="Add a description…"
+        <app-rich-text-editor
           [value]="descriptionDraft()"
-          (input)="onDescriptionInput($event)"
-          (blur)="saveDescription()"
-        ></textarea>
+          [disabled]="saving()"
+          placeholder="Add a description…"
+          (valueChange)="onDescriptionChange($event)"
+          (blurred)="saveDescription()"
+        />
       </section>
 
       <section class="space-y-3">
@@ -285,6 +319,7 @@
         <div hlmTabsList variant="line" class="flex-wrap">
           <button type="button" hlmTabsTrigger="acceptance">Acceptance criteria</button>
           <button type="button" hlmTabsTrigger="tests">Test cases</button>
+          <button type="button" hlmTabsTrigger="risks">Risks</button>
           <button type="button" hlmTabsTrigger="time">Time tracking</button>
           <button type="button" hlmTabsTrigger="subtasks">Sub-tasks</button>
         </div>
@@ -597,6 +632,26 @@
                 </div>
               }
             </div>
+          }
+        </div>
+
+        <div hlmTabsContent="risks" class="pt-4">
+          @if (risks().length === 0) {
+            <p class="text-muted-foreground text-sm">No risks identified for this task.</p>
+          } @else {
+            <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+              @for (risk of risks(); track $index) {
+                <li class="flex items-start gap-3 px-3 py-2.5">
+                  <span
+                    class="mt-1.5 size-1.5 shrink-0 rounded-full bg-amber-500"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="min-w-0 flex-1 text-sm leading-relaxed whitespace-pre-wrap">{{
+                    risk
+                  }}</span>
+                </li>
+              }
+            </ul>
           }
         </div>
 

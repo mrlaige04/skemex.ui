@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { HlmTabsImports } from 'spartan/tabs';
 import { SettingsColumnsTabComponent } from './settings-columns-tab.component';
+import { SettingsSpecializationsTabComponent } from './settings-specializations-tab.component';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [SettingsColumnsTabComponent, ...HlmTabsImports],
+  imports: [SettingsColumnsTabComponent, SettingsSpecializationsTabComponent, ...HlmTabsImports],
   templateUrl: './settings-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-h-0 overflow-y-auto' },

@@ -55,18 +55,6 @@
             <li hlmSidebarMenuItem>
               <a
                 hlmSidebarMenuButton
-                [routerLink]="projectSection('backlog')"
-                routerLinkActive
-                #backlogRla="routerLinkActive"
-                [isActive]="backlogRla.isActive"
-              >
-                <ng-icon hlm name="lucideList" />
-                <span>Backlog</span>
-              </a>
-            </li>
-            <li hlmSidebarMenuItem>
-              <a
-                hlmSidebarMenuButton
                 [routerLink]="projectSection('issues')"
                 routerLinkActive
                 #issuesRla="routerLinkActive"

@@ -26,6 +26,10 @@
 .issue-detail-row {
   display: grid;
   grid-template-columns: 6.5rem minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   column-gap: 0.75rem;
+}
+
+.issue-detail-assignee-action {
+  padding-left: calc(6.5rem + 0.75rem);
 }

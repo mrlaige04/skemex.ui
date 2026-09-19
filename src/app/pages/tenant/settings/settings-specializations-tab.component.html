@@ -1,0 +1,208 @@
+<section hlmCard>
+  <div hlmCardHeader class="flex flex-row items-start justify-between gap-4">
+    <div>
+      <h2 hlmCardTitle>Specializations</h2>
+      <p hlmCardDescription>
+        Roles like Backend Engineer or QA. Default skills are merged onto members when assigned.
+      </p>
+    </div>
+    <button hlmBtn type="button" variant="outline" size="sm" (click)="toggleCreateForm()">
+      <ng-icon hlm name="lucidePlus" size="sm" />
+      Add specialization
+    </button>
+  </div>
+
+  <div hlmCardContent class="flex flex-col gap-4">
+    @if (error(); as message) {
+      <p class="text-destructive text-sm">{{ message }}</p>
+    }
+
+    @if (showCreateForm()) {
+      <form
+        class="border-border bg-muted/20 flex flex-col gap-4 rounded-lg border p-4"
+        (submit)="createSpecialization($event)"
+      >
+        <div class="space-y-2">
+          <label hlmLabel for="spec-title">Title</label>
+          <input
+            hlmInput
+            id="spec-title"
+            type="text"
+            maxlength="256"
+            [value]="createModel().title"
+            (input)="updateCreateField('title', $event)"
+            placeholder="Backend Engineer"
+          />
+          @if (createSubmitted() && !createModel().title.trim()) {
+            <p class="text-destructive text-xs">Title is required.</p>
+          }
+        </div>
+        <div class="space-y-2">
+          <label hlmLabel for="spec-description">Description</label>
+          <textarea
+            hlmInput
+            id="spec-description"
+            rows="2"
+            maxlength="2000"
+            [value]="createModel().description"
+            (input)="updateCreateField('description', $event)"
+            placeholder="APIs, databases, and service integrations"
+          ></textarea>
+        </div>
+        <div class="space-y-2">
+          <label hlmLabel>Default skills</label>
+          <app-task-tags-input
+            [tags]="createModel().defaultSkills"
+            [fullWidth]="true"
+            [maxItems]="50"
+            [maxItemLength]="100"
+            placeholder="Add skill and press Enter…"
+            (tagsChange)="onCreateSkillsChange($event)"
+          />
+          <p class="text-muted-foreground text-xs">
+            Merged into a member’s skills when this specialization is assigned.
+          </p>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button hlmBtn type="button" variant="ghost" (click)="toggleCreateForm()">Cancel</button>
+          <button hlmBtn type="submit" [disabled]="!canCreate()">
+            @if (saving()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+            }
+            Create specialization
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading specializations…</p>
+    } @else if (specializations().length === 0) {
+      <p class="text-muted-foreground text-sm">
+        No specializations yet. Create ones that match how your team is organized.
+      </p>
+    } @else {
+      <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+        @for (item of specializations(); track item.id) {
+          <li class="p-3">
+            @if (editingId() === item.id) {
+              <form class="flex flex-col gap-4" (submit)="saveEdit($event)">
+                <div class="space-y-2">
+                  <label hlmLabel [attr.for]="'edit-spec-title-' + item.id">Title</label>
+                  <input
+                    hlmInput
+                    [id]="'edit-spec-title-' + item.id"
+                    type="text"
+                    maxlength="256"
+                    [value]="editModel().title"
+                    (input)="updateEditField('title', $event)"
+                  />
+                  @if (editSubmitted() && !editModel().title.trim()) {
+                    <p class="text-destructive text-xs">Title is required.</p>
+                  }
+                </div>
+                <div class="space-y-2">
+                  <label hlmLabel [attr.for]="'edit-spec-description-' + item.id">Description</label>
+                  <textarea
+                    hlmInput
+                    [id]="'edit-spec-description-' + item.id"
+                    rows="2"
+                    maxlength="2000"
+                    [value]="editModel().description"
+                    (input)="updateEditField('description', $event)"
+                  ></textarea>
+                </div>
+                <div class="space-y-2">
+                  <label hlmLabel>Default skills</label>
+                  <app-task-tags-input
+                    [tags]="editModel().defaultSkills"
+                    [fullWidth]="true"
+                    [maxItems]="50"
+                    [maxItemLength]="100"
+                    placeholder="Add skill and press Enter…"
+                    (tagsChange)="onEditSkillsChange($event)"
+                  />
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button hlmBtn type="button" variant="ghost" (click)="cancelEdit()">Cancel</button>
+                  <button hlmBtn type="submit" [disabled]="!canSaveEdit()">
+                    @if (saving()) {
+                      <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                    }
+                    Save
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 space-y-2">
+                  <div>
+                    <h3 class="text-sm font-semibold">{{ item.title }}</h3>
+                    @if (item.description) {
+                      <p class="text-muted-foreground mt-0.5 text-sm whitespace-pre-wrap">
+                        {{ item.description }}
+                      </p>
+                    }
+                  </div>
+                  @if (item.defaultSkills.length) {
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (skill of item.defaultSkills; track skill) {
+                        <span
+                          class="border-border bg-muted/50 text-foreground inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-medium"
+                        >
+                          {{ skill }}
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <p class="text-muted-foreground text-xs">No default skills</p>
+                  }
+                </div>
+                <div class="flex shrink-0 items-center gap-1">
+                  <button
+                    hlmBtn
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="px-2"
+                    title="Edit"
+                    (click)="startEdit(item)"
+                  >
+                    <ng-icon hlm name="lucidePencil" size="sm" />
+                  </button>
+                  <button
+                    hlmBtn
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="px-2"
+                    title="Delete"
+                    [disabled]="deletingId() === item.id"
+                    (click)="deleteSpecialization(item)"
+                  >
+                    @if (deletingId() === item.id) {
+                      <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                    } @else {
+                      <ng-icon hlm name="lucideTrash2" size="sm" />
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>
+
+<app-confirm-alert-dialog
+  [(state)]="confirmDialogState"
+  title="Delete specialization?"
+  confirmLabel="Delete"
+  (confirmed)="confirmDelete()"
+>
+  Delete
+  <span class="font-medium text-foreground">“{{ pendingDeleteTitle() }}”</span>?
+  Members keep any skills already merged from it; only the assignment is removed.
+</app-confirm-alert-dialog>

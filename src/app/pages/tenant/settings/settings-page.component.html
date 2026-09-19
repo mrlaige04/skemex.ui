@@ -7,10 +7,15 @@
   <div hlmTabs [tab]="activeTab()" (tabActivated)="onTabActivated($event)">
     <div hlmTabsList variant="line">
       <button type="button" hlmTabsTrigger="columns">Columns</button>
+      <button type="button" hlmTabsTrigger="specializations">Specializations</button>
     </div>
 
     <div hlmTabsContent="columns" class="pt-4">
       <app-settings-columns-tab />
+    </div>
+
+    <div hlmTabsContent="specializations" class="pt-4">
+      <app-settings-specializations-tab />
     </div>
   </div>
 </div>

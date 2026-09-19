@@ -59,8 +59,38 @@
   border-style: dashed;
   opacity: 0.45;
 }
-.board-column-body.cdk-drop-list-dragging .board-issue-card:not(.cdk-drag-placeholder) {
-  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+.board-subtask-card.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: var(--radius);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.15),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+/* Source node is replaced by a zero CDK placeholder; local slot keeps layout. */
+.board-subtask-card--lifting {
+  display: none !important;
+}
+.board-subtask-drag-slot {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: var(--radius);
+  background-color: var(--card, #fff);
+  border: 1px dashed var(--border);
+  pointer-events: none;
+}
+.board-subtask-cdk-placeholder {
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.board-column-body.cdk-drop-list-dragging .board-issue-card {
+  transition: none !important;
+  transform: none !important;
 }
 .board-column-body.cdk-drop-list-receiving {
   background-color: color-mix(in oklab, var(--muted) 35%, transparent);

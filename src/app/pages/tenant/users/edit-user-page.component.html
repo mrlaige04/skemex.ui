@@ -11,7 +11,9 @@
     </a>
     <div>
       <h1 class="text-2xl font-semibold tracking-tight">{{ pageTitle() }}</h1>
-      <p class="text-muted-foreground mt-0.5 text-sm">View member profile and update their workspace role.</p>
+      <p class="text-muted-foreground mt-0.5 text-sm">
+        Update role, specializations, and skills for AI assignment.
+      </p>
     </div>
   </div>
 
@@ -30,7 +32,9 @@
       <div hlmCard class="w-full">
         <div hlmCardHeader class="pb-4">
           <h2 hlmCardTitle>Account details</h2>
-          <p hlmCardDescription>Member profile is read-only. You can change the workspace role.</p>
+          <p hlmCardDescription>
+            Profile is read-only. Role, specializations, and skills can be updated.
+          </p>
         </div>
 
         <div hlmCardContent class="pt-0">
@@ -117,6 +121,70 @@
                   </hlm-select-group>
                 </hlm-select-content>
               </hlm-select>
+            </div>
+
+            <div class="space-y-2">
+              <div>
+                <label hlmLabel>Specializations</label>
+                <p class="text-muted-foreground text-xs">
+                  Search and pick from the workspace catalog. Newly selected ones add their default
+                  skills below.
+                </p>
+              </div>
+              @if (catalog().length === 0) {
+                <p class="text-muted-foreground text-sm">
+                  No specializations in this workspace yet. Add them under Settings → Specializations.
+                </p>
+              } @else {
+                <hlm-combobox-multiple
+                  class="w-full"
+                  [value]="selectedSpecializations()"
+                  [itemToString]="specializationToString"
+                  [isItemEqualToValue]="specializationEqual"
+                  (valueChange)="onSpecializationsChange($event)"
+                >
+                  <hlm-combobox-chips class="w-full">
+                    <ng-template hlmComboboxValues let-values>
+                      @for (value of values; track value.id) {
+                        <hlm-combobox-chip [value]="value">{{ value.title }}</hlm-combobox-chip>
+                      }
+                    </ng-template>
+                    <input hlmComboboxChipInput placeholder="Search specializations…" />
+                  </hlm-combobox-chips>
+                  <hlm-combobox-content *hlmComboboxPortal>
+                    <hlm-combobox-empty>No specializations found.</hlm-combobox-empty>
+                    <div hlmComboboxList>
+                      @for (item of catalog(); track item.id) {
+                        <hlm-combobox-item [value]="item">
+                          <div class="flex flex-col gap-0.5">
+                            <span>{{ item.title }}</span>
+                            @if (item.description) {
+                              <span class="text-muted-foreground text-xs">{{ item.description }}</span>
+                            }
+                          </div>
+                        </hlm-combobox-item>
+                      }
+                    </div>
+                  </hlm-combobox-content>
+                </hlm-combobox-multiple>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <div>
+                <label hlmLabel>Skills</label>
+                <p class="text-muted-foreground text-xs">
+                  Personal skill list used for AI task assignment. Press Enter or comma to add.
+                </p>
+              </div>
+              <app-task-tags-input
+                [tags]="skills()"
+                [fullWidth]="true"
+                [maxItems]="50"
+                [maxItemLength]="100"
+                placeholder="Add skill…"
+                (tagsChange)="onSkillsChange($event)"
+              />
             </div>
 
             <div hlmCardFooter class="flex justify-end gap-2 px-0 pb-0 pt-2">
