@@ -30,6 +30,7 @@ import {
   lucideShield,
   lucideUserCircle,
   lucideUsers,
+  lucideWrench,
 } from '@ng-icons/lucide';
 import { filter, merge, of } from 'rxjs';
 import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
@@ -66,6 +67,7 @@ import { AuthService } from '../../services/auth/auth.service';
       lucidePlus,
       lucideShield,
       lucideMail,
+      lucideWrench,
     }),
     provideHlmSidebarConfig({ closeMobileSidebarOnMenuButtonClick: true }),
   ],

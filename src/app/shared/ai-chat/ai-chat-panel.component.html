@@ -244,67 +244,67 @@
       </div>
 
       <form class="ai-chat__composer" (submit)="onSubmit($event)">
-        @if (chat.models().length > 0) {
-          <div class="ai-chat__model">
-            <label class="sr-only" for="ai-chat-model">AI model</label>
-            <hlm-select
-              class="ai-chat__model-select w-full"
-              [value]="chat.selectedModelId()"
-              [itemToString]="modelLabel"
-              [disabled]="chat.sending() || !chat.activeThread()"
-              (valueChange)="onModelChange($event)"
-            >
-              <hlm-select-trigger id="ai-chat-model" class="ai-chat__model-trigger w-full">
-                <hlm-select-placeholder>Select model</hlm-select-placeholder>
-                <ng-template hlmSelectValueTemplate let-modelId>
-                  <span class="inline-flex min-w-0 items-center gap-2">
-                    @if (modelById(modelId); as selected) {
-                      @if (authorIconSrc(selected.author); as iconSrc) {
-                        <img
-                          [src]="iconSrc"
-                          [alt]="selected.author ?? ''"
-                          width="16"
-                          height="16"
-                          class="size-4 shrink-0 object-contain"
-                        />
-                      } @else {
-                        <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
-                      }
-                      <span class="truncate">{{ selected.displayName }}</span>
+        <div class="ai-chat__model">
+          <label class="sr-only" for="ai-chat-model">AI model</label>
+          <hlm-select
+            class="ai-chat__model-select w-full"
+            [value]="chat.selectedModelId()"
+            [itemToString]="modelLabel"
+            [disabled]="chat.sending() || chat.models().length === 0"
+            (valueChange)="onModelChange($event)"
+          >
+            <hlm-select-trigger id="ai-chat-model" class="ai-chat__model-trigger w-full">
+              <hlm-select-placeholder>
+                {{ chat.models().length === 0 ? 'No models available' : 'Select model' }}
+              </hlm-select-placeholder>
+              <ng-template hlmSelectValueTemplate let-modelId>
+                <span class="inline-flex min-w-0 items-center gap-2">
+                  @if (modelById(modelId); as selected) {
+                    @if (authorIconSrc(selected.author); as iconSrc) {
+                      <img
+                        [src]="iconSrc"
+                        [alt]="selected.author ?? ''"
+                        width="16"
+                        height="16"
+                        class="size-4 shrink-0 object-contain"
+                      />
                     } @else {
-                      <span class="truncate">{{ modelLabel(modelId) }}</span>
+                      <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
                     }
-                  </span>
-                </ng-template>
-              </hlm-select-trigger>
-              <hlm-select-content *hlmSelectPortal>
-                @for (group of modelsByProvider(); track group.provider) {
-                  <hlm-select-group>
-                    <hlm-select-label>{{ group.providerName }}</hlm-select-label>
-                    @for (m of group.models; track m.id) {
-                      <hlm-select-item [value]="m.id">
-                        <span class="inline-flex min-w-0 items-center gap-2">
-                          @if (authorIconSrc(m.author); as iconSrc) {
-                            <img
-                              [src]="iconSrc"
-                              [alt]="m.author ?? ''"
-                              width="16"
-                              height="16"
-                              class="size-4 shrink-0 object-contain"
-                            />
-                          } @else {
-                            <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
-                          }
-                          <span class="truncate">{{ m.displayName }}</span>
-                        </span>
-                      </hlm-select-item>
-                    }
-                  </hlm-select-group>
-                }
-              </hlm-select-content>
-            </hlm-select>
-          </div>
-        }
+                    <span class="truncate">{{ selected.displayName }}</span>
+                  } @else {
+                    <span class="truncate">{{ modelLabel(modelId) }}</span>
+                  }
+                </span>
+              </ng-template>
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (group of modelsByProvider(); track group.provider) {
+                <hlm-select-group>
+                  <hlm-select-label>{{ group.providerName }}</hlm-select-label>
+                  @for (m of group.models; track m.id) {
+                    <hlm-select-item [value]="m.id">
+                      <span class="inline-flex min-w-0 items-center gap-2">
+                        @if (authorIconSrc(m.author); as iconSrc) {
+                          <img
+                            [src]="iconSrc"
+                            [alt]="m.author ?? ''"
+                            width="16"
+                            height="16"
+                            class="size-4 shrink-0 object-contain"
+                          />
+                        } @else {
+                          <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
+                        }
+                        <span class="truncate">{{ m.displayName }}</span>
+                      </span>
+                    </hlm-select-item>
+                  }
+                </hlm-select-group>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </div>
         <label class="sr-only" for="ai-chat-input">Message Skemex AI</label>
         <textarea
           id="ai-chat-input"
@@ -324,7 +324,7 @@
           type="submit"
           size="sm"
           class="ai-chat__send"
-          [disabled]="chat.sending() || !draft().trim()"
+          [disabled]="chat.sending() || !draft().trim() || !chat.selectedModelId()"
           aria-label="Send message"
         >
           <ng-icon hlm name="lucideArrowUp" size="sm" />

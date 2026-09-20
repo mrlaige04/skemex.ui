@@ -28,6 +28,8 @@ export const APP_PATHS = {
   adminAiProviders: '/admin/ai-providers',
   adminAiProvidersNew: '/admin/ai-providers/new',
   adminAiProviderEdit: (providerId: string) => `/admin/ai-providers/${providerId}/edit`,
+  adminAgentTools: '/admin/agent-tools',
+  adminAgentToolEdit: (toolId: string) => `/admin/agent-tools/${toolId}/edit`,
   adminUsers: '/admin/users',
   adminEmailTemplates: '/admin/email-templates',
   adminEmailTemplateEdit: (templateId: string) => `/admin/email-templates/${templateId}/edit`,

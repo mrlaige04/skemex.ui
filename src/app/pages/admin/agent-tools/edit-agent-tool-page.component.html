@@ -1,0 +1,104 @@
+<div class="flex min-w-0 max-w-full flex-1 flex-col gap-6 overflow-x-hidden p-4 md:p-6">
+  <div class="flex flex-col gap-4">
+    <a
+      hlmBtn
+      variant="ghost"
+      class="text-muted-foreground w-fit pl-0 hover:bg-transparent"
+      [routerLink]="toolsListLink"
+    >
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Back to agent tools
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">{{ pageTitle() }}</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        System name is fixed (matches the code tool). Description is shown to the model for function
+        calling; system prompt is used for direct tool execution (placeholders like
+        <code class="text-xs">__MAX_DEPTH__</code> are filled at runtime).
+      </p>
+    </div>
+  </div>
+
+  @if (loadError(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  } @else if (loading()) {
+    <p class="text-muted-foreground text-sm">Loading…</p>
+  } @else {
+    <div hlmCard class="min-w-0 w-full max-w-full">
+      <div hlmCardHeader>
+        <h2 hlmCardTitle>Tool configuration</h2>
+      </div>
+
+      <div hlmCardContent class="min-w-0 overflow-hidden">
+        <form novalidate (submit)="onSubmit($event)" class="min-w-0 space-y-5">
+          @for (err of toolForm().errorSummary(); track err.kind + (err.message ?? '')) {
+            @if (err.kind === 'server') {
+              <p
+                class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+                role="alert"
+              >
+                {{ err.message }}
+              </p>
+            }
+          }
+
+          <div class="space-y-2">
+            <label hlmLabel for="tool-system-name">System name</label>
+            <input
+              hlmInput
+              id="tool-system-name"
+              type="text"
+              class="font-mono text-sm"
+              [value]="systemName()"
+              readonly
+              disabled
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="tool-description">Description</label>
+            <textarea
+              hlmInput
+              id="tool-description"
+              rows="4"
+              class="min-h-24 resize-y font-sans"
+              [formField]="toolForm.description"
+            ></textarea>
+            <p class="text-muted-foreground text-xs">
+              Shown to the LLM when choosing tools in chat (function calling).
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label hlmLabel for="tool-system-prompt">System prompt</label>
+            <textarea
+              hlmInput
+              id="tool-system-prompt"
+              rows="18"
+              class="min-h-64 resize-y font-mono text-xs leading-relaxed"
+              [formField]="toolForm.systemPrompt"
+            ></textarea>
+            <p class="text-muted-foreground text-xs">
+              Used for direct execution (e.g. future UI buttons). Leave placeholders intact unless you
+              know how they are replaced.
+            </p>
+          </div>
+
+          <div hlmCardFooter class="flex flex-wrap justify-end gap-2 px-0 pb-0">
+            <a hlmBtn variant="outline" [routerLink]="toolsListLink" [class.pointer-events-none]="saving()">
+              Cancel
+            </a>
+            <button type="submit" hlmBtn [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

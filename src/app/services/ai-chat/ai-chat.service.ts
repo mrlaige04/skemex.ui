@@ -315,7 +315,18 @@ export class AiChatService {
     const projectCode = this._projectCode();
     if (!projectId || !projectCode) {
       this.appendLocalAssistant(
-        'Open a project first — AI decomposition runs in the context of the current project.',
+        'Open a project first — AI runs in the context of the current project.',
+      );
+      return;
+    }
+
+    const selectedModel =
+      this.selectedModel() ??
+      this._models().find((m) => m.id === this._selectedModelId()) ??
+      null;
+    if (!selectedModel?.externalId) {
+      this.appendLocalAssistant(
+        'Select an AI model above before sending. If none are listed, ask a platform admin to enable an AI provider and activate models.',
       );
       return;
     }
@@ -327,7 +338,7 @@ export class AiChatService {
       let chatId = this._activeThreadId();
       if (!chatId) {
         const created = await this.projectsService.createAiChat(projectId, {
-          aiModelId: this.resolveFallbackModelId(),
+          aiModelId: selectedModel.id,
         });
         const thread = this.summaryToThread(created);
         this._threads.set([thread]);
@@ -335,6 +346,9 @@ export class AiChatService {
         this._activeThreadId.set(chatId);
         this.syncSelectedModelFromThread(chatId);
         this.rememberActive(projectId, chatId);
+      } else {
+        // Persist the currently selected model onto the chat before execution.
+        await this.setSelectedModel(selectedModel.id);
       }
 
       await this.ensureMessagesLoaded(chatId);
@@ -345,23 +359,32 @@ export class AiChatService {
         content,
         createdAt: new Date().toISOString(),
       });
-      this.appendLocalAssistant('Got it — queuing decomposition for this project…');
+      this.appendLocalAssistant(
+        `Got it — using ${selectedModel.displayName}. Working with the model…`,
+      );
 
-      const job = await this.projectsService.enqueueAiChatDecompose(projectId, chatId, {
+      const job = await this.aiService.execute({
+        projectId,
+        chatId,
         userInput: content,
+        model: selectedModel.externalId,
       });
 
       this.replaceLastAssistant(
-        `Job queued (${job.status}). Working with the model — this can take a minute…`,
+        `Job queued (${job.status}). Working with ${selectedModel.displayName} — this can take a minute…`,
       );
 
-      const finished = await this.pollJob(projectId, job.id);
+      const finished = await this.pollAgentJob(job.id);
       await this.reloadActiveChat(projectId, chatId, projectCode);
 
       if (finished.timedOut) {
         this.appendLocalAssistant(
           finished.error?.trim() ||
-            'Timed out waiting for AI decomposition. Check Issues later or try again.',
+            'Timed out waiting for the AI. Check Issues later or try again.',
+        );
+      } else if (finished.status === 'Failed') {
+        this.appendLocalAssistant(
+          finished.error?.trim() || 'The AI job failed. Try again or pick another model.',
         );
       }
     } catch (err) {
@@ -394,7 +417,11 @@ export class AiChatService {
       }
 
       if (modelsResult.status === 'fulfilled') {
-        this._models.set(modelsResult.value.filter((m) => m.isActive));
+        // API already returns active models; keep entries even if isActive is missing.
+        this._models.set(modelsResult.value.filter((m) => m.isActive !== false));
+      } else {
+        this._models.set([]);
+        console.warn('Failed to load AI models for chat.', modelsResult.reason);
       }
 
       if (settingsResult.status === 'fulfilled') {
@@ -608,14 +635,13 @@ export class AiChatService {
     }
   }
 
-  private async pollJob(
-    projectId: string,
+  private async pollAgentJob(
     jobId: string,
   ): Promise<{ status: string; error?: string | null; timedOut: boolean }> {
     const started = Date.now();
     while (Date.now() - started < POLL_TIMEOUT_MS) {
       await delay(POLL_INTERVAL_MS);
-      const job = await this.projectsService.getAiDecomposeJob(projectId, jobId);
+      const job = await this.aiService.getExecution(jobId);
       if (job.status === 'Succeeded' || job.status === 'Failed') {
         return { status: job.status, error: job.error, timedOut: false };
       }
@@ -625,7 +651,7 @@ export class AiChatService {
     return {
       status: 'Failed',
       timedOut: true,
-      error: 'Timed out waiting for AI decomposition. Check Issues later or try again.',
+      error: 'Timed out waiting for the AI. Check Issues later or try again.',
     };
   }
 
