@@ -128,6 +128,24 @@ export const routes: Routes = [
         title: 'AI Providers',
       },
       {
+        path: 'agent-tools/:toolId/edit',
+        loadComponent: () =>
+          import('./pages/admin/agent-tools/edit-agent-tool-page.component').then(
+            (m) => m.EditAgentToolPageComponent,
+          ),
+        data: { breadcrumb: 'Edit agent tool' },
+        title: 'Edit agent tool',
+      },
+      {
+        path: 'agent-tools',
+        loadComponent: () =>
+          import('./pages/admin/agent-tools/agent-tools-page.component').then(
+            (m) => m.AgentToolsPageComponent,
+          ),
+        data: { breadcrumb: 'Agent tools' },
+        title: 'Agent tools',
+      },
+      {
         path: 'users/new',
         loadComponent: () =>
           import('./pages/admin/users/create-sa-user-page.component').then((m) => m.CreateSaUserPageComponent),

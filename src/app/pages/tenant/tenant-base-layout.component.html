@@ -115,6 +115,18 @@
               <li hlmSidebarMenuItem>
                 <a
                   hlmSidebarMenuButton
+                  [routerLink]="adminSection('agent-tools')"
+                  routerLinkActive
+                  #adminAgentToolsRla="routerLinkActive"
+                  [isActive]="adminAgentToolsRla.isActive"
+                >
+                  <ng-icon hlm name="lucideWrench" />
+                  <span>Agent tools</span>
+                </a>
+              </li>
+              <li hlmSidebarMenuItem>
+                <a
+                  hlmSidebarMenuButton
                   [routerLink]="adminSection('users')"
                   routerLinkActive
                   #adminUsersRla="routerLinkActive"
