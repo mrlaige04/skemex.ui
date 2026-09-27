@@ -121,7 +121,6 @@ export interface AiDecompositionJobDto {
   projectId: string;
   status: AiDecompositionJobStatus;
   userInput: string;
-  customInstructions?: string | null;
   error?: string | null;
   rootTaskId?: string | null;
   rootTaskCode?: string | null;
@@ -131,7 +130,6 @@ export interface AiDecompositionJobDto {
 
 export interface EnqueueAiTaskDecompositionRequest {
   userInput: string;
-  customInstructions?: string | null;
 }
 
 export interface ProjectTaskUserDto {

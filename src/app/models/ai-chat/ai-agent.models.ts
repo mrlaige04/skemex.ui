@@ -3,7 +3,6 @@ export interface ExecuteAiRequest {
   projectId?: string | null;
   chatId?: string | null;
   userInput: string;
-  customInstructions?: string | null;
   argumentsJson?: string | null;
   /** Provider model external id (e.g. llama-3.3-70b-versatile). */
   model?: string | null;
@@ -17,7 +16,6 @@ export interface AiAgentJobDto {
   toolName?: string | null;
   status: AiAgentJobStatus;
   userInput: string;
-  customInstructions?: string | null;
   error?: string | null;
   assistantMessage?: string | null;
   artifactType?: string | null;
