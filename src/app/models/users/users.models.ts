@@ -20,6 +20,7 @@ export interface TenantSpecializationSummaryDto {
 export interface TenantRoleDto {
   id: string;
   name: string;
+  isSystem?: boolean;
 }
 
 export interface CreateTenantUserRequest {

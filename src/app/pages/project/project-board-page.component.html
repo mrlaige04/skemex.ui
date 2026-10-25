@@ -13,6 +13,7 @@
         aria-label="Open Skemex AI to decompose a goal"
         [attr.aria-pressed]="aiChat.open()"
         (click)="aiChat.setOpen(true)"
+        *hasPermission="permissions.aiChat"
       >
         <ng-icon hlm name="lucideSparkles" size="sm" />
       </button>

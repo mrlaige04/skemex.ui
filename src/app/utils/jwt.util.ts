@@ -14,7 +14,9 @@ export function readJwtPayload(accessToken: string): Record<string, unknown> | n
     if (parts.length < 2) {
       return null;
     }
-    return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    return JSON.parse(atob(padded)) as Record<string, unknown>;
   } catch {
     return null;
   }
@@ -47,21 +49,60 @@ export function rolesFromToken(accessToken: string | null | undefined): string[]
     return [];
   }
 
-  const fromRolesClaim = payload['Roles'];
-  if (Array.isArray(fromRolesClaim)) {
-    return fromRolesClaim.filter((r): r is string => typeof r === 'string');
+  return collectStringClaims(payload, [
+    'Roles',
+    'role',
+    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+  ]);
+}
+
+/** Permission names from {@code permissions} (space-separated) and legacy {@code permission} claims. */
+export function permissionsFromToken(accessToken: string | null | undefined): string[] {
+  if (!accessToken) {
+    return [];
   }
-  if (typeof fromRolesClaim === 'string' && fromRolesClaim.length > 0) {
-    return [fromRolesClaim];
+  const payload = readJwtPayload(accessToken);
+  if (!payload) {
+    return [];
   }
 
-  const roleClaim = payload['role'];
-  if (typeof roleClaim === 'string') {
-    return [roleClaim];
-  }
-  if (Array.isArray(roleClaim)) {
-    return roleClaim.filter((r): r is string => typeof r === 'string');
+  const values = new Set<string>();
+
+  const packed = payload['permissions'];
+  if (typeof packed === 'string' && packed.length > 0) {
+    for (const part of packed.split(/\s+/)) {
+      if (part.length > 0) {
+        values.add(part);
+      }
+    }
+  } else if (Array.isArray(packed)) {
+    for (const item of packed) {
+      if (typeof item === 'string' && item.length > 0) {
+        values.add(item);
+      }
+    }
   }
 
-  return [];
+  for (const name of collectStringClaims(payload, ['permission'])) {
+    values.add(name);
+  }
+
+  return [...values];
+}
+
+function collectStringClaims(payload: Record<string, unknown>, keys: string[]): string[] {
+  const values = new Set<string>();
+  for (const key of keys) {
+    const claim = payload[key];
+    if (typeof claim === 'string' && claim.length > 0) {
+      values.add(claim);
+    } else if (Array.isArray(claim)) {
+      for (const item of claim) {
+        if (typeof item === 'string' && item.length > 0) {
+          values.add(item);
+        }
+      }
+    }
+  }
+  return [...values];
 }

@@ -165,7 +165,7 @@
                   <span>Dashboard</span>
                 </a>
               </li>
-              <li hlmSidebarMenuItem>
+              <li hlmSidebarMenuItem *hasPermission="permissions.usersView">
                 <a
                   hlmSidebarMenuButton
                   [routerLink]="tenantSection('users')"
@@ -177,7 +177,7 @@
                   <span>Users</span>
                 </a>
               </li>
-              <li hlmSidebarMenuItem>
+              <li hlmSidebarMenuItem *hasPermission="permissions.projectsView">
                 <a
                   hlmSidebarMenuButton
                   [routerLink]="tenantSection('projects')"
@@ -189,18 +189,24 @@
                   <span>Projects</span>
                 </a>
               </li>
-              <li hlmSidebarMenuItem>
-                <a
-                  hlmSidebarMenuButton
-                  [routerLink]="tenantSection('settings')"
-                  routerLinkActive
-                  #setRla="routerLinkActive"
-                  [isActive]="setRla.isActive"
-                >
-                  <ng-icon hlm name="lucideSettings" />
-                  <span>Settings</span>
-                </a>
-              </li>
+              @if (
+                auth.hasPermission(permissions.settingsColumnsView) ||
+                auth.hasPermission(permissions.settingsSpecializationsView) ||
+                auth.hasPermission(permissions.settingsRolesView)
+              ) {
+                <li hlmSidebarMenuItem>
+                  <a
+                    hlmSidebarMenuButton
+                    [routerLink]="tenantSection('settings')"
+                    routerLinkActive
+                    #setRla="routerLinkActive"
+                    [isActive]="setRla.isActive"
+                  >
+                    <ng-icon hlm name="lucideSettings" />
+                    <span>Settings</span>
+                  </a>
+                </li>
+              }
             </ul>
           </div>
         </div>

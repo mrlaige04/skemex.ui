@@ -1,0 +1,97 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <a
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        class="text-muted-foreground mb-2 -ml-2 w-fit"
+        [routerLink]="rolesListLink"
+      >
+        <ng-icon hlm name="lucideArrowLeft" size="sm" />
+        Back to roles
+      </a>
+      <h1 class="text-2xl font-semibold tracking-tight">{{ title() }}</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Choose a name and the permissions this custom role should grant.
+      </p>
+    </div>
+    <button type="button" hlmBtn [disabled]="!canSave()" (click)="save()">
+      @if (saving()) {
+        <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+      } @else {
+        <ng-icon hlm name="lucideSave" size="sm" />
+      }
+      Save
+    </button>
+  </div>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  <div hlmCard>
+    <div hlmCardContent class="flex flex-col gap-4">
+      @if (loading()) {
+        <p class="text-muted-foreground text-sm">Loading…</p>
+      } @else {
+        <div class="max-w-md space-y-2">
+          <label hlmLabel for="role-name">Name</label>
+          <input
+            id="role-name"
+            hlmInput
+            type="text"
+            [ngModel]="name()"
+            (ngModelChange)="name.set($event)"
+            placeholder="e.g. Project lead"
+            maxlength="128"
+          />
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-sm font-medium">Permissions</h2>
+            <button
+              type="button"
+              hlmBtn
+              variant="outline"
+              size="sm"
+              (click)="toggleAllPermissions()"
+            >
+              {{ allPermissionsSelected() ? 'Unselect all' : 'Select all' }}
+            </button>
+          </div>
+          @for (group of groups(); track group.id) {
+            <section class="border-border rounded-lg border p-4">
+              <label class="mb-3 flex items-center gap-2 text-sm font-medium">
+                <hlm-checkbox
+                  [checked]="groupFullySelected(group)"
+                  (checkedChange)="toggleGroup(group, $event)"
+                />
+                {{ group.name }}
+              </label>
+              <ul class="grid gap-2 sm:grid-cols-2">
+                @for (permission of group.permissions; track permission.id) {
+                  <li>
+                    <label class="text-muted-foreground flex items-center gap-2 text-sm">
+                      <hlm-checkbox
+                        [checked]="isSelected(permission.id)"
+                        (checkedChange)="togglePermission(permission.id, $event)"
+                      />
+                      <span class="font-mono text-xs text-foreground">{{ permission.name }}</span>
+                    </label>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

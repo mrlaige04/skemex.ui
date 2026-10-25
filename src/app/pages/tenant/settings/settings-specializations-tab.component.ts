@@ -21,9 +21,11 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmInputImports } from 'spartan/input';
 import { HlmLabelImports } from 'spartan/label';
 import { problemDetailMessage } from '../../../http/problem-details';
+import { PERMISSIONS } from '../../../models/auth/permissions';
 import type { TenantSpecializationDto } from '../../../models/tenant-specializations/tenant-specializations.models';
 import { TenantSpecializationsService } from '../../../services/tenant-specializations/tenant-specializations.service';
 import { ConfirmAlertDialogComponent } from '../../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { TaskTagsInputComponent } from '../../../shared/task-tags-input/task-tags-input.component';
 
 @Component({
@@ -31,6 +33,7 @@ import { TaskTagsInputComponent } from '../../../shared/task-tags-input/task-tag
   imports: [
     NgIcon,
     ConfirmAlertDialogComponent,
+    HasPermissionDirective,
     TaskTagsInputComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
@@ -52,6 +55,7 @@ import { TaskTagsInputComponent } from '../../../shared/task-tags-input/task-tag
 })
 export class SettingsSpecializationsTabComponent implements OnInit {
   private readonly specializationsService = inject(TenantSpecializationsService);
+  readonly permissions = PERMISSIONS;
 
   readonly loading = signal(true);
   readonly saving = signal(false);

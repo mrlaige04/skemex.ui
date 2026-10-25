@@ -26,6 +26,19 @@ export interface TenantSummary {
   name: string;
 }
 
+export interface RoleBase {
+  id: string;
+  name: string;
+  isSystem: boolean;
+}
+
+export interface PermissionBase {
+  id: string;
+  name: string;
+  groupName: string;
+  isSystem: boolean;
+}
+
 export interface CurrentUserResponse {
   id: string;
   email: string;
@@ -34,8 +47,8 @@ export interface CurrentUserResponse {
   isSuperAdmin: boolean;
   avatarUrl?: string | null;
   tenants: TenantSummary[];
-  roles: unknown[];
-  permissions: unknown[];
+  roles: RoleBase[];
+  permissions: PermissionBase[];
 }
 
 export interface LoginResponse {
@@ -63,8 +76,8 @@ export interface TenantSessionResponse {
   token: AccessTokenResponse;
   tenantId: string;
   tenantName: string;
-  roles: unknown[];
-  permissions: unknown[];
+  roles: RoleBase[];
+  permissions: PermissionBase[];
 }
 
 /** Browser session snapshot after a workspace is selected (sidebar + guards). */

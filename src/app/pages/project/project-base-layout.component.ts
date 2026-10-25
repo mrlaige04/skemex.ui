@@ -35,12 +35,14 @@ import { HlmButtonImports } from 'spartan/button';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import type { ProjectDto } from '../../models/projects/projects.models';
 import { APP_PATHS, projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.component';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { NotificationsBellComponent } from '../../shared/notifications/notifications-bell.component';
 
 @Component({
@@ -52,6 +54,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
     NgIcon,
     AiChatPanelComponent,
     NotificationsBellComponent,
+    HasPermissionDirective,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmButtonImports,
@@ -80,6 +83,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
 })
 export class ProjectBaseLayoutComponent implements OnInit {
   readonly auth = inject(AuthService);
+  readonly permissions = PERMISSIONS;
   readonly aiChat = inject(AiChatService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

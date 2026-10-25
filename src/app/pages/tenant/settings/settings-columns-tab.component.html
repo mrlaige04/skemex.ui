@@ -6,7 +6,14 @@
         Default columns copied to new projects. Drag to reorder; order is saved automatically.
       </p>
     </div>
-    <button hlmBtn type="button" variant="outline" size="sm" (click)="toggleCreateForm()">
+    <button
+      hlmBtn
+      type="button"
+      variant="outline"
+      size="sm"
+      (click)="toggleCreateForm()"
+      *hasPermission="permissions.settingsColumnsCreate"
+    >
       <ng-icon hlm name="lucidePlus" size="sm" />
       Add column
     </button>
@@ -123,6 +130,7 @@
           size="sm"
           [disabled]="seedingDefaults()"
           (click)="addDefaultColumns()"
+          *hasPermission="permissions.settingsColumnsCreate"
         >
           @if (seedingDefaults()) {
             <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
@@ -262,6 +270,7 @@
                     size="icon-sm"
                     (click)="startEdit(column)"
                     [attr.aria-label]="'Edit ' + column.title"
+                    *hasPermission="permissions.settingsColumnsEdit"
                   >
                     <ng-icon hlm name="lucidePencil" size="sm" />
                   </button>
@@ -273,6 +282,7 @@
                     (click)="deleteColumn(column)"
                     [disabled]="deletingColumnId() === column.id"
                     [attr.aria-label]="'Delete ' + column.title"
+                    *hasPermission="permissions.settingsColumnsDelete"
                   >
                     @if (deletingColumnId() === column.id) {
                       <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />

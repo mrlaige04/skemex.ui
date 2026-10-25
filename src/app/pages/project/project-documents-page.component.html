@@ -15,59 +15,61 @@
     </p>
   }
 
-  <input
-    #fileInput
-    type="file"
-    class="hidden"
-    accept=".pdf,.docx,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
-    (change)="onFileSelected($event)"
-  />
+  @if (auth.hasPermission(permissions.documentsUpload)) {
+    <input
+      #fileInput
+      type="file"
+      class="hidden"
+      accept=".pdf,.docx,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+      (change)="onFileSelected($event)"
+    />
 
-  <div
-    class="border-border bg-muted/20 flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-6 py-8 text-center transition-colors"
-  [class.border-primary]="dragActive()"
-  [class.bg-primary/5]="dragActive()"
-  [class.pointer-events-none]="uploading() || loading()"
-  [class.opacity-60]="uploading() || loading()"
-  (click)="onBrowseClick(fileInput)"
-  (dragenter)="onDragEnter($event)"
-  (dragleave)="onDragLeave($event)"
-  (dragover)="onDragOver($event)"
-  (drop)="onDrop($event)"
-  role="button"
-  tabindex="0"
-  (keydown.enter)="onBrowseClick(fileInput)"
-  (keydown.space)="onBrowseClick(fileInput); $event.preventDefault()"
-  >
-    @if (uploading()) {
-      <ng-icon hlm name="lucideLoaderCircle" size="lg" class="text-primary animate-spin" />
-      <div>
-        <p class="font-medium">Uploading document…</p>
-        <p class="text-muted-foreground mt-1 text-sm">Please wait while your file is being uploaded.</p>
-      </div>
-    } @else {
-      <ng-icon
-        hlm
-        name="lucideUploadCloud"
-        size="lg"
-        class="text-muted-foreground"
-        [class.text-primary]="dragActive()"
-      />
-      <div>
-        <p class="font-medium">
-          @if (dragActive()) {
-            Drop file to upload
-          } @else {
-            Drag and drop a file here
-          }
-        </p>
-        <p class="text-muted-foreground mt-1 text-sm">
-          PDF, DOCX, PNG, or JPG up to 25 MB — or
-          <span class="text-primary font-medium">browse files</span>
-        </p>
-      </div>
-    }
-  </div>
+    <div
+      class="border-border bg-muted/20 flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-6 py-8 text-center transition-colors"
+      [class.border-primary]="dragActive()"
+      [class.bg-primary/5]="dragActive()"
+      [class.pointer-events-none]="uploading() || loading()"
+      [class.opacity-60]="uploading() || loading()"
+      (click)="onBrowseClick(fileInput)"
+      (dragenter)="onDragEnter($event)"
+      (dragleave)="onDragLeave($event)"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event)"
+      role="button"
+      tabindex="0"
+      (keydown.enter)="onBrowseClick(fileInput)"
+      (keydown.space)="onBrowseClick(fileInput); $event.preventDefault()"
+    >
+      @if (uploading()) {
+        <ng-icon hlm name="lucideLoaderCircle" size="lg" class="text-primary animate-spin" />
+        <div>
+          <p class="font-medium">Uploading document…</p>
+          <p class="text-muted-foreground mt-1 text-sm">Please wait while your file is being uploaded.</p>
+        </div>
+      } @else {
+        <ng-icon
+          hlm
+          name="lucideUploadCloud"
+          size="lg"
+          class="text-muted-foreground"
+          [class.text-primary]="dragActive()"
+        />
+        <div>
+          <p class="font-medium">
+            @if (dragActive()) {
+              Drop file to upload
+            } @else {
+              Drag and drop a file here
+            }
+          </p>
+          <p class="text-muted-foreground mt-1 text-sm">
+            PDF, DOCX, PNG, or JPG up to 25 MB — or
+            <span class="text-primary font-medium">browse files</span>
+          </p>
+        </div>
+      }
+    </div>
+  }
 
   <section hlmCard>
     <div hlmCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

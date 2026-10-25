@@ -31,5 +31,7 @@ export const tenantWorkspaceGuard: CanActivateFn = async () => {
     return router.createUrlTree([APP_PATHS.select]);
   }
 
+  // Always load tenant-scoped roles/permissions from GET api/auth/session (not JWT).
+  await auth.ensureSessionRbac(true);
   return true;
 };

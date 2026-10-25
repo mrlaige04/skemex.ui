@@ -8,7 +8,9 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDownload, lucideEye, lucideLoaderCircle, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import type { ProjectDocumentDto } from '../../models/projects/projects.models';
+import { AuthService } from '../../services/auth/auth.service';
 import {
   PROJECT_DOCUMENTS_TABLE_HOST,
   type ProjectDocumentsTableHost,
@@ -37,22 +39,24 @@ import {
           Download
         </a>
       }
-      <button
-        type="button"
-        hlmBtn
-        variant="ghost"
-        size="sm"
-        class="text-destructive hover:text-destructive h-8 px-2"
-        [disabled]="host.deletingId() === document.id"
-        (click)="host.deleteDocument(document)"
-      >
-        @if (host.deletingId() === document.id) {
-          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
-        } @else {
-          <ng-icon hlm name="lucideTrash2" size="sm" />
-        }
-        Delete
-      </button>
+      @if (auth.hasPermission(permissions.documentsDelete)) {
+        <button
+          type="button"
+          hlmBtn
+          variant="ghost"
+          size="sm"
+          class="text-destructive hover:text-destructive h-8 px-2"
+          [disabled]="host.deletingId() === document.id"
+          (click)="host.deleteDocument(document)"
+        >
+          @if (host.deletingId() === document.id) {
+            <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+          } @else {
+            <ng-icon hlm name="lucideTrash2" size="sm" />
+          }
+          Delete
+        </button>
+      }
     </div>
   `,
 })
@@ -61,6 +65,8 @@ export class ProjectDocumentsTableActionsCellComponent {
   // so computed would cache the first row forever when the cell instance is reused.
   readonly ctx = injectFlexRenderContext<CellContext<ProjectDocumentDto, unknown>>();
   readonly host = inject<ProjectDocumentsTableHost>(PROJECT_DOCUMENTS_TABLE_HOST);
+  readonly auth = inject(AuthService);
+  readonly permissions = PERMISSIONS;
 
   get document(): ProjectDocumentDto {
     return this.ctx.row.original;

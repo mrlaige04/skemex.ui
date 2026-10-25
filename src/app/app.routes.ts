@@ -1,9 +1,11 @@
 import { inject } from '@angular/core';
 import { ActivatedRoute, Router, Routes } from '@angular/router';
+import { hasPermissionGuard } from './routing/has-permission.guard';
 import { isNotAuthenticatedGuard } from './routing/is-not-authenticated.guard';
 import { projectWorkspaceGuard } from './routing/project-workspace.guard';
 import { superAdminGuard } from './routing/super-admin.guard';
 import { tenantWorkspaceGuard } from './routing/tenant-workspace.guard';
+import { PERMISSIONS } from './models/auth/permissions';
 
 export const routes: Routes = [
   {
@@ -73,6 +75,12 @@ export const routes: Routes = [
     path: 'tenant-select',
     loadComponent: () =>
       import('./pages/auth/select-tenant/select-tenant-page.component').then((m) => m.SelectTenantPageComponent),
+  },
+  {
+    path: 'no-access',
+    loadComponent: () =>
+      import('./pages/no-access/no-access-page.component').then((m) => m.NoAccessPageComponent),
+    title: 'No access',
   },
   {
     path: 'admin',
@@ -210,46 +218,81 @@ export const routes: Routes = [
       },
       {
         path: 'users/new',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/users/create-user-page.component').then((m) => m.CreateUserPageComponent),
-        data: { breadcrumb: 'Add user' },
+        data: { breadcrumb: 'Add user', permission: PERMISSIONS.usersCreate },
         title: 'Add user',
       },
       {
         path: 'users/:userId/edit',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/users/edit-user-page.component').then((m) => m.EditUserPageComponent),
-        data: { breadcrumb: 'Edit user' },
+        data: { breadcrumb: 'Edit user', permission: PERMISSIONS.usersEdit },
         title: 'Edit user',
       },
       {
         path: 'users',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/users/users-page.component').then((m) => m.UsersPageComponent),
-        data: { breadcrumb: 'Users' },
+        data: { breadcrumb: 'Users', permission: PERMISSIONS.usersView },
         title: 'Users',
       },
       {
+        path: 'roles/new',
+        canActivate: [hasPermissionGuard],
+        loadComponent: () =>
+          import('./pages/tenant/roles/edit-role-page.component').then((m) => m.EditRolePageComponent),
+        data: { breadcrumb: 'Create role', permission: PERMISSIONS.settingsRolesCreate },
+        title: 'Create role',
+      },
+      {
+        path: 'roles/:roleId/edit',
+        canActivate: [hasPermissionGuard],
+        loadComponent: () =>
+          import('./pages/tenant/roles/edit-role-page.component').then((m) => m.EditRolePageComponent),
+        data: { breadcrumb: 'Edit role', permission: PERMISSIONS.settingsRolesEdit },
+        title: 'Edit role',
+      },
+      {
+        path: 'roles',
+        pathMatch: 'full',
+        redirectTo: 'settings',
+      },
+      {
         path: 'projects/new',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/projects/create-project-page.component').then(
             (m) => m.CreateProjectPageComponent,
           ),
-        data: { breadcrumb: 'Create project' },
+        data: { breadcrumb: 'Create project', permission: PERMISSIONS.projectsCreate },
         title: 'Create project',
       },
       {
         path: 'projects',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/projects/projects-page.component').then((m) => m.ProjectsPageComponent),
-        data: { breadcrumb: 'Projects' },
+        data: { breadcrumb: 'Projects', permission: PERMISSIONS.projectsView },
         title: 'Projects',
       },
       {
         path: 'settings',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/tenant/settings/settings-page.component').then((m) => m.SettingsPageComponent),
-        data: { breadcrumb: 'Settings' },
+        data: {
+          breadcrumb: 'Settings',
+          permission: [
+            PERMISSIONS.settingsColumnsView,
+            PERMISSIONS.settingsSpecializationsView,
+            PERMISSIONS.settingsRolesView,
+          ],
+          permissionMode: 'any',
+        },
         title: 'Settings',
       },
       {
@@ -272,7 +315,8 @@ export const routes: Routes = [
   },
   {
     path: ':projectCode',
-    canActivate: [tenantWorkspaceGuard, projectWorkspaceGuard],
+    canActivate: [tenantWorkspaceGuard, projectWorkspaceGuard, hasPermissionGuard],
+    data: { permission: PERMISSIONS.projectsView },
     loadComponent: () =>
       import('./pages/project/project-base-layout.component').then((m) => m.ProjectBaseLayoutComponent),
     children: [
@@ -332,20 +376,22 @@ export const routes: Routes = [
       },
       {
         path: 'documents',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/project/project-documents-page.component').then(
             (m) => m.ProjectDocumentsPageComponent,
           ),
-        data: { breadcrumb: 'Documents' },
+        data: { breadcrumb: 'Documents', permission: PERMISSIONS.documentsView },
         title: 'Documents',
       },
       {
         path: 'documents/:documentId',
+        canActivate: [hasPermissionGuard],
         loadComponent: () =>
           import('./pages/project/project-document-page.component').then(
             (m) => m.ProjectDocumentPageComponent,
           ),
-        data: { breadcrumb: 'Document' },
+        data: { breadcrumb: 'Document', permission: PERMISSIONS.documentsView },
         title: 'Document',
       },
       {
