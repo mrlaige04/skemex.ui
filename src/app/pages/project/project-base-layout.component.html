@@ -1,10 +1,6 @@
 <div hlmSidebarWrapper class="app-shell flex h-svh max-h-svh overflow-hidden">
   <hlm-sidebar collapsible="icon" variant="sidebar" side="left">
     <div hlmSidebarHeader class="app-shell__header">
-      <a routerLink="/" class="app-shell__brand">
-        Skemex<span class="app-shell__brand-dot">.</span>
-      </a>
-
       <button type="button" hlmBtn variant="ghost" size="sm" class="app-shell__back" (click)="goBackToWorkspace()">
         <ng-icon hlm name="lucideArrowLeft" size="sm" class="shrink-0 opacity-70" />
         <span class="group-data-[collapsible=icon]:hidden">All projects</span>
@@ -179,7 +175,8 @@
         <ng-icon
           hlm
           name="lucideChevronsUpDown"
-          class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+          size="sm"
+          class="shrink-0 opacity-40 group-data-[collapsible=icon]:hidden"
         />
       </button>
     </div>
@@ -202,6 +199,9 @@
             </li>
           </ol>
         </nav>
+      </div>
+      <div class="app-shell__topbar-actions">
+        <app-notifications-bell />
       </div>
     </header>
     <div class="app-shell__content app-shell__content--project project-outlet">

@@ -1,0 +1,76 @@
+<hlm-popover
+  align="end"
+  sideOffset="6"
+  [state]="popoverState()"
+  (stateChanged)="onPopoverStateChanged($event)"
+>
+  <button
+    type="button"
+    hlmBtn
+    variant="ghost"
+    size="icon-sm"
+    hlmPopoverTrigger
+    class="notifications-bell__trigger relative"
+    aria-label="Notifications"
+  >
+    <ng-icon hlm name="lucideBell" size="sm" />
+    @if (unreadCount() > 0) {
+      <span class="notifications-bell__badge" aria-hidden="true"></span>
+    }
+  </button>
+
+  <hlm-popover-content class="notifications-bell__panel w-80 p-0" *hlmPopoverPortal="let ctx">
+    <div class="notifications-bell__header">
+      <span class="text-sm font-semibold">Notifications</span>
+      @if (unreadCount() > 0) {
+        <span class="text-muted-foreground text-xs">{{ unreadCount() }} unread</span>
+      }
+    </div>
+
+    <div class="notifications-bell__list">
+      @if (recentLoading()) {
+        <p class="text-muted-foreground px-3 py-6 text-center text-sm">Loading…</p>
+      } @else if (recent().length === 0) {
+        <p class="text-muted-foreground px-3 py-6 text-center text-sm">You're all caught up.</p>
+      } @else {
+        @for (item of recent(); track item.id) {
+          <button
+            type="button"
+            class="notifications-bell__item"
+            [class.notifications-bell__item--unread]="!item.isRead"
+            (click)="onItemClick(item)"
+          >
+            <span
+              [class]="'notifications-bell__severity ' + severityClass(item.severity)"
+              aria-hidden="true"
+            ></span>
+            <span class="min-w-0 flex-1 text-left">
+              <span class="block truncate text-sm font-medium leading-snug">{{ item.title }}</span>
+              @if (item.body) {
+                <span class="text-muted-foreground mt-0.5 line-clamp-2 block text-xs">{{
+                  item.body
+                }}</span>
+              }
+              <span class="text-muted-foreground mt-1 block text-[11px]">{{
+                relativeTime(item.createdAt)
+              }}</span>
+            </span>
+          </button>
+        }
+      }
+    </div>
+
+    <div class="notifications-bell__footer">
+      <a
+        hlmBtn
+        variant="ghost"
+        size="sm"
+        class="w-full justify-center"
+        [routerLink]="seeAllLink"
+        (click)="popoverState.set('closed')"
+      >
+        See all notifications
+      </a>
+    </div>
+  </hlm-popover-content>
+</hlm-popover>

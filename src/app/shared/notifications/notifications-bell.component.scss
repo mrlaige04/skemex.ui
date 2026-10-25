@@ -1,0 +1,75 @@
+.notifications-bell__badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--destructive, #dc2626);
+  pointer-events: none;
+}
+
+.notifications-bell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notifications-bell__list {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.notifications-bell__item {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: color-mix(in oklab, var(--muted) 70%, transparent);
+  }
+
+  &--unread {
+    background: color-mix(in oklab, var(--primary) 6%, transparent);
+  }
+}
+
+.notifications-bell__severity {
+  margin-top: 0.35rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.notifications-severity--info {
+  background: #3b82f6;
+}
+
+.notifications-severity--success {
+  background: #16a34a;
+}
+
+.notifications-severity--warning {
+  background: #d97706;
+}
+
+.notifications-severity--error {
+  background: #dc2626;
+}
+
+.notifications-bell__footer {
+  border-top: 1px solid var(--border);
+  padding: 0.35rem;
+}

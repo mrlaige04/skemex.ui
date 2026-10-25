@@ -39,6 +39,7 @@ import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
 import { APP_PATHS, adminSectionPath, workspaceSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
+import { NotificationsBellComponent } from '../../shared/notifications/notifications-bell.component';
 
 @Component({
   selector: 'app-tenant-base-layout',
@@ -47,6 +48,7 @@ import { AuthService } from '../../services/auth/auth.service';
     RouterLinkActive,
     RouterOutlet,
     NgIcon,
+    NotificationsBellComponent,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmDropdownMenuImports,
