@@ -330,6 +330,24 @@ export const routes: Routes = [
         data: { breadcrumb: 'Document' },
         title: 'Document',
       },
+      {
+        path: 'ai-usage/history',
+        loadComponent: () =>
+          import('./pages/project/ai-usage/project-ai-usage-history-page.component').then(
+            (m) => m.ProjectAiUsageHistoryPageComponent,
+          ),
+        data: { breadcrumb: 'AI activity' },
+        title: 'AI activity',
+      },
+      {
+        path: 'ai-usage',
+        loadComponent: () =>
+          import('./pages/project/ai-usage/project-ai-usage-page.component').then(
+            (m) => m.ProjectAiUsagePageComponent,
+          ),
+        data: { breadcrumb: 'AI usage' },
+        title: 'AI usage',
+      },
     ],
   },
   { path: 'home', pathMatch: 'full', redirectTo: 'dashboard' },

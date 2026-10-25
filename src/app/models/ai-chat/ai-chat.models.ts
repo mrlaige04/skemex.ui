@@ -69,7 +69,6 @@ export interface AiChatMessageDto {
   chatId: string;
   role: string;
   content: string;
-  decompositionJobId?: string | null;
   rootTaskId?: string | null;
   rootTaskCode?: string | null;
   createdAt: string;

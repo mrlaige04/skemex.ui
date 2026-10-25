@@ -1,0 +1,49 @@
+.usage-groups__group {
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in oklab, var(--foreground) 4%, transparent);
+  }
+}
+
+.usage-groups__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in oklab, var(--foreground) 8%, transparent);
+    color: var(--foreground);
+  }
+}
+
+.usage-groups__context {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.usage-groups__child {
+  td {
+    border-top-style: dashed;
+  }
+}
+
+.usage-groups__child-main {
+  border-left: 2px solid var(--border);
+}

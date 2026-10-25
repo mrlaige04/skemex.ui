@@ -1,0 +1,190 @@
+<div class="dash flex w-full min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+  <header class="dash__header flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="min-w-0">
+      <p class="dash__kicker">{{ projectName() || projectCode() }}</p>
+      <h1 class="text-2xl font-semibold tracking-tight">AI usage</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Tokens, latency, and operation mix for this project.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="dash-range" role="group" aria-label="Time range">
+        <button type="button" [class.is-active]="range() === '7d'" (click)="setRange('7d')">7d</button>
+        <button type="button" [class.is-active]="range() === '30d'" (click)="setRange('30d')">30d</button>
+        <button type="button" [class.is-active]="range() === '90d'" (click)="setRange('90d')">90d</button>
+      </div>
+      <button hlmBtn type="button" variant="outline" size="sm" [disabled]="loading()" (click)="refresh()">
+        <ng-icon hlm name="lucideRefreshCw" size="sm" [class.animate-spin]="loading()" />
+        Refresh
+      </button>
+      <a hlmBtn size="sm" [routerLink]="historyLink()">
+        <ng-icon hlm name="lucideList" size="sm" />
+        All activity
+      </a>
+    </div>
+  </header>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  @if (loading()) {
+    <div class="dash-skel" aria-busy="true">
+      <div class="dash-skel__stats">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="dash-skel__card"></div>
+        }
+      </div>
+      <div class="dash-skel__grid">
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+        <div class="dash-skel__panel"></div>
+      </div>
+    </div>
+  } @else if (summary(); as data) {
+    <section class="dash-stats" aria-label="AI usage KPIs">
+      <article class="dash-stat">
+        <div class="dash-stat__icon" aria-hidden="true">
+          <ng-icon hlm name="lucideCoins" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Tokens used</p>
+          <p class="dash-stat__value">{{ totalTokensLabel() }}</p>
+          <p class="dash-stat__hint">
+            {{ data.promptTokens | number }} prompt · {{ data.completionTokens | number }} completion
+          </p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon" aria-hidden="true">
+          <ng-icon hlm name="lucideClock3" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Average latency</p>
+          <p class="dash-stat__value">{{ avgLatencyLabel() }}</p>
+          <p class="dash-stat__hint">Across all metered operations</p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon dash-stat__icon--team" aria-hidden="true">
+          <ng-icon hlm name="lucideActivity" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Operations</p>
+          <p class="dash-stat__value">{{ operationsLabel() }}</p>
+          <p class="dash-stat__hint">
+            {{ data.chatCompletions }} completions · {{ data.functionCalls }} function calls
+          </p>
+        </div>
+      </article>
+      <article class="dash-stat">
+        <div class="dash-stat__icon dash-stat__icon--warn" aria-hidden="true">
+          <ng-icon hlm name="lucidePercent" size="sm" />
+        </div>
+        <div class="min-w-0">
+          <p class="dash-stat__label">Success rate</p>
+          <p class="dash-stat__value">{{ successRateLabel() }}</p>
+          <p class="dash-stat__hint">
+            {{ data.successfulOperations }} of {{ data.totalOperations }} succeeded
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section class="dash-extra grid gap-4 lg:grid-cols-4">
+      <article class="dash-mini">
+        <ng-icon hlm name="lucideSparkles" size="sm" />
+        <div>
+          <p class="dash-mini__label">Embeddings</p>
+          <p class="dash-mini__value">{{ data.embeddingOperations | number }}</p>
+        </div>
+      </article>
+      <article class="dash-mini">
+        <ng-icon hlm name="lucideZap" size="sm" />
+        <div>
+          <p class="dash-mini__label">Tool runs</p>
+          <p class="dash-mini__value">{{ data.toolExecutions | number }}</p>
+        </div>
+      </article>
+      <article class="dash-mini">
+        <ng-icon hlm name="lucideCoins" size="sm" />
+        <div>
+          <p class="dash-mini__label">Prompt tokens</p>
+          <p class="dash-mini__value">{{ data.promptTokens | number }}</p>
+        </div>
+      </article>
+      <article class="dash-mini">
+        <ng-icon hlm name="lucideCoins" size="sm" />
+        <div>
+          <p class="dash-mini__label">Completion tokens</p>
+          <p class="dash-mini__value">{{ data.completionTokens | number }}</p>
+        </div>
+      </article>
+    </section>
+
+    @if (chartsReady()) {
+      <section class="dash-analytics grid gap-4 lg:grid-cols-2">
+        <article class="dash-panel">
+          <header class="dash-panel__head">
+            <h2 class="dash-panel__title">Tokens &amp; volume</h2>
+            <p class="dash-panel__sub">Daily trend for the selected range</p>
+          </header>
+          <div class="dash-panel__chart">
+            <canvas
+              baseChart
+              type="line"
+              [data]="tokensLineData()"
+              [options]="lineOptions"
+            ></canvas>
+          </div>
+        </article>
+
+        <article class="dash-panel">
+          <header class="dash-panel__head">
+            <h2 class="dash-panel__title">By operation type</h2>
+            <p class="dash-panel__sub">Completions, tools, embeddings, function calls</p>
+          </header>
+          <div class="dash-panel__chart">
+            <canvas
+              baseChart
+              type="doughnut"
+              [data]="typeDoughnutData()"
+              [options]="doughnutOptions"
+            ></canvas>
+          </div>
+        </article>
+
+        <article class="dash-panel">
+          <header class="dash-panel__head">
+            <h2 class="dash-panel__title">Top operations</h2>
+            <p class="dash-panel__sub">Most frequent operation names</p>
+          </header>
+          <div class="dash-panel__chart">
+            <canvas baseChart type="bar" [data]="nameBarData()" [options]="barOptions"></canvas>
+          </div>
+        </article>
+
+        <article class="dash-panel">
+          <header class="dash-panel__head">
+            <h2 class="dash-panel__title">Tokens by model</h2>
+            <p class="dash-panel__sub">Where token spend concentrates</p>
+          </header>
+          <div class="dash-panel__chart">
+            <canvas
+              baseChart
+              type="bar"
+              [data]="modelBarData()"
+              [options]="verticalBarOptions"
+            ></canvas>
+          </div>
+        </article>
+      </section>
+    }
+  }
+</div>

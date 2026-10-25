@@ -79,6 +79,18 @@
             <li hlmSidebarMenuItem>
               <a
                 hlmSidebarMenuButton
+                [routerLink]="projectSection('ai-usage')"
+                routerLinkActive
+                #aiUsageRla="routerLinkActive"
+                [isActive]="aiUsageRla.isActive"
+              >
+                <ng-icon hlm name="lucideActivity" />
+                <span>AI Usage</span>
+              </a>
+            </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
                 [routerLink]="projectSection('settings')"
                 routerLinkActive
                 #settingsRla="routerLinkActive"

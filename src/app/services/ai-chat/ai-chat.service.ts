@@ -368,6 +368,7 @@ export class AiChatService {
         chatId,
         userInput: content,
         model: selectedModel.externalId,
+        source: 'Chat',
       });
 
       this.replaceLastAssistant(
