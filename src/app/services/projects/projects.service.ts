@@ -6,8 +6,6 @@ import type {
   CreateProjectRequest,
   CreateProjectTaskRequest,
   CreateProjectTaskWorkLogRequest,
-  EnqueueAiTaskDecompositionRequest,
-  AiDecompositionJobDto,
   ListProjectTasksParams,
   ProjectColumnDto,
   ProjectDocumentDto,
@@ -377,37 +375,6 @@ export class ProjectsService {
   getDocument(projectId: string, documentId: string): Promise<ProjectDocumentDto> {
     return firstValueFrom(
       this.api.get<ProjectDocumentDto>(`api/projects/${projectId}/documents/${documentId}`),
-    );
-  }
-
-  enqueueAiDecompose(
-    projectId: string,
-    body: EnqueueAiTaskDecompositionRequest,
-  ): Promise<AiDecompositionJobDto> {
-    return firstValueFrom(
-      this.api.post<EnqueueAiTaskDecompositionRequest, AiDecompositionJobDto>(
-        `api/projects/${projectId}/ai/decompose`,
-        body,
-      ),
-    );
-  }
-
-  enqueueAiChatDecompose(
-    projectId: string,
-    chatId: string,
-    body: EnqueueAiTaskDecompositionRequest,
-  ): Promise<AiDecompositionJobDto> {
-    return firstValueFrom(
-      this.api.post<EnqueueAiTaskDecompositionRequest, AiDecompositionJobDto>(
-        `api/projects/${projectId}/ai/chats/${chatId}/decompose`,
-        body,
-      ),
-    );
-  }
-
-  getAiDecomposeJob(projectId: string, jobId: string): Promise<AiDecompositionJobDto> {
-    return firstValueFrom(
-      this.api.get<AiDecompositionJobDto>(`api/projects/${projectId}/ai/decompose/${jobId}`),
     );
   }
 

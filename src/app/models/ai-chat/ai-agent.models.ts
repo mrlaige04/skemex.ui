@@ -1,3 +1,5 @@
+export type AiExecutionSource = 'Chat' | 'Ui' | 'Api' | 'Documents';
+
 export interface ExecuteAiRequest {
   toolName?: string | null;
   projectId?: string | null;
@@ -6,6 +8,8 @@ export interface ExecuteAiRequest {
   argumentsJson?: string | null;
   /** Provider model external id (e.g. llama-3.3-70b-versatile). */
   model?: string | null;
+  /** Origin of the call; inferred by API when omitted. */
+  source?: AiExecutionSource | null;
 }
 
 export type AiAgentJobStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | string;

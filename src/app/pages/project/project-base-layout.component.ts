@@ -18,6 +18,7 @@ import {
 } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideActivity,
   lucideArrowLeft,
   lucideChevronsUpDown,
   lucideCircleAlert,
@@ -57,6 +58,7 @@ import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.compone
   ],
   providers: [
     provideIcons({
+      lucideActivity,
       lucideArrowLeft,
       lucideChevronsUpDown,
       lucideCircleAlert,

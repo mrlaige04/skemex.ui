@@ -1,0 +1,300 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">AI activity</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        @if (projectName()) {
+          Executions for {{ projectName() }} — expand a row for nested usage.
+        } @else {
+          Executions for this project — expand a row for nested usage.
+        }
+      </p>
+    </div>
+
+    <a hlmBtn variant="outline" size="sm" [routerLink]="dashboardLink()">
+      <ng-icon hlm name="lucideArrowLeft" size="sm" />
+      Usage dashboard
+    </a>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="space-y-4">
+      @if (listError(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <div class="grid gap-3 lg:grid-cols-4">
+        <div class="space-y-1.5 lg:col-span-1">
+          <label hlmLabel class="text-xs">Search</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              type="search"
+              placeholder="Title, model, user…"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="usage-type-label">Contains type</label>
+          <hlm-select
+            class="w-full"
+            [value]="typeFilter()"
+            [itemToString]="typeLabel"
+            (valueChange)="onTypeFilterChange($event)"
+            aria-labelledby="usage-type-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="All types" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of operationTypes; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="usage-success-label">Status</label>
+          <hlm-select
+            class="w-full"
+            [value]="successFilter()"
+            [itemToString]="successLabel"
+            (valueChange)="onSuccessFilterChange($event)"
+            aria-labelledby="usage-success-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Any status" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of successOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="usage-sort-label">Sort</label>
+          <hlm-select
+            class="w-full"
+            [value]="sort()"
+            [itemToString]="sortLabel"
+            (valueChange)="onSortChange($event)"
+            aria-labelledby="usage-sort-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Newest first" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of sortOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+      </div>
+
+      <div class="usage-groups overflow-hidden">
+        <div hlmTableContainer>
+          <table hlmTable class="usage-groups__table">
+            <thead hlmTHead>
+              <tr hlmTr>
+                <th hlmTh class="w-10"></th>
+                <th hlmTh>Execution</th>
+                <th hlmTh>Started</th>
+                <th hlmTh>Ended</th>
+                <th hlmTh>Duration</th>
+                <th hlmTh>Ops</th>
+                <th hlmTh>Tokens</th>
+                <th hlmTh>Status</th>
+                <th hlmTh>User</th>
+              </tr>
+            </thead>
+            <tbody hlmTBody>
+              @if (loading() && groups().length === 0) {
+                <tr hlmTr>
+                  <td hlmTd class="text-muted-foreground h-24 text-center text-sm" colspan="9">
+                    Loading activity…
+                  </td>
+                </tr>
+              } @else if (!loading() && groups().length === 0) {
+                <tr hlmTr>
+                  <td hlmTd class="text-muted-foreground h-24 text-center text-sm" colspan="9">
+                    No AI executions recorded for this project yet.
+                  </td>
+                </tr>
+              } @else {
+                @for (group of groups(); track group.id) {
+                  <tr
+                    hlmTr
+                    class="usage-groups__group"
+                    [class.is-expanded]="isExpanded(group.id)"
+                    (click)="toggleGroup(group.id)"
+                  >
+                    <td hlmTd class="w-10 px-3">
+                      <button
+                        type="button"
+                        class="usage-groups__toggle"
+                        [attr.aria-expanded]="isExpanded(group.id)"
+                        [attr.aria-label]="
+                          isExpanded(group.id) ? 'Collapse execution' : 'Expand execution'
+                        "
+                        (click)="$event.stopPropagation(); toggleGroup(group.id)"
+                      >
+                        <ng-icon
+                          hlm
+                          [name]="
+                            isExpanded(group.id) ? 'lucideChevronDown' : 'lucideChevronRight'
+                          "
+                          size="sm"
+                        />
+                      </button>
+                    </td>
+                    <td hlmTd>
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="usage-groups__context">{{ group.contextLabel || group.source }}</span>
+                          <span class="font-medium">{{ group.title }}</span>
+                        </div>
+                        <p class="text-muted-foreground mt-0.5 text-xs">
+                          {{ typeChips(group) }}
+                          @if (group.toolCount > 0) {
+                            <span> · {{ group.toolCount }} tool{{ group.toolCount === 1 ? '' : 's' }}</span>
+                          }
+                        </p>
+                      </div>
+                    </td>
+                    <td hlmTd>
+                      <span class="text-muted-foreground text-sm">{{ formatWhen(group.startedAt) }}</span>
+                    </td>
+                    <td hlmTd>
+                      <span class="text-muted-foreground text-sm">{{ formatWhen(group.endedAt) }}</span>
+                    </td>
+                    <td hlmTd>
+                      <span class="text-muted-foreground text-sm tabular-nums">{{
+                        formatLatency(group.durationMs)
+                      }}</span>
+                    </td>
+                    <td hlmTd>
+                      <span class="text-sm tabular-nums">{{ group.operationCount }}</span>
+                    </td>
+                    <td hlmTd>
+                      <span class="text-sm font-medium tabular-nums">{{
+                        group.totalTokens | number
+                      }}</span>
+                      <span class="text-muted-foreground block text-xs">
+                        {{ group.promptTokens | number }} prompt ·
+                        {{ group.completionTokens | number }} completion
+                      </span>
+                    </td>
+                    <td hlmTd>
+                      @if (group.success) {
+                        <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">OK</span>
+                      } @else {
+                        <span class="text-sm font-medium text-red-700 dark:text-red-400">Failed</span>
+                      }
+                    </td>
+                    <td hlmTd>
+                      <span class="text-sm">{{ group.userDisplayName }}</span>
+                    </td>
+                  </tr>
+
+                  @if (isExpanded(group.id)) {
+                    @for (activity of group.activities; track activity.id) {
+                      <tr hlmTr class="usage-groups__child">
+                        <td hlmTd></td>
+                        <td hlmTd>
+                          <div class="usage-groups__child-main pl-2">
+                            <span class="text-sm font-medium">{{ humanize(activity.operationType) }}</span>
+                            <span class="text-muted-foreground text-sm">
+                              · {{ humanize(activity.operationName) }}
+                            </span>
+                            @if (activity.model) {
+                              <p class="text-muted-foreground mt-0.5 text-xs">{{ activity.model }}</p>
+                            }
+                          </div>
+                        </td>
+                        <td hlmTd>
+                          <span class="text-muted-foreground text-sm">{{
+                            formatWhen(activity.createdAt)
+                          }}</span>
+                        </td>
+                        <td hlmTd>
+                          <span class="text-muted-foreground text-sm">—</span>
+                        </td>
+                        <td hlmTd>
+                          <span class="text-muted-foreground text-sm tabular-nums">{{
+                            formatLatency(activity.durationMs)
+                          }}</span>
+                        </td>
+                        <td hlmTd>
+                          <span class="text-muted-foreground text-sm">—</span>
+                        </td>
+                        <td hlmTd>
+                          <span class="text-sm tabular-nums">{{ activityTokens(activity) }}</span>
+                          @if (activityTokenDetail(activity); as detail) {
+                            <span class="text-muted-foreground block text-xs">{{ detail }}</span>
+                          }
+                        </td>
+                        <td hlmTd>
+                          @if (activity.success) {
+                            <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400"
+                              >OK</span
+                            >
+                          } @else {
+                            <span
+                              class="text-sm font-medium text-red-700 dark:text-red-400"
+                              [title]="activity.errorMessage || ''"
+                              >Failed</span
+                            >
+                          }
+                        </td>
+                        <td hlmTd></td>
+                      </tr>
+                    } @empty {
+                      <tr hlmTr class="usage-groups__child">
+                        <td hlmTd></td>
+                        <td hlmTd colspan="8">
+                          <span class="text-muted-foreground pl-2 text-sm">No nested usage recorded.</span>
+                        </td>
+                      </tr>
+                    }
+                  }
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <hlm-numbered-pagination
+          class="border-border mt-0 border-t"
+          [currentPage]="currentPage()"
+          (currentPageChange)="onCurrentPageChange($event)"
+          [itemsPerPage]="pageSize()"
+          (itemsPerPageChange)="onItemsPerPageChange($event)"
+          [totalItems]="totalItems()"
+          [pageSizes]="[10, 20, 50, 100]"
+          [maxSize]="7"
+        />
+      </div>
+    </div>
+  </div>
+</div>
