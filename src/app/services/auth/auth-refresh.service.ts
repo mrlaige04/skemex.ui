@@ -74,7 +74,10 @@ export class AuthRefreshService {
       }
 
       await this.tokens.persistFromAccessTokenResponse(token);
-      this.injector.get(AuthService).syncSuperAdminFromToken();
+      const auth = this.injector.get(AuthService);
+      auth.syncSuperAdminFromToken();
+      // Refresh may mint a new permissions claim — pull RBAC from session when possible.
+      void auth.ensureSessionRbac();
       return true;
     } catch (err) {
       // Only clear the session on definitive auth failure; network blips should not logout.

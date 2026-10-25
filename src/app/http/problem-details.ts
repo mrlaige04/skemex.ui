@@ -5,13 +5,45 @@ export function isTransientHttpFailure(err: unknown): boolean {
   return err instanceof HttpErrorResponse && err.status === 0;
 }
 
+function messagesFromErrorsBag(errors: unknown): string[] {
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) {
+    return [];
+  }
+
+  const messages: string[] = [];
+  for (const value of Object.values(errors as Record<string, unknown>)) {
+    if (typeof value === 'string' && value.trim()) {
+      messages.push(value.trim());
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.trim()) {
+          messages.push(item.trim());
+        }
+      }
+    }
+  }
+  return messages;
+}
+
 function messageFromProblemBody(body: unknown): string | null {
   if (body && typeof body === 'object' && !Array.isArray(body)) {
     const rec = body as Record<string, unknown>;
+
+    // ASP.NET ValidationProblemDetails: prefer concrete field/code messages over the generic title.
+    const fromErrors = messagesFromErrorsBag(rec['errors']);
+    if (fromErrors.length > 0) {
+      return [...new Set(fromErrors)].join(' ');
+    }
+
     const detail = rec['detail'];
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail.trim();
+    }
+
     const title = rec['title'];
-    if (typeof detail === 'string' && detail.trim()) return detail;
-    if (typeof title === 'string' && title.trim()) return title;
+    if (typeof title === 'string' && title.trim()) {
+      return title.trim();
+    }
   }
   if (typeof body === 'string' && body.trim()) {
     return body;

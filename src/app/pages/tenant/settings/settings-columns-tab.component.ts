@@ -26,9 +26,11 @@ import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmInputImports } from 'spartan/input';
 import { HlmLabelImports } from 'spartan/label';
 import { problemDetailMessage } from '../../../http/problem-details';
+import { PERMISSIONS } from '../../../models/auth/permissions';
 import type { TenantColumnDto } from '../../../models/tenant-columns/tenant-columns.models';
 import { TenantColumnsService } from '../../../services/tenant-columns/tenant-columns.service';
 import { ConfirmAlertDialogComponent } from '../../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 
 function slugifyKey(value: string): string {
   return value
@@ -55,6 +57,7 @@ const DEFAULT_KANBAN_COLUMNS = [
     CdkDrag,
     CdkDropList,
     ConfirmAlertDialogComponent,
+    HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmCheckboxImports,
@@ -80,6 +83,7 @@ const DEFAULT_KANBAN_COLUMNS = [
 })
 export class SettingsColumnsTabComponent implements OnInit {
   private readonly tenantColumnsService = inject(TenantColumnsService);
+  readonly permissions = PERMISSIONS;
 
   readonly loading = signal(true);
   readonly saving = signal(false);

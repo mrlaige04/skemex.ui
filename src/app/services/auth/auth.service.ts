@@ -48,6 +48,14 @@ export class AuthService {
   private readonly _workspaceContext = signal<TenantWorkspaceContext | null>(null);
   private readonly _superAdminSession = signal<SuperAdminSession | null>(null);
   private readonly _isSuperAdmin = signal(false);
+  /**
+   * Tenant-scoped roles/permissions from {@code GET api/auth/session} / select-tenant.
+   * UI must not read RBAC from the JWT.
+   */
+  private readonly _sessionRoles = signal<string[]>([]);
+  private readonly _sessionPermissions = signal<string[]>([]);
+  /** Tenant id the current in-memory RBAC cache belongs to. */
+  private _rbacTenantId: string | null = null;
 
   /** Current tenant workspace (after {@link selectTenant}); persisted in localStorage, cleared on logout. */
   readonly workspaceContext = this._workspaceContext.asReadonly();
@@ -56,6 +64,9 @@ export class AuthService {
   readonly superAdminSession = this._superAdminSession.asReadonly();
 
   readonly isSuperAdmin = this._isSuperAdmin.asReadonly();
+
+  /** Reactive handle for guards/directives when session RBAC is refreshed. */
+  readonly rbacVersion = signal(0);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -75,6 +86,54 @@ export class AuthService {
     if (!fromToken) {
       this.clearSuperAdminSession();
     }
+  }
+
+  /** Tenant role names from the session API (selected-tenant scope). */
+  roles(): string[] {
+    return this._sessionRoles();
+  }
+
+  /** Permission names (`resource:action`) from the session API (selected-tenant scope). */
+  permissions(): string[] {
+    return this._sessionPermissions();
+  }
+
+  hasRole(role: string | undefined | null): boolean {
+    if (!role) {
+      return true;
+    }
+    return this.roles().includes(role);
+  }
+
+  hasPermission(permission: string | undefined | null): boolean {
+    if (!permission) {
+      return true;
+    }
+    return this.permissions().includes(permission);
+  }
+
+  private setSessionRbac(
+    roles: { name: string }[] | string[],
+    permissions: { name: string }[] | string[],
+    tenantId?: string | null,
+  ): void {
+    const roleNames = roles
+      .map((r) => (typeof r === 'string' ? r : r?.name))
+      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+    const permissionNames = permissions
+      .map((p) => (typeof p === 'string' ? p : p?.name))
+      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+    this._sessionRoles.set(roleNames);
+    this._sessionPermissions.set(permissionNames);
+    this._rbacTenantId = tenantId ?? this._workspaceContext()?.tenantId ?? null;
+    this.rbacVersion.update((v) => v + 1);
+  }
+
+  private clearSessionRbac(): void {
+    this._sessionRoles.set([]);
+    this._sessionPermissions.set([]);
+    this._rbacTenantId = null;
+    this.rbacVersion.update((v) => v + 1);
   }
 
   establishSuperAdminSession(user: CurrentUserResponse): void {
@@ -227,6 +286,13 @@ export class AuthService {
       avatarUrl: pending?.avatarUrl ?? prev?.avatarUrl ?? null,
       tenants,
     });
+    this.setSessionRbac(res.roles ?? [], res.permissions ?? [], res.tenantId);
+    // Re-fetch session with the new tenant-scoped token as the source of truth.
+    try {
+      await this.getSession();
+    } catch {
+      /* keep select-tenant payload */
+    }
     this.clearPendingTenantSelection();
   }
 
@@ -235,9 +301,42 @@ export class AuthService {
     return firstValueFrom(this.api.get<CurrentUserProfileDto>('api/auth/me'));
   }
 
-  /** Fresh user + workspace list from the API (for tenant selection after login or refresh). */
+  /** Fresh user + workspace list + tenant-scoped RBAC from {@code GET api/auth/session}. */
   getSession(): Promise<CurrentUserResponse> {
-    return firstValueFrom(this.api.get<CurrentUserResponse>('api/auth/session'));
+    return firstValueFrom(this.api.get<CurrentUserResponse>('api/auth/session')).then((session) => {
+      this.setSessionRbac(
+        session.roles ?? [],
+        session.permissions ?? [],
+        this._workspaceContext()?.tenantId ?? null,
+      );
+      return session;
+    });
+  }
+
+  /**
+   * Ensures roles/permissions are loaded from {@code GET api/auth/session}
+   * for the currently selected workspace (not from JWT).
+   */
+  async ensureSessionRbac(force = false): Promise<void> {
+    if (!this.accessToken() || this.isSuperAdmin()) {
+      return;
+    }
+
+    const tenantId = this._workspaceContext()?.tenantId ?? null;
+    if (!tenantId) {
+      this.clearSessionRbac();
+      return;
+    }
+
+    if (
+      !force &&
+      this._rbacTenantId === tenantId &&
+      (this._sessionRoles().length > 0 || this._sessionPermissions().length > 0)
+    ) {
+      return;
+    }
+
+    await this.getSession();
   }
 
   /** Re-fetches session from the API and updates pending selection / workspace tenant list. */
@@ -391,6 +490,7 @@ export class AuthService {
 
   private clearWorkspaceContext(): void {
     this._workspaceContext.set(null);
+    this.clearSessionRbac();
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }

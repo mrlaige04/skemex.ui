@@ -60,7 +60,7 @@
                 <span>Issues</span>
               </a>
             </li>
-            <li hlmSidebarMenuItem>
+            <li hlmSidebarMenuItem *hasPermission="permissions.documentsView">
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('documents')"
@@ -72,7 +72,7 @@
                 <span>Documents</span>
               </a>
             </li>
-            <li hlmSidebarMenuItem>
+            <li hlmSidebarMenuItem *hasPermission="permissions.aiViewUsage">
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('ai-usage')"
@@ -209,8 +209,10 @@
     </div>
   </main>
 
-  @if (aiChat.open()) {
+  @if (auth.hasPermission(permissions.aiChat) && aiChat.open()) {
     <button type="button" class="ai-chat-backdrop" aria-label="Close AI chat" (click)="aiChat.setOpen(false)"></button>
   }
-  <app-ai-chat-panel />
+  @if (auth.hasPermission(permissions.aiChat)) {
+    <app-ai-chat-panel />
+  }
 </div>

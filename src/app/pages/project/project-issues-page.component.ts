@@ -29,10 +29,12 @@ import type {
   ProjectTaskSort,
   ProjectUserDto,
 } from '../../models/projects/projects.models';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import { APP_PATHS } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import {
   RichTableComponent,
   type RichTableColumn,
@@ -92,6 +94,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     NgIcon,
     RichTableComponent,
     ConfirmAlertDialogComponent,
+    HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
@@ -112,6 +115,7 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   private readonly projectsService = inject(ProjectsService);
   private readonly destroyRef = inject(DestroyRef);
   readonly aiChat = inject(AiChatService);
+  readonly permissions = PERMISSIONS;
   private readonly search$ = new Subject<string>();
   private readonly richTable = viewChild(RichTableComponent);
 

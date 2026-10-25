@@ -76,7 +76,7 @@ export class EditUserPageComponent implements OnInit {
   private readonly userId = this.route.snapshot.paramMap.get('userId') ?? '';
 
   readonly model = signal({
-    roleName: 'User',
+    roleName: 'Developer',
   });
 
   readonly userForm = form(this.model, (f) => {
@@ -106,7 +106,7 @@ export class EditUserPageComponent implements OnInit {
   }
 
   onRoleChange(value: string | null): void {
-    this.model.update((m) => ({ ...m, roleName: value ?? 'User' }));
+    this.model.update((m) => ({ ...m, roleName: value ?? 'Developer' }));
   }
 
   onSkillsChange(skills: string[]): void {
@@ -148,7 +148,8 @@ export class EditUserPageComponent implements OnInit {
       this.roles.set(await this.usersService.roles());
     } catch {
       this.roles.set([
-        { id: '', name: 'User' },
+        { id: '', name: 'Developer' },
+        { id: '', name: 'QA' },
         { id: '', name: 'Admin' },
       ]);
     }
@@ -185,7 +186,7 @@ export class EditUserPageComponent implements OnInit {
       this.selectedSpecializations.set(assigned);
 
       this.model.set({
-        roleName: user.roles[0] ?? 'User',
+        roleName: user.roles[0] ?? 'Developer',
       });
     } catch (err) {
       this.loadError.set(problemDetailMessage(err as HttpErrorResponse));

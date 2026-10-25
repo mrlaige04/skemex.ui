@@ -17,9 +17,12 @@ import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { problemDetailMessage } from '../../http/problem-details';
 import type { ProjectColumnDto, ProjectTaskDto, ProjectTaskUserDto } from '../../models/projects/projects.models';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import { projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
 import { TaskTagBadgeComponent } from '../../shared/task-tag-badge/task-tag-badge.component';
 import { stripHtmlToPlainText } from '../../shared/rich-text/rich-text.util';
@@ -169,6 +172,7 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
     CdkScrollable,
     TaskTypeBadgeComponent,
     TaskTagBadgeComponent,
+    HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmIconImports,
   ],
@@ -184,6 +188,7 @@ export class ProjectBoardPageComponent implements OnInit {
   private readonly projectsService = inject(ProjectsService);
   private readonly cdr = inject(ChangeDetectorRef);
   readonly aiChat = inject(AiChatService);
+  readonly permissions = PERMISSIONS;
 
   readonly loading = signal(true);
   readonly moving = signal(false);

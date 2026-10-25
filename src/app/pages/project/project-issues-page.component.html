@@ -21,6 +21,7 @@
         [attr.aria-pressed]="aiChat.open()"
         [disabled]="!createLink().length"
         (click)="aiChat.setOpen(true)"
+        *hasPermission="permissions.aiChat"
       >
         <ng-icon hlm name="lucideSparkles" size="sm" />
       </button>

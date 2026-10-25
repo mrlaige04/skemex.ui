@@ -23,8 +23,10 @@ import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import type { ProjectDocumentDto } from '../../models/projects/projects.models';
 import { projectSectionPath } from '../../routing/app-paths';
+import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ProjectDocumentsTableActionsCellComponent } from './project-documents-table-actions-cell.component';
 import {
@@ -114,6 +116,8 @@ export class ProjectDocumentsPageComponent implements OnInit, ProjectDocumentsTa
   private readonly projectsService = inject(ProjectsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly search$ = new Subject<string>();
+  readonly auth = inject(AuthService);
+  readonly permissions = PERMISSIONS;
 
   readonly loading = signal(true);
   readonly uploading = signal(false);

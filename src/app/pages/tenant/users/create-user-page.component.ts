@@ -111,7 +111,7 @@ export class CreateUserPageComponent implements OnInit {
     email: '',
     firstName: '',
     lastName: '',
-    roleName: 'User',
+    roleName: 'Developer',
   });
 
   readonly userForm = form(this.model, (f) => {
@@ -148,7 +148,7 @@ export class CreateUserPageComponent implements OnInit {
   }
 
   onRoleChange(value: string | null): void {
-    this.model.update((m) => ({ ...m, roleName: value ?? 'User' }));
+    this.model.update((m) => ({ ...m, roleName: value ?? 'Developer' }));
   }
 
   onSubmit(event: SubmitEvent): void {
@@ -200,7 +200,8 @@ export class CreateUserPageComponent implements OnInit {
       }
     } catch {
       this.roles.set([
-        { id: '', name: 'User' },
+        { id: '', name: 'Developer' },
+        { id: '', name: 'QA' },
         { id: '', name: 'Admin' },
       ]);
     }

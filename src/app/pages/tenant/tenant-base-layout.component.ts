@@ -26,6 +26,7 @@ import {
   lucideLogOut,
   lucideMail,
   lucidePlus,
+  lucideKeyRound,
   lucideSettings,
   lucideShield,
   lucideUserCircle,
@@ -37,8 +38,10 @@ import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
+import { PERMISSIONS } from '../../models/auth/permissions';
 import { APP_PATHS, adminSectionPath, workspaceSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { NotificationsBellComponent } from '../../shared/notifications/notifications-bell.component';
 
 @Component({
@@ -49,6 +52,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
     RouterOutlet,
     NgIcon,
     NotificationsBellComponent,
+    HasPermissionDirective,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmDropdownMenuImports,
@@ -61,6 +65,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
       lucideLayoutDashboard,
       lucideUsers,
       lucideFolderKanban,
+      lucideKeyRound,
       lucideSettings,
       lucideUserCircle,
       lucideChevronsUpDown,
@@ -80,6 +85,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
 })
 export class TenantBaseLayoutComponent {
   readonly auth = inject(AuthService);
+  readonly permissions = PERMISSIONS;
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
