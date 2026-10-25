@@ -2,7 +2,9 @@
   <h1 class="auth-page__title">Create account</h1>
   <p class="auth-page__subtitle">Start free — decompose your next goal in minutes.</p>
 
-  <form novalidate (submit)="onSubmit($event)" class="mt-8 space-y-5">
+  <app-auth-social-buttons />
+
+  <form novalidate (submit)="onSubmit($event)" class="space-y-5">
     @for (err of registerForm().errorSummary(); track err.kind + (err.message ?? '')) {
       @if (err.kind === 'server') {
         <p class="auth-alert auth-alert--error">{{ err.message }}</p>

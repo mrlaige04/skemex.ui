@@ -44,6 +44,15 @@ export const routes: Routes = [
           ),
         title: 'Reset password',
       },
+      {
+        path: 'external/callback',
+        canActivate: [isNotAuthenticatedGuard],
+        loadComponent: () =>
+          import('./pages/auth/external-callback/external-auth-callback-page.component').then(
+            (m) => m.ExternalAuthCallbackPageComponent,
+          ),
+        title: 'Signing in',
+      },
     ],
   },
   {

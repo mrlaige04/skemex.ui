@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  --auth-ink: #0c1219;
+  --auth-muted: #5a6573;
+  --auth-line: #c5ced8;
+  --auth-paper: #f4f7fa;
+}
+
+.auth-social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+}
+
+.auth-social-btn {
+  display: inline-flex;
+  height: 2.6rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--auth-line);
+  border-radius: var(--radius, 0.375rem);
+  background: var(--auth-paper);
+  color: var(--auth-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: #fff;
+    border-color: var(--auth-ink);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 4px var(--auth-ink);
+  }
+
+  svg,
+  ng-icon {
+    flex-shrink: 0;
+    color: inherit;
+  }
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1.35rem 0 1.15rem;
+  color: var(--auth-muted);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--auth-line);
+  }
+}
+
+.auth-divider__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--auth-muted);
+  white-space: nowrap;
+}

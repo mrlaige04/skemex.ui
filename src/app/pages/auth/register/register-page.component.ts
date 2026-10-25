@@ -10,6 +10,7 @@ import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmLabelImports } from 'spartan/label';
 import { problemDetailMessage } from '../../../http/problem-details';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthSocialButtonsComponent } from '../auth-social-buttons.component';
 
 @Component({
   selector: 'app-register-page',
@@ -17,6 +18,7 @@ import { AuthService } from '../../../services/auth/auth.service';
     FormField,
     RouterLink,
     NgIcon,
+    AuthSocialButtonsComponent,
     ...HlmButtonImports,
     ...HlmIconImports,
     ...HlmInputGroupImports,
