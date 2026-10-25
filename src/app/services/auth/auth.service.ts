@@ -8,6 +8,8 @@ import type {
   CreateTenantRequest,
   CurrentUserProfileDto,
   CurrentUserResponse,
+  ExchangeExternalLoginRequest,
+  ExternalAuthProviderDto,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
@@ -23,6 +25,7 @@ import type {
   TenantWorkspaceContext,
   UpdateUserProfileResponse,
 } from '../../models/auth/auth.models';
+import { apiConfig } from '../../config/api.config';
 import { BaseHttp } from '../http/base-http.service';
 import { AuthTokenStore } from './auth-token.store';
 import { isSuperAdminFromToken } from '../../utils/jwt.util';
@@ -37,6 +40,7 @@ export class AuthService {
   private readonly api = inject(BaseHttp);
   private readonly router = inject(Router);
   private readonly tokens = inject(AuthTokenStore);
+  private readonly apiBaseUrl = inject(apiConfig).url.replace(/\/$/, '');
 
   /** Mirrors stored access token (signal); safe to use from templates or interceptors via store. */
   readonly accessToken = this.tokens.accessToken;
@@ -89,19 +93,42 @@ export class AuthService {
   login(body: LoginRequest): Promise<LoginResponse> {
     return firstValueFrom(
       this.api.post<LoginRequest, LoginResponse>('api/auth/login', body),
-    ).then(async (res) => {
-      if (!res?.token?.accessToken) {
-        throw new Error('Login response did not include an access token.');
-      }
-      await this.tokens.persistFromAccessTokenResponse(res.token);
-      if (res.user.isSuperAdmin) {
-        this.establishSuperAdminSession(res.user);
-      } else {
-        this.clearSuperAdminSession();
-        this.setPendingTenantSelection(res.user);
-      }
-      return res;
-    });
+    ).then((res) => this.persistLoginResponse(res));
+  }
+
+  listExternalProviders(): Promise<ExternalAuthProviderDto[]> {
+    return firstValueFrom(this.api.get<ExternalAuthProviderDto[]>('api/auth/external/providers'));
+  }
+
+  /** Full-page navigation to the API OAuth start endpoint. */
+  startExternalLogin(provider: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const name = provider.trim().toLowerCase();
+    window.location.assign(`${this.apiBaseUrl}/api/auth/external/${encodeURIComponent(name)}/start`);
+  }
+
+  exchangeExternalLogin(code: string): Promise<LoginResponse> {
+    return firstValueFrom(
+      this.api.post<ExchangeExternalLoginRequest, LoginResponse>('api/auth/external/exchange', {
+        code,
+      }),
+    ).then((res) => this.persistLoginResponse(res));
+  }
+
+  private async persistLoginResponse(res: LoginResponse): Promise<LoginResponse> {
+    if (!res?.token?.accessToken) {
+      throw new Error('Login response did not include an access token.');
+    }
+    await this.tokens.persistFromAccessTokenResponse(res.token);
+    if (res.user.isSuperAdmin) {
+      this.establishSuperAdminSession(res.user);
+    } else {
+      this.clearSuperAdminSession();
+      this.setPendingTenantSelection(res.user);
+    }
+    return res;
   }
 
   register(body: RegisterRequest): Promise<RegisterResponse> {

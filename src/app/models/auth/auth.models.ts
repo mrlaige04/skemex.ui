@@ -43,6 +43,15 @@ export interface LoginResponse {
   user: CurrentUserResponse;
 }
 
+export interface ExternalAuthProviderDto {
+  name: string;
+  displayName: string;
+}
+
+export interface ExchangeExternalLoginRequest {
+  code: string;
+}
+
 export interface RegisterResponse {
   id: string;
   email: string;

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { email, FormField, form, required, submit } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideGithub, lucideKeyRound, lucideMail } from '@ng-icons/lucide';
+import { lucideKeyRound, lucideMail } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
@@ -11,6 +11,7 @@ import { HlmLabelImports } from 'spartan/label';
 import { APP_PATHS } from '../../../routing/app-paths';
 import { problemDetailMessage } from '../../../http/problem-details';
 import { AuthService } from '../../../services/auth/auth.service';
+import { AuthSocialButtonsComponent } from '../auth-social-buttons.component';
 
 function formatLoginError(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
@@ -28,12 +29,13 @@ function formatLoginError(err: unknown): string {
     FormField,
     RouterLink,
     NgIcon,
+    AuthSocialButtonsComponent,
     ...HlmButtonImports,
     ...HlmIconImports,
     ...HlmInputGroupImports,
     ...HlmLabelImports,
   ],
-  providers: [provideIcons({ lucideMail, lucideKeyRound, lucideGithub })],
+  providers: [provideIcons({ lucideMail, lucideKeyRound })],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
