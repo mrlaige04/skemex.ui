@@ -253,6 +253,15 @@ export const routes: Routes = [
         title: 'Settings',
       },
       {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./pages/tenant/notifications/notifications-page.component').then(
+            (m) => m.NotificationsPageComponent,
+          ),
+        data: { breadcrumb: 'Notifications' },
+        title: 'Notifications',
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./pages/tenant/account/account-page.component').then((m) => m.AccountPageComponent),

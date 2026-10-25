@@ -10,30 +10,6 @@
   --shell-signal: #c8f04d;
 }
 
-/* —— Brand —— */
-.app-shell__brand {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.05rem;
-  padding: 0.1rem 0.15rem;
-  text-decoration: none;
-  color: var(--shell-ink);
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.2rem;
-  letter-spacing: -0.045em;
-  line-height: 1;
-  transition: opacity 160ms ease;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
-.app-shell__brand-dot {
-  color: var(--shell-accent);
-}
-
 /* —— Workspace / project switcher —— */
 .app-shell__switcher {
   display: flex;

@@ -22,6 +22,7 @@ export const APP_PATHS = {
   projectUsers: (projectCode: string) => `/${projectCode}/settings?tab=users`,
   projectSettings: (projectCode: string) => `/${projectCode}/settings`,
   settings: '/settings',
+  notifications: '/notifications',
   profile: '/profile',
   adminDashboard: '/admin/dashboard',
   adminTenants: '/admin/tenants',

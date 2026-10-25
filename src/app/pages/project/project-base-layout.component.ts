@@ -41,6 +41,7 @@ import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.component';
+import { NotificationsBellComponent } from '../../shared/notifications/notifications-bell.component';
 
 @Component({
   selector: 'app-project-base-layout',
@@ -50,6 +51,7 @@ import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.compone
     RouterOutlet,
     NgIcon,
     AiChatPanelComponent,
+    NotificationsBellComponent,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmButtonImports,

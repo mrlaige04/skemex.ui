@@ -1,10 +1,6 @@
 <div hlmSidebarWrapper class="app-shell min-h-svh">
   <hlm-sidebar collapsible="icon" variant="sidebar" side="left">
     <div hlmSidebarHeader class="app-shell__header">
-      <a routerLink="/" class="app-shell__brand">
-        Skemex<span class="app-shell__brand-dot">.</span>
-      </a>
-
       @if (auth.isSuperAdmin()) {
         <div class="app-shell__switcher pointer-events-none">
           <div class="app-shell__switcher-icon" aria-hidden="true">
@@ -64,7 +60,8 @@
           <ng-icon
             hlm
             name="lucideChevronsUpDown"
-            class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+            size="sm"
+            class="shrink-0 opacity-40 group-data-[collapsible=icon]:hidden"
           />
         </button>
       }
@@ -286,7 +283,8 @@
         <ng-icon
           hlm
           name="lucideChevronsUpDown"
-          class="size-3.5 shrink-0 text-[color:var(--shell-muted)] group-data-[collapsible=icon]:hidden"
+          size="sm"
+          class="shrink-0 opacity-40 group-data-[collapsible=icon]:hidden"
         />
       </button>
     </div>
@@ -307,6 +305,9 @@
             </li>
           </ol>
         </nav>
+      </div>
+      <div class="app-shell__topbar-actions">
+        <app-notifications-bell />
       </div>
     </header>
     <div class="app-shell__content">

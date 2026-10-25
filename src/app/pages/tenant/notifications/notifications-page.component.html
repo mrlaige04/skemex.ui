@@ -1,0 +1,129 @@
+<div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Notifications</h1>
+      <p class="text-muted-foreground mt-1 text-sm">Updates across your workspaces.</p>
+    </div>
+    <button
+      type="button"
+      hlmBtn
+      variant="outline"
+      size="sm"
+      [disabled]="markingAll() || loading()"
+      (click)="markAllRead()"
+    >
+      <ng-icon hlm name="lucideCheckCheck" size="sm" />
+      Mark all as read
+    </button>
+  </div>
+
+  <div hlmCard>
+    <div hlmCardContent class="space-y-4">
+      @if (listError(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <div class="grid gap-3 lg:grid-cols-4">
+        <div class="space-y-1.5 lg:col-span-1">
+          <label hlmLabel class="text-xs">Search</label>
+          <div hlmInputGroup>
+            <div hlmInputGroupAddon>
+              <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+            </div>
+            <input
+              hlmInputGroupInput
+              type="search"
+              placeholder="Title or body…"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="notif-severity-label">Severity</label>
+          <hlm-select
+            class="w-full"
+            [value]="severityFilter()"
+            [itemToString]="severityLabelFn"
+            (valueChange)="onSeverityFilterChange($event)"
+            aria-labelledby="notif-severity-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="All severities" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of severityOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="notif-read-label">Status</label>
+          <hlm-select
+            class="w-full"
+            [value]="readFilter()"
+            [itemToString]="readLabelFn"
+            (valueChange)="onReadFilterChange($event)"
+            aria-labelledby="notif-read-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="All" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of readOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label hlmLabel class="text-xs" id="notif-sort-label">Sort</label>
+          <hlm-select
+            class="w-full"
+            [value]="sort()"
+            [itemToString]="sortLabelFn"
+            (valueChange)="onSortChange($event)"
+            aria-labelledby="notif-sort-label"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Newest first" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                @for (option of sortOptions; track option.value) {
+                  <hlm-select-item [value]="option.value">{{ option.label }}</hlm-select-item>
+                }
+              </hlm-select-group>
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+      </div>
+
+      <app-rich-table
+        [data]="items()"
+        [columns]="columns"
+        [loading]="loading()"
+        emptyMessage="No notifications match your filters."
+        [showPagination]="true"
+        [showColumnsSelection]="false"
+        [pageNumber]="currentPage()"
+        [page]="pageSize()"
+        [totalItems]="totalItems()"
+        (paginationChange)="onPaginationChange($event)"
+      />
+    </div>
+  </div>
+</div>
