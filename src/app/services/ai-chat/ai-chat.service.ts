@@ -3,7 +3,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
+import { aiUserFacingError, aiUserFacingMessage } from '../../http/ai-user-facing-error';
 import { problemDetailMessage } from '../../http/problem-details';
+import type { AiChatArtefactRefDto } from '../../models/ai-chat/ai-agent.models';
 import type {
   AiChatDto,
   AiChatMessage,
@@ -13,6 +15,7 @@ import type {
   AiChatThread,
   AiModelDto,
 } from '../../models/ai-chat/ai-chat.models';
+import { toAiChatDisplayItems } from '../../models/ai-chat/ai-chat.models';
 import { APP_PATHS } from '../../routing/app-paths';
 import { AiService } from '../ai/ai.service';
 import { ProjectsService } from '../projects/projects.service';
@@ -51,6 +54,7 @@ export class AiChatService {
   readonly threads = this._threads.asReadonly();
   readonly models = this._models.asReadonly();
   readonly selectedModelId = this._selectedModelId.asReadonly();
+  readonly projectId = this._projectId.asReadonly();
 
   readonly activeThread = computed(() => {
     const id = this._activeThreadId();
@@ -75,6 +79,8 @@ export class AiChatService {
     }
     return active.messages;
   });
+
+  readonly displayItems = computed(() => toAiChatDisplayItems(this.messages()));
 
   readonly historyThreads = computed(() =>
     [...this._threads()].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt)),
@@ -305,9 +311,13 @@ export class AiChatService {
     }
   }
 
-  async send(raw: string): Promise<void> {
+  async send(
+    raw: string,
+    files: File[] = [],
+    artefacts: AiChatArtefactRefDto[] = [],
+  ): Promise<void> {
     const content = raw.trim();
-    if (!content || this._sending()) {
+    if ((!content && files.length === 0) || this._sending()) {
       return;
     }
 
@@ -353,43 +363,48 @@ export class AiChatService {
 
       await this.ensureMessagesLoaded(chatId);
 
+      const localContent =
+        content ||
+        (files.length > 0 ? `Attached: ${files.map((file) => file.name).join(', ')}` : '');
       this.appendLocalMessage({
         id: `local-user-${Date.now()}`,
         role: 'user',
-        content,
+        content: localContent,
         createdAt: new Date().toISOString(),
       });
-      this.appendLocalAssistant(
-        `Got it — using ${selectedModel.displayName}. Working with the model…`,
+
+      const job = await this.aiService.execute(
+        {
+          projectId,
+          chatId,
+          userInput: content,
+          model: selectedModel.externalId,
+          source: 'Chat',
+          artefacts: artefacts.length > 0 ? artefacts : null,
+        },
+        files,
       );
 
-      const job = await this.aiService.execute({
-        projectId,
-        chatId,
-        userInput: content,
-        model: selectedModel.externalId,
-        source: 'Chat',
-      });
-
-      this.replaceLastAssistant(
-        `Job queued (${job.status}). Working with ${selectedModel.displayName} — this can take a minute…`,
-      );
-
-      const finished = await this.pollAgentJob(job.id);
+      const finished = await this.pollAgentJob(job.id, projectId, chatId, projectCode);
       await this.reloadActiveChat(projectId, chatId, projectCode);
 
       if (finished.timedOut) {
         this.appendLocalAssistant(
-          finished.error?.trim() ||
-            'Timed out waiting for the AI. Check Issues later or try again.',
+          aiUserFacingMessage(
+            finished.error,
+            'Timed out waiting for the AI. Please try again.',
+          ),
         );
-      } else if (finished.status === 'Failed') {
+      } else if (finished.status === 'Failed' && !this.activeThreadHasAssistantReply()) {
         this.appendLocalAssistant(
-          finished.error?.trim() || 'The AI job failed. Try again or pick another model.',
+          aiUserFacingMessage(
+            finished.error,
+            'Something went wrong while running the AI. Please try again.',
+          ),
         );
       }
     } catch (err) {
-      this.replaceLastAssistant(problemDetailMessage(err as HttpErrorResponse));
+      this.appendLocalAssistant(aiUserFacingError(err));
     } finally {
       this._sending.set(false);
     }
@@ -638,22 +653,48 @@ export class AiChatService {
 
   private async pollAgentJob(
     jobId: string,
+    projectId: string,
+    chatId: string,
+    projectCode: string,
   ): Promise<{ status: string; error?: string | null; timedOut: boolean }> {
     const started = Date.now();
     while (Date.now() - started < POLL_TIMEOUT_MS) {
       await delay(POLL_INTERVAL_MS);
+      try {
+        await this.reloadActiveChat(projectId, chatId, projectCode);
+      } catch {
+        // Keep polling even if a transient chat reload fails.
+      }
+
       const job = await this.aiService.getExecution(jobId);
       if (job.status === 'Succeeded' || job.status === 'Failed') {
-        return { status: job.status, error: job.error, timedOut: false };
+        return {
+          status: job.status,
+          error: job.error ? aiUserFacingMessage(job.error) : job.error,
+          timedOut: false,
+        };
       }
-      this.replaceLastAssistant(`Still working… (status: ${job.status})`);
     }
 
     return {
       status: 'Failed',
       timedOut: true,
-      error: 'Timed out waiting for the AI. Check Issues later or try again.',
+      error: 'Timed out waiting for the AI. Please try again.',
     };
+  }
+
+  private activeThreadHasAssistantReply(): boolean {
+    const messages = this.activeThread()?.messages ?? [];
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (message.role === 'user') {
+        return false;
+      }
+      if (message.role === 'assistant' && message.content.trim()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private welcomeMessage(): AiChatMessage {
@@ -692,34 +733,6 @@ export class AiChatService {
       content,
       createdAt: new Date().toISOString(),
     });
-  }
-
-  private replaceLastAssistant(content: string): void {
-    const id = this._activeThreadId();
-    if (!id) {
-      return;
-    }
-    this._threads.update((list) =>
-      list.map((t) => {
-        if (t.id !== id) {
-          return t;
-        }
-        const next = [...t.messages];
-        for (let i = next.length - 1; i >= 0; i -= 1) {
-          if (next[i].role === 'assistant') {
-            next[i] = { ...next[i], content, createdAt: new Date().toISOString() };
-            return { ...t, messages: next, updatedAt: new Date().toISOString() };
-          }
-        }
-        next.push({
-          id: `local-assistant-${Date.now()}`,
-          role: 'assistant',
-          content,
-          createdAt: new Date().toISOString(),
-        });
-        return { ...t, messages: next, updatedAt: new Date().toISOString() };
-      }),
-    );
   }
 }
 
