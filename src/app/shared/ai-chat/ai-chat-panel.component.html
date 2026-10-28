@@ -184,27 +184,57 @@
           <p class="ai-chat__history-empty">{{ err }}</p>
         }
 
-        @for (msg of chat.messages(); track msg.id) {
-          <div
-            class="ai-msg"
-            [class.ai-msg--user]="msg.role === 'user'"
-            [class.ai-msg--assistant]="msg.role === 'assistant'"
-          >
-            @if (msg.role === 'assistant') {
-              <span class="ai-msg__avatar" aria-hidden="true">
-                <ng-icon hlm name="lucideSparkles" size="sm" />
-              </span>
-            }
-            <div class="ai-msg__bubble">
-              <p class="ai-msg__text">{{ msg.content }}</p>
-              @if (msg.linkHref; as href) {
-                <a class="ai-msg__link" [routerLink]="href">{{ msg.linkLabel || 'Open task' }}</a>
+        @for (item of chat.displayItems(); track item.id; let lastItem = $last) {
+          @if (item.kind === 'message') {
+            <div
+              class="ai-msg"
+              [class.ai-msg--user]="item.message.role === 'user'"
+              [class.ai-msg--assistant]="item.message.role === 'assistant'"
+            >
+              @if (item.message.role === 'assistant') {
+                <span class="ai-msg__avatar" aria-hidden="true">
+                  <ng-icon hlm name="lucideSparkles" size="sm" />
+                </span>
               }
+              <div class="ai-msg__bubble">
+                <div class="ai-msg__text ai-md" [innerHTML]="item.message.content | aiMarkdown"></div>
+                @if (item.message.linkHref; as href) {
+                  <a class="ai-msg__link" [routerLink]="href">{{ item.message.linkLabel || 'Open task' }}</a>
+                }
+              </div>
             </div>
-          </div>
+          } @else {
+            <div
+              class="ai-progress"
+              [class.ai-progress--live]="chat.sending() && lastItem"
+              role="status"
+              aria-live="polite"
+            >
+              <p class="ai-progress__eyebrow">Working</p>
+              <ol class="ai-progress__steps">
+                @for (step of item.steps; track step.id; let lastStep = $last; let stepIndex = $index) {
+                  <li
+                    class="ai-progress__step"
+                    [class.ai-progress__step--done]="!(chat.sending() && lastItem && lastStep)"
+                    [class.ai-progress__step--current]="chat.sending() && lastItem && lastStep"
+                    [style.animation-delay.ms]="stepEnterDelay(stepIndex)"
+                  >
+                    <span class="ai-progress__marker" aria-hidden="true">
+                      @if (chat.sending() && lastItem && lastStep) {
+                        <span class="ai-progress__pulse"></span>
+                      } @else {
+                        <ng-icon hlm name="lucideCheck" size="sm" />
+                      }
+                    </span>
+                    <span class="ai-progress__label ai-md" [innerHTML]="step.content | aiMarkdown"></span>
+                  </li>
+                }
+              </ol>
+            </div>
+          }
         }
 
-        @if (chat.sending()) {
+        @if (chat.sending() && !hasLiveProgress()) {
           <div class="ai-msg ai-msg--assistant">
             <span class="ai-msg__avatar" aria-hidden="true">
               <ng-icon hlm name="lucideSparkles" size="sm" />
@@ -242,6 +272,96 @@
           </div>
         }
       </div>
+
+      @if (artefactPanelOpen()) {
+        <div
+          #artefactPanel
+          class="ai-chat__artefact-panel"
+          role="dialog"
+          aria-label="Link artefact"
+        >
+          <div class="ai-chat__artefact-panel-header">
+            @if (mentionMenuPhase() === 'picker') {
+              <button
+                type="button"
+                class="ai-chat__artefact-panel-icon-btn"
+                aria-label="Back"
+                (click)="backToArtefactKinds()"
+              >
+                <ng-icon hlm name="lucideArrowLeft" size="sm" />
+              </button>
+            }
+            <span class="ai-chat__artefact-panel-title">
+              {{ mentionMenuPhase() === 'kinds' ? 'Link to message' : artefactPickerTitle() }}
+            </span>
+            <button
+              type="button"
+              class="ai-chat__artefact-panel-icon-btn"
+              aria-label="Close"
+              (click)="closeArtefactPanel()"
+            >
+              <ng-icon hlm name="lucideX" size="sm" />
+            </button>
+          </div>
+
+          @if (mentionMenuPhase() === 'kinds') {
+            <div class="ai-chat__artefact-panel-kinds">
+              <button type="button" class="ai-chat__menu-action" (click)="onMentionMenu('task')">
+                <ng-icon hlm name="lucideListTodo" size="sm" />
+                Tasks
+              </button>
+              <button type="button" class="ai-chat__menu-action" (click)="onMentionMenu('user')">
+                <ng-icon hlm name="lucideUser" size="sm" />
+                Users
+              </button>
+              <button
+                type="button"
+                class="ai-chat__menu-action"
+                (click)="onMentionMenu('document')"
+              >
+                <ng-icon hlm name="lucideFileText" size="sm" />
+                Documents
+              </button>
+            </div>
+          } @else {
+            <div class="ai-chat__artefact-menu-search">
+              <div hlmInputGroup class="h-8 w-full">
+                <div hlmInputGroupAddon>
+                  <ng-icon hlm name="lucideSearch" size="sm" class="text-muted-foreground" />
+                </div>
+                <input
+                  hlmInputGroupInput
+                  type="search"
+                  placeholder="Search…"
+                  [value]="artefactPickerFilter()"
+                  (input)="onArtefactFilterInput($event)"
+                />
+              </div>
+            </div>
+            <div class="ai-chat__artefact-menu-list">
+              @if (artefactPickerLoading() && artefactPickerOptions().length === 0) {
+                <p class="ai-chat__artefact-empty">Loading…</p>
+              } @else if (artefactPickerOptions().length > 0) {
+                @for (option of artefactPickerOptions(); track option.id) {
+                  <button
+                    type="button"
+                    class="ai-chat__menu-action"
+                    (click)="selectArtefactOption(option)"
+                  >
+                    <span class="ai-chat__artefact-option-label" [title]="option.label">{{
+                      option.label
+                    }}</span>
+                  </button>
+                }
+              } @else {
+                <p class="ai-chat__artefact-empty">
+                  {{ artefactPickerError() ?? 'No matches.' }}
+                </p>
+              }
+            </div>
+          }
+        </div>
+      }
 
       <form class="ai-chat__composer" (submit)="onSubmit($event)">
         <div class="ai-chat__model">
@@ -306,29 +426,73 @@
           </hlm-select>
         </div>
         <label class="sr-only" for="ai-chat-input">Message Skemex AI</label>
-        <textarea
-          id="ai-chat-input"
-          name="aiChatMessage"
-          class="ai-chat__input"
-          rows="2"
-          maxlength="4000"
-          placeholder="Describe a goal to decompose…"
-          [ngModel]="draft()"
-          [ngModelOptions]="{ standalone: true }"
-          (ngModelChange)="draft.set($event)"
-          (keydown)="onKeydown($event)"
-          [disabled]="chat.sending()"
-        ></textarea>
-        <button
-          hlmBtn
-          type="submit"
-          size="sm"
-          class="ai-chat__send"
-          [disabled]="chat.sending() || !draft().trim() || !chat.selectedModelId()"
-          aria-label="Send message"
-        >
-          <ng-icon hlm name="lucideArrowUp" size="sm" />
-        </button>
+        <div class="ai-chat__input" [class.ai-chat__input--disabled]="chat.sending()">
+          <app-ai-chat-markdown-input
+            class="ai-chat__markdown"
+            placeholder="Describe a goal to decompose…"
+            [disabled]="chat.sending()"
+            (markdownChange)="onDraftChange($event)"
+            (submit)="onSubmit()"
+            (mentionShortcut)="onMentionShortcut()"
+            (mentionDismiss)="onMentionDismiss()"
+          />
+
+          @if (attachmentError(); as err) {
+            <p class="ai-chat__attachment-error">{{ err }}</p>
+          }
+
+          <div class="ai-chat__composer-bar">
+            <button
+              type="button"
+              hlmBtn
+              variant="ghost"
+              size="sm"
+              class="ai-chat__attach"
+              [disabled]="chat.sending()"
+              aria-label="Attach file"
+              (click)="openFilePicker()"
+            >
+              <ng-icon hlm name="lucidePaperclip" size="sm" />
+            </button>
+
+            <div class="ai-chat__attachment-row">
+              @for (item of fileAttachments(); track item.id) {
+                <span class="ai-chat__badge">
+                  <ng-icon hlm [name]="attachmentIcon(item)" size="sm" />
+                  <span class="ai-chat__badge-name" [title]="item.name">{{ item.name }}</span>
+                  <button
+                    type="button"
+                    class="ai-chat__badge-remove"
+                    aria-label="Remove attachment"
+                    (click)="removeAttachment(item.id)"
+                  >
+                    <ng-icon hlm name="lucideX" size="sm" />
+                  </button>
+                </span>
+              }
+            </div>
+
+            <button
+              hlmBtn
+              type="submit"
+              size="sm"
+              class="ai-chat__send"
+              [disabled]="chat.sending() || !canSend() || !chat.selectedModelId()"
+              aria-label="Send message"
+            >
+              <ng-icon hlm name="lucideArrowUp" size="sm" />
+            </button>
+          </div>
+
+          <input
+            #fileInput
+            class="sr-only"
+            type="file"
+            accept=".pdf,.docx,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+            multiple
+            (change)="onFilesSelected($event)"
+          />
+        </div>
       </form>
     }
   </div>

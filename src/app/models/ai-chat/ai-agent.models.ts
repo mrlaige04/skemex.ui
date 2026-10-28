@@ -1,5 +1,13 @@
 export type AiExecutionSource = 'Chat' | 'Ui' | 'Api' | 'Documents';
 
+export type AiChatArtefactType = 'task' | 'user' | 'document';
+
+export interface AiChatArtefactRefDto {
+  number: number;
+  type: AiChatArtefactType;
+  entityId: string;
+}
+
 export interface ExecuteAiRequest {
   toolName?: string | null;
   projectId?: string | null;
@@ -10,6 +18,8 @@ export interface ExecuteAiRequest {
   model?: string | null;
   /** Origin of the call; inferred by API when omitted. */
   source?: AiExecutionSource | null;
+  /** Linked project artefacts referenced as `{artefact:N}` in userInput. */
+  artefacts?: AiChatArtefactRefDto[] | null;
 }
 
 export type AiAgentJobStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed' | string;

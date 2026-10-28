@@ -64,6 +64,16 @@ export function aiAuthorIconSrc(author: string | null | undefined): string | nul
   return file ? `/ai-authors/${file}` : null;
 }
 
+export interface AiChatMessageAttachmentDto {
+  id: string;
+  chatId: string;
+  messageId: string;
+  fileName: string;
+  contentType: string;
+  fileSizeBytes: number;
+  createdAt: string;
+}
+
 export interface AiChatMessageDto {
   id: string;
   chatId: string;
@@ -73,6 +83,7 @@ export interface AiChatMessageDto {
   rootTaskCode?: string | null;
   createdAt: string;
   updatedAt?: string | null;
+  attachments?: AiChatMessageAttachmentDto[];
 }
 
 export interface AiChatSummaryDto {
@@ -124,6 +135,54 @@ export interface AiChatMessage {
   createdAt: string;
   linkHref?: string | null;
   linkLabel?: string | null;
+}
+
+/** Render unit for the chat panel: normal bubble or animated progress feed. */
+export type AiChatDisplayItem =
+  | { kind: 'message'; id: string; message: AiChatMessage }
+  | { kind: 'progress'; id: string; steps: AiChatMessage[] };
+
+/** Group consecutive system notes into a progress feed; keep other roles as bubbles. */
+export function toAiChatDisplayItems(messages: AiChatMessage[]): AiChatDisplayItem[] {
+  const items: AiChatDisplayItem[] = [];
+  let index = 0;
+
+  while (index < messages.length) {
+    const current = messages[index];
+    if (current.role !== 'system') {
+      items.push({ kind: 'message', id: current.id, message: current });
+      index += 1;
+      continue;
+    }
+
+    const steps: AiChatMessage[] = [];
+    while (index < messages.length && messages[index].role === 'system') {
+      const systemMessage = messages[index];
+      const lines = systemMessage.content
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length <= 1) {
+        steps.push(systemMessage);
+      } else {
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+          steps.push({
+            ...systemMessage,
+            id: `${systemMessage.id}:${lineIndex}`,
+            content: lines[lineIndex],
+          });
+        }
+      }
+      index += 1;
+    }
+
+    if (steps.length > 0) {
+      items.push({ kind: 'progress', id: `progress-${steps[0].id}`, steps });
+    }
+  }
+
+  return items;
 }
 
 /** UI view model for a chat thread (summary + loaded messages). */
