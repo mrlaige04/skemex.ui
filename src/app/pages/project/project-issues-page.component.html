@@ -132,22 +132,77 @@
         </div>
       </div>
 
-      @if (hasSelection()) {
-        <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        @if (hasSelection()) {
           <span class="text-muted-foreground text-sm">{{ selectedCount() }} selected</span>
           <button
             hlmBtn
             type="button"
             variant="destructive"
             size="sm"
-            [disabled]="bulkDeleting()"
+            [disabled]="bulkDeleting() || exporting()"
             (click)="requestBulkDelete()"
           >
             <ng-icon hlm name="lucideTrash2" size="sm" />
             Delete selected
           </button>
+        }
+
+        <div hlmButtonGroup class="ms-auto" *hasPermission="permissions.tasksView">
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            size="sm"
+            [disabled]="exporting() || loading()"
+            (click)="exportDefault()"
+          >
+            <ng-icon hlm name="lucideDownload" size="sm" />
+            {{ exporting() ? 'Exporting…' : 'Export' }}
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            size="sm"
+            class="px-2"
+            aria-label="More export options"
+            [disabled]="exporting() || loading()"
+            [hlmDropdownMenuTrigger]="exportMenu"
+          >
+            <ng-icon hlm name="lucideChevronDown" size="sm" />
+          </button>
         </div>
-      }
+
+        <ng-template #exportMenu>
+          <div hlmDropdownMenu class="w-56">
+            <div hlmDropdownMenuLabel>Export all (current filter)</div>
+            @for (option of exportFormats; track option.format) {
+              <button
+                type="button"
+                hlmDropdownMenuItem
+                (triggered)="exportTasks('AllFiltered', option.format)"
+              >
+                {{ option.label }}
+              </button>
+            }
+
+            @if (hasSelection()) {
+              <hlm-dropdown-menu-separator />
+              <div hlmDropdownMenuLabel>Export selected ({{ selectedCount() }})</div>
+              @for (option of exportFormats; track option.format) {
+                <button
+                  type="button"
+                  hlmDropdownMenuItem
+                  (triggered)="exportTasks('Selected', option.format)"
+                >
+                  {{ option.label }}
+                </button>
+              }
+            }
+          </div>
+        </ng-template>
+      </div>
 
       <app-rich-table
         [data]="issues()"

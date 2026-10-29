@@ -6,6 +6,8 @@ import type {
   CreateProjectRequest,
   CreateProjectTaskRequest,
   CreateProjectTaskWorkLogRequest,
+  ExportTasksFormat,
+  ExportTasksRequest,
   ListProjectTasksParams,
   ProjectColumnDto,
   ProjectDocumentDto,
@@ -213,6 +215,24 @@ export class ProjectsService {
         taskIds,
       }),
     );
+  }
+
+  async exportTasks(
+    projectId: string,
+    body: ExportTasksRequest,
+  ): Promise<{ blob: Blob; fileName: string }> {
+    const response = await firstValueFrom(
+      this.api.postBlob<ExportTasksRequest>(`api/projects/${projectId}/tasks/export`, body),
+    );
+    const blob = response.body;
+    if (!blob) {
+      throw new Error('Export returned an empty file.');
+    }
+    return {
+      blob,
+      fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition'))
+        ?? `tasks-export.${exportExtension(body.format)}`,
+    };
   }
 
   updateTask(
@@ -463,5 +483,36 @@ export class ProjectsService {
 
   delete(id: string): Promise<void> {
     return firstValueFrom(this.api.delete<void>(`api/projects/${id}`));
+  }
+}
+
+function parseContentDispositionFileName(header: string | null): string | null {
+  if (!header) {
+    return null;
+  }
+
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim().replace(/^"|"$/g, ''));
+    } catch {
+      return utf8Match[1].trim().replace(/^"|"$/g, '');
+    }
+  }
+
+  const plainMatch = /filename="?([^";]+)"?/i.exec(header);
+  return plainMatch?.[1]?.trim() || null;
+}
+
+function exportExtension(format: ExportTasksFormat): string {
+  switch (format) {
+    case 'Csv':
+      return 'csv';
+    case 'Markdown':
+      return 'md';
+    case 'Json':
+      return 'json';
+    default:
+      return 'xlsx';
   }
 }
