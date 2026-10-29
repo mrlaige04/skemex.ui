@@ -186,6 +186,20 @@ export interface ListProjectTasksParams {
   pageSize?: number;
 }
 
+export type ExportTasksScope = 'AllFiltered' | 'Selected';
+export type ExportTasksFormat = 'Xlsx' | 'Csv' | 'Markdown' | 'Json';
+
+export interface ExportTasksRequest {
+  scope: ExportTasksScope;
+  format: ExportTasksFormat;
+  selectedTaskIds?: string[];
+  search?: string;
+  columnId?: string | null;
+  assigneeId?: string | null;
+  unassigned?: boolean;
+  sort?: ProjectTaskSort;
+}
+
 export interface UpdateProjectTaskRequest {
   columnId?: string | null;
   title?: string | null;

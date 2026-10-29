@@ -13,17 +13,32 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePlus, lucideSearch, lucideSparkles, lucideTrash2 } from '@ng-icons/lucide';
+import {
+  lucideChevronDown,
+  lucideDownload,
+  lucidePlus,
+  lucideSearch,
+  lucideSparkles,
+  lucideTrash2,
+} from '@ng-icons/lucide';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { HlmButtonImports } from 'spartan/button';
+import { HlmButtonGroupImports } from 'spartan/button-group';
 import { HlmCardImports } from 'spartan/card';
+import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmInputGroupImports } from 'spartan/input-group';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
-import { problemDetailMessage, isTransientHttpFailure } from '../../http/problem-details';
+import {
+  problemDetailMessage,
+  problemDetailMessageAsync,
+  isTransientHttpFailure,
+} from '../../http/problem-details';
 import type {
+  ExportTasksFormat,
+  ExportTasksScope,
   ProjectColumnDto,
   ProjectTaskDto,
   ProjectTaskSort,
@@ -96,14 +111,23 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     ConfirmAlertDialogComponent,
     HasPermissionDirective,
     ...HlmButtonImports,
+    ...HlmButtonGroupImports,
     ...HlmCardImports,
+    ...HlmDropdownMenuImports,
     ...HlmIconImports,
     ...HlmInputGroupImports,
     ...HlmLabelImports,
     ...HlmSelectImports,
   ],
   providers: [
-    provideIcons({ lucidePlus, lucideSearch, lucideSparkles, lucideTrash2 }),
+    provideIcons({
+      lucideChevronDown,
+      lucideDownload,
+      lucidePlus,
+      lucideSearch,
+      lucideSparkles,
+      lucideTrash2,
+    }),
     { provide: PROJECT_ISSUES_TABLE_HOST, useExisting: ProjectIssuesPageComponent },
   ],
   templateUrl: './project-issues-page.component.html',
@@ -139,6 +163,14 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   readonly selectedIds = signal<string[]>([]);
   readonly deletingId = signal<string | null>(null);
   readonly bulkDeleting = signal(false);
+  readonly exporting = signal(false);
+
+  readonly exportFormats: Array<{ format: ExportTasksFormat; label: string }> = [
+    { format: 'Xlsx', label: 'Excel (.xlsx)' },
+    { format: 'Csv', label: 'CSV' },
+    { format: 'Markdown', label: 'Markdown' },
+    { format: 'Json', label: 'JSON' },
+  ];
 
   readonly confirmDialogState = signal<'open' | 'closed'>('closed');
   readonly confirmMode = signal<'single' | 'bulk'>('single');
@@ -289,6 +321,14 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
     this.confirmDialogState.set('open');
   }
 
+  exportDefault(): void {
+    void this.exportTasks('AllFiltered', 'Xlsx');
+  }
+
+  exportTasks(scope: ExportTasksScope, format: ExportTasksFormat): void {
+    void this.runExport(scope, format);
+  }
+
   async confirmDelete(): Promise<void> {
     if (this.confirmMode() === 'bulk') {
       await this.performBulkDelete();
@@ -338,6 +378,47 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
       this.listError.set(problemDetailMessage(err as HttpErrorResponse));
     } finally {
       this.deletingId.set(null);
+    }
+  }
+
+  private async runExport(scope: ExportTasksScope, format: ExportTasksFormat): Promise<void> {
+    if (!this.projectId || this.exporting()) {
+      return;
+    }
+
+    if (scope === 'Selected' && this.selectedIds().length === 0) {
+      return;
+    }
+
+    this.exporting.set(true);
+    this.listError.set(null);
+    try {
+      const columnId = this.columnFilter();
+      const assignee = this.assigneeFilter();
+      const { blob, fileName } = await this.projectsService.exportTasks(this.projectId, {
+        scope,
+        format,
+        selectedTaskIds: scope === 'Selected' ? this.selectedIds() : undefined,
+        search: this.searchInput(),
+        columnId: columnId === ALL_VALUE ? null : columnId,
+        assigneeId: assignee === ALL_VALUE || assignee === UNASSIGNED_VALUE ? null : assignee,
+        unassigned: assignee === UNASSIGNED_VALUE,
+        sort: this.sort(),
+      });
+
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.rel = 'noopener';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      this.listError.set(await problemDetailMessageAsync(err));
+    } finally {
+      this.exporting.set(false);
     }
   }
 

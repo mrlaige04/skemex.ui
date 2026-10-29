@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { apiConfig, type ApiConfig } from '../../config/api.config';
@@ -22,6 +22,21 @@ export class BaseHttp {
   ): Observable<Res> {
     const fullUrl = `${this.baseUrl}/${url}`;
     return this.http.post<Res>(fullUrl, data, { params, headers });
+  }
+
+  public postBlob<Req>(
+    url: string,
+    data: Req,
+    params: Record<string, string | number | boolean | readonly string[]> = {},
+    headers: Record<string, string | string[]> = {},
+  ): Observable<HttpResponse<Blob>> {
+    const fullUrl = `${this.baseUrl}/${url}`;
+    return this.http.post(fullUrl, data, {
+      params,
+      headers,
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 
   public get<Res>(
