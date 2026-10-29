@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HlmTabsImports } from 'spartan/tabs';
 import { ProjectSettingsAiTabComponent } from './project-settings-ai-tab.component';
 import { ProjectSettingsColumnsTabComponent } from './project-settings-columns-tab.component';
+import { ProjectSettingsIntegrationsTabComponent } from './project-settings-integrations-tab.component';
 import { ProjectSettingsMainInfoTabComponent } from './project-settings-main-info-tab.component';
 import { ProjectSettingsUsersTabComponent } from './project-settings-users-tab.component';
 
-const SETTINGS_TABS = new Set(['main', 'users', 'columns', 'ai']);
+const SETTINGS_TABS = new Set(['main', 'users', 'columns', 'ai', 'integrations']);
 
 @Component({
   selector: 'app-project-settings-page',
@@ -15,6 +16,7 @@ const SETTINGS_TABS = new Set(['main', 'users', 'columns', 'ai']);
     ProjectSettingsUsersTabComponent,
     ProjectSettingsColumnsTabComponent,
     ProjectSettingsAiTabComponent,
+    ProjectSettingsIntegrationsTabComponent,
     ...HlmTabsImports,
   ],
   templateUrl: './project-settings-page.component.html',

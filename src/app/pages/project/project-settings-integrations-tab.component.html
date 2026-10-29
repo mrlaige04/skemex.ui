@@ -1,0 +1,172 @@
+<section hlmCard>
+  <div hlmCardHeader>
+    <h2 hlmCardTitle>Integrations</h2>
+    <p hlmCardDescription>
+      Connect external tools to this project. Jira Cloud uses Atlassian OAuth so tokens stay encrypted
+      on the server.
+    </p>
+  </div>
+
+  <div hlmCardContent class="space-y-5">
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading integrations…</p>
+    } @else {
+      @if (error(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      @if (info(); as msg) {
+        <p
+          class="rounded-md border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+          role="status"
+        >
+          {{ msg }}
+        </p>
+      }
+
+      <div class="space-y-4 rounded-lg border p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 space-y-1">
+            <div class="flex items-center gap-2">
+              <ng-icon hlm name="lucideLink2" size="sm" />
+              <h3 class="font-medium">Jira Cloud</h3>
+            </div>
+            <p class="text-muted-foreground text-sm">
+              Authorize Skemex against Atlassian, then map a Jira project for future sync.
+            </p>
+            @if (connection(); as conn) {
+              <p class="text-muted-foreground text-xs">
+                Status:
+                <span class="text-foreground font-medium">{{ conn.status }}</span>
+                @if (conn.siteName) {
+                  · Site {{ conn.siteName }}
+                }
+                @if (conn.externalProjectKey) {
+                  · Project {{ conn.externalProjectKey }}
+                }
+              </p>
+            }
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2" *hasPermission="permissions.projectsEdit">
+            @if (!connection()) {
+              <button
+                hlmBtn
+                type="button"
+                size="sm"
+                [disabled]="connecting()"
+                (click)="connectJira()"
+              >
+                @if (connecting()) {
+                  <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                } @else {
+                  <ng-icon hlm name="lucideExternalLink" size="sm" />
+                }
+                Add Jira Integration
+              </button>
+            } @else {
+              <button
+                hlmBtn
+                type="button"
+                variant="outline"
+                size="sm"
+                [disabled]="connecting()"
+                (click)="connectJira()"
+              >
+                Reconnect
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                variant="destructive"
+                size="sm"
+                [disabled]="disconnecting()"
+                (click)="disconnect()"
+              >
+                <ng-icon hlm name="lucideUnplug" size="sm" />
+                Disconnect
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (connection() && (needsMapping() || isConnected())) {
+          <div class="grid gap-4 border-t pt-4 md:grid-cols-2">
+            <div class="space-y-2">
+              <label hlmLabel id="jira-site-label">Jira site</label>
+              <hlm-select
+                class="w-full"
+                [value]="selectedCloudId()"
+                [itemToString]="siteLabel"
+                (valueChange)="onSiteChange($event)"
+                aria-labelledby="jira-site-label"
+              >
+                <hlm-select-trigger class="w-full">
+                  <hlm-select-value placeholder="Select a Jira site" />
+                </hlm-select-trigger>
+                <hlm-select-content *hlmSelectPortal>
+                  <hlm-select-group>
+                    @for (site of sites(); track site.id) {
+                      <hlm-select-item [value]="site.id">{{ site.name }}</hlm-select-item>
+                    }
+                  </hlm-select-group>
+                </hlm-select-content>
+              </hlm-select>
+            </div>
+
+            <div class="space-y-2">
+              <label hlmLabel id="jira-project-label">Jira project</label>
+              <hlm-select
+                class="w-full"
+                [value]="selectedProjectId()"
+                [itemToString]="projectLabel"
+                (valueChange)="onProjectChange($event)"
+                aria-labelledby="jira-project-label"
+              >
+                <hlm-select-trigger class="w-full">
+                  @if (loadingProjects()) {
+                    <span class="text-muted-foreground">Loading projects…</span>
+                  } @else {
+                    <hlm-select-value placeholder="Select a Jira project" />
+                  }
+                </hlm-select-trigger>
+                <hlm-select-content *hlmSelectPortal>
+                  <hlm-select-group>
+                    @for (project of jiraProjects(); track project.id) {
+                      <hlm-select-item [value]="project.id">
+                        {{ project.key }} — {{ project.name }}
+                      </hlm-select-item>
+                    }
+                  </hlm-select-group>
+                </hlm-select-content>
+              </hlm-select>
+            </div>
+
+            <div class="md:col-span-2">
+              <button
+                hlmBtn
+                type="button"
+                size="sm"
+                *hasPermission="permissions.projectsEdit"
+                [disabled]="!canSaveMapping()"
+                (click)="saveMapping()"
+              >
+                @if (savingMapping()) {
+                  <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                } @else {
+                  <ng-icon hlm name="lucideCheck" size="sm" />
+                }
+                Save project mapping
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>
