@@ -1,0 +1,113 @@
+<hlm-dialog [state]="state()" (stateChanged)="onStateChanged($event)">
+  <hlm-dialog-content *hlmDialogPortal class="flex max-h-[90vh] w-[min(100vw-2rem,36rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+    <hlm-dialog-header class="border-b px-6 py-4">
+      <h2 hlmDialogTitle>Export tasks to Jira</h2>
+      <p hlmDialogDescription>
+        Creates Jira issues from Skemex tasks (summary, description, assignee by email, estimates,
+        labels, worklogs). Requires a connected Jira project mapping.
+      </p>
+    </hlm-dialog-header>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      @if (error(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <div class="space-y-2">
+        <p class="text-sm font-medium">What to export</p>
+        <div class="grid gap-2">
+          <button
+            type="button"
+            class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
+            [class.border-primary]="scope() === 'All'"
+            [class.bg-accent]="scope() === 'All'"
+            (click)="setScope('All')"
+          >
+            <span class="font-medium">All project tasks</span>
+            <span class="text-muted-foreground mt-0.5 block text-xs">
+              Export every Skemex task in this project (max 200)
+            </span>
+          </button>
+          @if (hasSelection()) {
+            <button
+              type="button"
+              class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
+              [class.border-primary]="scope() === 'Selected'"
+              [class.bg-accent]="scope() === 'Selected'"
+              (click)="setScope('Selected')"
+            >
+              <span class="font-medium">Selected tasks</span>
+              <span class="text-muted-foreground mt-0.5 block text-xs">{{ scopeHint() }}</span>
+            </button>
+          }
+          @if (hasFilterContext()) {
+            <button
+              type="button"
+              class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
+              [class.border-primary]="scope() === 'AllFiltered'"
+              [class.bg-accent]="scope() === 'AllFiltered'"
+              (click)="setScope('AllFiltered')"
+            >
+              <span class="font-medium">Current filters</span>
+              <span class="text-muted-foreground mt-0.5 block text-xs">
+                Same search / status / assignee as the Issues list
+              </span>
+            </button>
+          }
+        </div>
+        <p class="text-muted-foreground text-xs">{{ scopeHint() }}</p>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm">
+        <hlm-checkbox
+          [checked]="skipAlreadyExported()"
+          (checkedChange)="toggleSkip($event === true)"
+        />
+        Skip tasks already exported to Jira
+      </label>
+
+      @if (result(); as res) {
+        <div class="space-y-2 rounded-md border p-3 text-sm">
+          <p class="font-medium">
+            Done: {{ res.exported }} exported, {{ res.skipped }} skipped, {{ res.failed }} failed
+            (of {{ res.totalCandidates }})
+          </p>
+          <ul class="max-h-48 space-y-1 overflow-y-auto text-xs">
+            @for (item of res.items; track item.taskId) {
+              <li class="flex flex-wrap gap-x-2 gap-y-0.5">
+                <span class="font-medium">{{ item.taskCode }}</span>
+                <span class="text-muted-foreground">{{ item.status }}</span>
+                @if (item.jiraIssueKey) {
+                  <span>{{ item.jiraIssueKey }}</span>
+                }
+                @if (item.message) {
+                  <span class="text-muted-foreground w-full">{{ item.message }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <hlm-dialog-footer class="border-t px-6 py-4">
+      <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="exporting()">
+        Close
+      </button>
+      <button type="button" hlmBtn [disabled]="exporting()" (click)="runExport()">
+        @if (exporting()) {
+          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+          Exporting…
+        } @else {
+          <ng-icon hlm name="lucideUpload" size="sm" />
+          Export to Jira
+        }
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

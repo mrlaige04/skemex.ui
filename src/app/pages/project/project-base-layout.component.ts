@@ -20,6 +20,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideActivity,
   lucideArrowLeft,
+  lucideChevronDown,
   lucideChevronsUpDown,
   lucideCircleAlert,
   lucideFileText,
@@ -32,6 +33,7 @@ import {
 import { filter, merge, of } from 'rxjs';
 import { HlmBreadcrumbImports } from 'spartan/breadcrumb';
 import { HlmButtonImports } from 'spartan/button';
+import { HlmCollapsibleImports } from 'spartan/collapsible';
 import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
@@ -58,6 +60,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
     ...HlmButtonImports,
+    ...HlmCollapsibleImports,
     ...HlmDropdownMenuImports,
     ...HlmIconImports,
   ],
@@ -65,6 +68,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
     provideIcons({
       lucideActivity,
       lucideArrowLeft,
+      lucideChevronDown,
       lucideChevronsUpDown,
       lucideCircleAlert,
       lucideFileText,
@@ -93,6 +97,7 @@ export class ProjectBaseLayoutComponent implements OnInit {
   readonly project = signal<ProjectDto | null>(null);
   readonly projectCode = signal('');
   readonly breadcrumbPage = signal('');
+  readonly jiraNavOpen = signal(false);
   readonly userAvatarLoadFailed = signal(false);
   readonly projectLogoLoadFailed = signal(false);
   private readonly resetUserAvatarError = effect(() => {
@@ -122,12 +127,21 @@ export class ProjectBaseLayoutComponent implements OnInit {
       const label = (child?.snapshot?.data?.['breadcrumb'] as string) ?? '';
       this.breadcrumbPage.set(label);
     };
+    const syncJiraNav = (): void => {
+      const url = this.router.url;
+      if (url.includes('/integrations/jira')) {
+        this.jiraNavOpen.set(true);
+      }
+    };
     merge(
       of(null),
       this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)),
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => refreshCrumb());
+      .subscribe(() => {
+        refreshCrumb();
+        syncJiraNav();
+      });
   }
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -137,6 +151,14 @@ export class ProjectBaseLayoutComponent implements OnInit {
   projectSection(segment: string): string[] {
     const code = this.projectCode();
     return code ? projectSectionPath(code, segment) : [APP_PATHS.projects];
+  }
+
+  jiraIssuesLink(): string[] {
+    return this.projectSection('integrations/jira/issues');
+  }
+
+  jiraUsersLink(): string[] {
+    return this.projectSection('integrations/jira/users');
   }
   goBackToWorkspace(): void {
     void this.router.navigate([APP_PATHS.projects]);

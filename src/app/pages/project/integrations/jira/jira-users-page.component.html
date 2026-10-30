@@ -1,0 +1,71 @@
+<div class="flex flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Jira users</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Users assignable in the mapped Jira project. Connect and map a project in
+        <a class="text-primary underline-offset-2 hover:underline" [routerLink]="settingsLink()">Settings</a>
+        if nothing appears.
+      </p>
+    </div>
+    <button
+      hlmBtn
+      type="button"
+      variant="outline"
+      size="sm"
+      [disabled]="loading()"
+      (click)="refresh()"
+    >
+      @if (loading()) {
+        <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+      } @else {
+        <ng-icon hlm name="lucideRefreshCw" size="sm" />
+      }
+      Refresh
+    </button>
+  </div>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  <section hlmCard>
+    <div hlmCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 hlmCardTitle>Users</h2>
+        <p hlmCardDescription>{{ totalItems() }} user{{ totalItems() === 1 ? '' : 's' }}</p>
+      </div>
+      <div hlmInputGroup class="w-full sm:max-w-xs">
+        <div hlmInputGroupAddon>
+          <ng-icon hlm name="lucideSearch" size="sm" />
+        </div>
+        <input
+          hlmInputGroupInput
+          type="search"
+          placeholder="Search users…"
+          [value]="searchInput()"
+          (input)="onSearchInput($any($event.target).value)"
+        />
+      </div>
+    </div>
+    <div hlmCardContent>
+      <app-rich-table
+        [data]="pagedUsers()"
+        [columns]="tableColumns"
+        [loading]="loading()"
+        emptyMessage="No Jira users found."
+        [showPagination]="true"
+        [showColumnsSelection]="false"
+        [pageNumber]="currentPage()"
+        [page]="pageSize()"
+        [totalItems]="totalItems()"
+        (paginationChange)="onPaginationChange($event)"
+      />
+    </div>
+  </section>
+</div>

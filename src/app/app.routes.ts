@@ -412,6 +412,15 @@ export const routes: Routes = [
         data: { breadcrumb: 'AI usage' },
         title: 'AI usage',
       },
+      {
+        path: 'integrations',
+        canActivate: [hasPermissionGuard],
+        data: { permission: PERMISSIONS.projectsEdit },
+        loadChildren: () =>
+          import('./pages/project/integrations/integrations.routes').then(
+            (m) => m.INTEGRATIONS_ROUTES,
+          ),
+      },
     ],
   },
   { path: 'home', pathMatch: 'full', redirectTo: 'dashboard' },
