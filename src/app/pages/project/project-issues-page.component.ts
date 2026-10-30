@@ -175,7 +175,6 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   readonly confirmDialogState = signal<'open' | 'closed'>('closed');
   readonly confirmMode = signal<'single' | 'bulk'>('single');
   readonly pendingDeleteIssue = signal<ProjectTaskDto | null>(null);
-
   readonly allValue = ALL_VALUE;
   readonly unassignedValue = UNASSIGNED_VALUE;
   readonly sortOptions = SORT_OPTIONS;

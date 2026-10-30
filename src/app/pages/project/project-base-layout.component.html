@@ -99,6 +99,65 @@
           </ul>
         </div>
       </div>
+
+      <div hlmSidebarGroup *hasPermission="permissions.projectsEdit">
+        <div hlmSidebarGroupLabel>Integrations</div>
+        <div hlmSidebarGroupContent>
+          <ul hlmSidebarMenu>
+            <li hlmSidebarMenuItem>
+              <div
+                hlmCollapsible
+                class="group/collapsible w-full"
+                [expanded]="jiraNavOpen()"
+                (expandedChange)="jiraNavOpen.set($event)"
+              >
+                <button type="button" hlmSidebarMenuButton hlmCollapsibleTrigger>
+                  <img
+                    src="/integrations/jira.svg"
+                    alt=""
+                    class="size-4 shrink-0"
+                    width="16"
+                    height="16"
+                  />
+                  <span>Jira</span>
+                  <ng-icon
+                    hlm
+                    name="lucideChevronDown"
+                    size="sm"
+                    class="ml-auto opacity-50 transition-transform group-data-[state=closed]/collapsible:-rotate-90"
+                  />
+                </button>
+                <div hlmCollapsibleContent>
+                  <ul hlmSidebarMenu class="mt-0.5 gap-0.5 pl-6">
+                    <li hlmSidebarMenuItem>
+                      <a
+                        hlmSidebarMenuButton
+                        [routerLink]="jiraIssuesLink()"
+                        routerLinkActive
+                        #jiraIssuesRla="routerLinkActive"
+                        [isActive]="jiraIssuesRla.isActive"
+                      >
+                        <span>Issues</span>
+                      </a>
+                    </li>
+                    <li hlmSidebarMenuItem>
+                      <a
+                        hlmSidebarMenuButton
+                        [routerLink]="jiraUsersLink()"
+                        routerLinkActive
+                        #jiraUsersRla="routerLinkActive"
+                        [isActive]="jiraUsersRla.isActive"
+                      >
+                        <span>Users</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div hlmSidebarFooter class="app-shell__footer">

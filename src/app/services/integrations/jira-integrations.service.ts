@@ -1,11 +1,17 @@
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type {
+  ExportTasksToJiraRequest,
+  ExportTasksToJiraResultDto,
+  ImportTasksFromJiraRequest,
+  ImportTasksFromJiraResultDto,
   JiraAccessibleResourceDto,
   JiraAuthorizeStartDto,
   JiraConnectionDto,
   JiraConnectionResponseDto,
+  JiraIssuePreviewDto,
   JiraProjectDto,
+  JiraUserDto,
   MapJiraProjectRequest,
 } from '../../models/integrations/jira.models';
 import { BaseHttp } from '../http/base-http.service';
@@ -63,6 +69,42 @@ export class JiraIntegrationsService {
   disconnect(projectId: string): Promise<void> {
     return firstValueFrom(
       this.api.delete<void>(`api/projects/${projectId}/integrations/jira`),
+    );
+  }
+
+  exportTasks(
+    projectId: string,
+    body: ExportTasksToJiraRequest,
+  ): Promise<ExportTasksToJiraResultDto> {
+    return firstValueFrom(
+      this.api.post<ExportTasksToJiraRequest, ExportTasksToJiraResultDto>(
+        `api/projects/${projectId}/integrations/jira/export-tasks`,
+        body,
+      ),
+    );
+  }
+
+  listRemoteIssues(projectId: string): Promise<JiraIssuePreviewDto[]> {
+    return firstValueFrom(
+      this.api.get<JiraIssuePreviewDto[]>(`api/projects/${projectId}/integrations/jira/issues`),
+    );
+  }
+
+  listRemoteUsers(projectId: string): Promise<JiraUserDto[]> {
+    return firstValueFrom(
+      this.api.get<JiraUserDto[]>(`api/projects/${projectId}/integrations/jira/users`),
+    );
+  }
+
+  importTasks(
+    projectId: string,
+    body: ImportTasksFromJiraRequest,
+  ): Promise<ImportTasksFromJiraResultDto> {
+    return firstValueFrom(
+      this.api.post<ImportTasksFromJiraRequest, ImportTasksFromJiraResultDto>(
+        `api/projects/${projectId}/integrations/jira/import-tasks`,
+        body,
+      ),
     );
   }
 }

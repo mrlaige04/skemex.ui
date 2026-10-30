@@ -1,0 +1,154 @@
+<hlm-dialog [state]="state()" (stateChanged)="onStateChanged($event)">
+  <hlm-dialog-content
+    *hlmDialogPortal
+    class="flex max-h-[90vh] w-[min(100vw-2rem,42rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+  >
+    <hlm-dialog-header class="border-b px-6 py-4">
+      <h2 hlmDialogTitle>Import tasks from Jira</h2>
+      <p hlmDialogDescription>
+        Loads issues from the mapped Jira project. Select rows to import, or import all not-yet-imported
+        issues.
+      </p>
+    </hlm-dialog-header>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      @if (error(); as err) {
+        <p
+          class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {{ err }}
+        </p>
+      }
+
+      <label class="flex items-center gap-2 text-sm">
+        <hlm-checkbox
+          [checked]="skipAlreadyImported()"
+          (checkedChange)="toggleSkip($event === true)"
+        />
+        Skip already imported issues
+      </label>
+
+      @if (loading()) {
+        <p class="text-muted-foreground flex items-center gap-2 text-sm">
+          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+          Loading Jira issues…
+        </p>
+      } @else if (issues().length === 0) {
+        <p class="text-muted-foreground text-sm">No issues found in the mapped Jira project.</p>
+      } @else {
+        <div class="flex items-center justify-between gap-2 text-sm">
+          <label class="flex items-center gap-2">
+            <hlm-checkbox
+              [checked]="allImportableSelected()"
+              (checkedChange)="toggleSelectAll($event === true)"
+            />
+            Select all importable
+          </label>
+          <span class="text-muted-foreground text-xs">
+            {{ selectedCount() }} selected · {{ importableIssues().length }} importable ·
+            {{ issues().length }} total
+          </span>
+        </div>
+
+        <div class="max-h-72 overflow-y-auto rounded-md border">
+          <ul class="divide-y">
+            @for (issue of issues(); track issue.key) {
+              <li
+                class="flex items-start gap-3 px-3 py-2.5"
+                [class.opacity-60]="issue.alreadyImported && skipAlreadyImported()"
+              >
+                <hlm-checkbox
+                  class="mt-0.5"
+                  [checked]="isSelected(issue.key)"
+                  [disabled]="issue.alreadyImported && skipAlreadyImported()"
+                  (checkedChange)="toggleIssue(issue.key, $event === true)"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span class="font-mono text-sm font-medium">{{ issue.key }}</span>
+                    <span class="text-muted-foreground text-xs">{{ issue.issueType }}</span>
+                    @if (issue.status) {
+                      <span class="text-muted-foreground text-xs">· {{ issue.status }}</span>
+                    }
+                    @if (issue.alreadyImported) {
+                      <span class="text-xs text-emerald-700 dark:text-emerald-300">
+                        imported{{ issue.localTaskCode ? ` as ${issue.localTaskCode}` : '' }}
+                      </span>
+                    }
+                  </div>
+                  <p class="truncate text-sm">{{ issue.summary || '—' }}</p>
+                  @if (issue.assigneeDisplayName || issue.parentKey) {
+                    <p class="text-muted-foreground truncate text-xs">
+                      @if (issue.assigneeDisplayName) {
+                        {{ issue.assigneeDisplayName }}
+                      }
+                      @if (issue.assigneeDisplayName && issue.parentKey) {
+                        ·
+                      }
+                      @if (issue.parentKey) {
+                        parent {{ issue.parentKey }}
+                      }
+                    </p>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (result(); as res) {
+        <div class="space-y-2 rounded-md border p-3 text-sm">
+          <p class="font-medium">
+            Done: {{ res.imported }} imported, {{ res.skipped }} skipped, {{ res.failed }} failed (of
+            {{ res.totalCandidates }})
+          </p>
+          <ul class="max-h-36 space-y-1 overflow-y-auto text-xs">
+            @for (item of res.items; track item.jiraIssueKey) {
+              <li class="flex flex-wrap gap-x-2">
+                <span class="font-medium">{{ item.jiraIssueKey }}</span>
+                <span class="text-muted-foreground">{{ item.status }}</span>
+                @if (item.localTaskCode) {
+                  <span>{{ item.localTaskCode }}</span>
+                }
+                @if (item.message) {
+                  <span class="text-muted-foreground w-full">{{ item.message }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <hlm-dialog-footer class="border-t px-6 py-4">
+      <button type="button" hlmBtn variant="ghost" hlmDialogClose [disabled]="importing()">
+        Close
+      </button>
+      <button
+        type="button"
+        hlmBtn
+        variant="outline"
+        [disabled]="importing() || loading() || importableIssues().length === 0"
+        (click)="importAll()"
+      >
+        Import all
+      </button>
+      <button
+        type="button"
+        hlmBtn
+        [disabled]="importing() || loading() || selectedCount() === 0"
+        (click)="importSelected()"
+      >
+        @if (importing()) {
+          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+          Importing…
+        } @else {
+          <ng-icon hlm name="lucideDownload" size="sm" />
+          Import selected ({{ selectedCount() }})
+        }
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
