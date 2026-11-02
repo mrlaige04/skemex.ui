@@ -3,48 +3,42 @@
     <div>
       <h1 class="text-2xl font-semibold tracking-tight">Jira issues</h1>
       <p class="text-muted-foreground mt-1 text-sm">
-        Issues from the mapped Jira project. Connect and map a project in
+        Issues from the mapped Jira project. Import here; export Skemex tasks to Jira from the
+        Issues list (current filters or selection). Connect and map a project in
         <a class="text-primary underline-offset-2 hover:underline" [routerLink]="settingsLink()">Settings</a>
         if nothing appears.
       </p>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex shrink-0 flex-wrap items-center gap-2">
       <button
         hlmBtn
         type="button"
         variant="outline"
         size="sm"
-        [disabled]="loading()"
+        class="inline-flex items-center gap-2"
+        [disabled]="!projectId || refreshing()"
         (click)="openJiraImportDialog()"
       >
-        <ng-icon hlm name="lucideDownload" size="sm" />
-        Import from Jira
+        <ng-icon hlm name="lucideDownload" size="sm" class="pointer-events-none" />
+        <span>Import from Jira</span>
       </button>
       <button
         hlmBtn
         type="button"
         variant="outline"
         size="sm"
-        [disabled]="loading()"
-        (click)="openJiraExportDialog()"
-      >
-        <ng-icon hlm name="lucideUpload" size="sm" />
-        Export to Jira
-      </button>
-      <button
-        hlmBtn
-        type="button"
-        variant="outline"
-        size="sm"
-        [disabled]="loading()"
+        class="inline-flex items-center gap-2"
+        [disabled]="!projectId || refreshing()"
         (click)="refresh()"
       >
-        @if (loading()) {
-          <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
-        } @else {
-          <ng-icon hlm name="lucideRefreshCw" size="sm" />
-        }
-        Refresh
+        <ng-icon
+          hlm
+          name="lucideRefreshCw"
+          size="sm"
+          class="pointer-events-none"
+          [class.animate-spin]="refreshing()"
+        />
+        <span>Refresh</span>
       </button>
     </div>
   </div>
@@ -93,11 +87,6 @@
     </div>
   </section>
 </div>
-
-<app-export-to-jira-dialog
-  [(state)]="jiraExportDialogState"
-  [context]="jiraExportContext()"
-/>
 
 <app-import-from-jira-dialog
   [(state)]="jiraImportDialogState"

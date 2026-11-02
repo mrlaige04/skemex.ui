@@ -76,7 +76,9 @@ export class ExportToJiraDialogComponent {
       case 'All':
         return 'All tasks in this project (up to 200)';
       default:
-        return `Tasks matching current filters (~${ctx.filteredTotalHint} on list)`;
+        return this.hasFilterContext()
+          ? `Tasks matching current filters (~${ctx.filteredTotalHint} on list)`
+          : 'All tasks visible with the current Issues list filters (up to 200)';
     }
   });
 
@@ -85,7 +87,8 @@ export class ExportToJiraDialogComponent {
     if (next === 'open') {
       this.error.set(null);
       this.result.set(null);
-      this.scope.set(this.hasSelection() ? 'Selected' : 'All');
+      // Prefer selection; otherwise current Issues filters (or all tasks if none).
+      this.scope.set(this.hasSelection() ? 'Selected' : 'AllFiltered');
       this.skipAlreadyExported.set(true);
     }
   }

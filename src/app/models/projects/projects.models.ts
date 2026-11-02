@@ -141,6 +141,20 @@ export interface ProjectTaskWorkLogDto {
   user: ProjectTaskUserDto;
 }
 
+export interface ProjectTaskCommentDto {
+  id: string;
+  taskId: string;
+  projectId: string;
+  body: string;
+  createdAt: string;
+  updatedAt?: string | null;
+  author: ProjectTaskUserDto;
+}
+
+export interface CreateProjectTaskCommentRequest {
+  body: string;
+}
+
 export interface ProjectTaskDto {
   id: string;
   projectId: string;

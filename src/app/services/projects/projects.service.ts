@@ -4,8 +4,10 @@ import type { PaginatedList } from '../../models/paginated-list';
 import type {
   CreateProjectColumnRequest,
   CreateProjectRequest,
+  CreateProjectTaskCommentRequest,
   CreateProjectTaskRequest,
   CreateProjectTaskWorkLogRequest,
+  ProjectTaskCommentDto,
   ExportTasksFormat,
   ExportTasksRequest,
   ListProjectTasksParams,
@@ -252,6 +254,27 @@ export class ProjectsService {
     return firstValueFrom(
       this.api.get<ProjectTaskWorkLogDto[]>(
         `api/projects/${projectId}/tasks/${taskId}/work-logs`,
+      ),
+    );
+  }
+
+  listTaskComments(projectId: string, taskId: string): Promise<ProjectTaskCommentDto[]> {
+    return firstValueFrom(
+      this.api.get<ProjectTaskCommentDto[]>(
+        `api/projects/${projectId}/tasks/${taskId}/comments`,
+      ),
+    );
+  }
+
+  createTaskComment(
+    projectId: string,
+    taskId: string,
+    body: CreateProjectTaskCommentRequest,
+  ): Promise<ProjectTaskCommentDto> {
+    return firstValueFrom(
+      this.api.post<CreateProjectTaskCommentRequest, ProjectTaskCommentDto>(
+        `api/projects/${projectId}/tasks/${taskId}/comments`,
+        body,
       ),
     );
   }

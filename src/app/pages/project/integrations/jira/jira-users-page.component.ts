@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideLoaderCircle, lucideRefreshCw, lucideSearch } from '@ng-icons/lucide';
+import { lucideRefreshCw, lucideSearch } from '@ng-icons/lucide';
 import {
   injectFlexRenderContext,
   type CellContext,
@@ -75,7 +75,7 @@ export class JiraUsersPersonCellComponent {
     ...HlmIconImports,
     ...HlmInputGroupImports,
   ],
-  providers: [provideIcons({ lucideLoaderCircle, lucideRefreshCw, lucideSearch })],
+  providers: [provideIcons({ lucideRefreshCw, lucideSearch })],
   templateUrl: './jira-users-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-h-0 overflow-y-auto' },
@@ -86,6 +86,7 @@ export class JiraUsersPageComponent implements OnInit {
   private readonly jiraService = inject(JiraIntegrationsService);
 
   readonly loading = signal(true);
+  readonly refreshing = signal(false);
   readonly error = signal<string | null>(null);
   readonly users = signal<JiraUserDto[]>([]);
   readonly searchInput = signal('');
@@ -181,27 +182,32 @@ export class JiraUsersPageComponent implements OnInit {
       return;
     }
 
+    this.loading.set(true);
     try {
       const project = await this.projectsService.getByCode(code);
       if (!project?.id) {
         this.error.set('Project was not found.');
-        this.loading.set(false);
         return;
       }
       this.projectId = project.id;
-      await this.loadUsers();
+      await this.loadUsers({ showRefreshing: false });
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
+      this.users.set([]);
+    } finally {
       this.loading.set(false);
     }
   }
 
-  private async loadUsers(): Promise<void> {
+  private async loadUsers(options?: { showRefreshing?: boolean }): Promise<void> {
     if (!this.projectId) {
       return;
     }
 
-    this.loading.set(true);
+    const showRefreshing = options?.showRefreshing !== false;
+    if (showRefreshing) {
+      this.refreshing.set(true);
+    }
     this.error.set(null);
     try {
       const users = await this.jiraService.listRemoteUsers(this.projectId);
@@ -211,7 +217,9 @@ export class JiraUsersPageComponent implements OnInit {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
       this.users.set([]);
     } finally {
-      this.loading.set(false);
+      if (showRefreshing) {
+        this.refreshing.set(false);
+      }
     }
   }
 }

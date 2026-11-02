@@ -29,6 +29,7 @@ import type {
 } from '../../models/integrations/jira.models';
 import { PERMISSIONS } from '../../models/auth/permissions';
 import { JiraIntegrationsService } from '../../services/integrations/jira-integrations.service';
+import { ProjectIntegrationsService } from '../../services/integrations/project-integrations.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 
@@ -59,6 +60,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly projectsService = inject(ProjectsService);
   private readonly jiraService = inject(JiraIntegrationsService);
+  private readonly integrationsService = inject(ProjectIntegrationsService);
 
   readonly permissions = PERMISSIONS;
 
@@ -190,6 +192,11 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
         externalProjectName: project.name,
       });
       this.connection.set(updated);
+      this.integrationsService.setConfigured(
+        this.projectId,
+        'jira',
+        updated.status === 'Connected',
+      );
       this.info.set(`Linked to Jira project ${updated.externalProjectKey}.`);
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
@@ -213,6 +220,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
       this.jiraProjects.set([]);
       this.selectedCloudId.set(null);
       this.selectedProjectId.set(null);
+      this.integrationsService.setConfigured(this.projectId, 'jira', false);
       this.info.set('Jira integration disconnected.');
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
@@ -251,6 +259,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
       this.projectId = project.id;
       const connection = await this.jiraService.getConnection(project.id);
       this.connection.set(connection);
+      await this.integrationsService.refresh(project.id, 'jira');
 
       if (connection && connection.status !== 'Disconnected') {
         await this.loadSitesAndProjects(connection);

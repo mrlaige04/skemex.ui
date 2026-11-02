@@ -148,30 +148,47 @@
           </button>
         }
 
-        <div hlmButtonGroup class="ms-auto" *hasPermission="permissions.tasksView">
-          <button
-            hlmBtn
-            type="button"
-            variant="outline"
-            size="sm"
-            [disabled]="exporting() || loading()"
-            (click)="exportDefault()"
-          >
-            <ng-icon hlm name="lucideDownload" size="sm" />
-            {{ exporting() ? 'Exporting…' : 'Export' }}
-          </button>
-          <button
-            hlmBtn
-            type="button"
-            variant="outline"
-            size="sm"
-            class="px-2"
-            aria-label="More export options"
-            [disabled]="exporting() || loading()"
-            [hlmDropdownMenuTrigger]="exportMenu"
-          >
-            <ng-icon hlm name="lucideChevronDown" size="sm" />
-          </button>
+        <div class="ms-auto flex flex-wrap items-center gap-2">
+          @if (jiraConfigured()) {
+            <button
+              hlmBtn
+              type="button"
+              variant="outline"
+              size="sm"
+              *hasPermission="permissions.tasksView"
+              [disabled]="loading()"
+              (click)="openJiraExportDialog()"
+            >
+              <ng-icon hlm name="lucideUpload" size="sm" />
+              Export to Jira
+            </button>
+          }
+
+          <div hlmButtonGroup *hasPermission="permissions.tasksView">
+            <button
+              hlmBtn
+              type="button"
+              variant="outline"
+              size="sm"
+              [disabled]="exporting() || loading()"
+              (click)="exportDefault()"
+            >
+              <ng-icon hlm name="lucideDownload" size="sm" />
+              {{ exporting() ? 'Exporting…' : 'Export' }}
+            </button>
+            <button
+              hlmBtn
+              type="button"
+              variant="outline"
+              size="sm"
+              class="px-2"
+              aria-label="More export options"
+              [disabled]="exporting() || loading()"
+              [hlmDropdownMenuTrigger]="exportMenu"
+            >
+              <ng-icon hlm name="lucideChevronDown" size="sm" />
+            </button>
+          </div>
         </div>
 
         <ng-template #exportMenu>
@@ -221,6 +238,11 @@
     </div>
   </div>
 </div>
+
+<app-export-to-jira-dialog
+  [(state)]="jiraExportDialogState"
+  [context]="jiraExportContext()"
+/>
 
 <app-confirm-alert-dialog
   [(state)]="confirmDialogState"

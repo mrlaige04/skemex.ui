@@ -30,6 +30,7 @@ import { problemDetailMessage } from '../../http/problem-details';
 import type {
   ProjectColumnDto,
   ProjectTaskAttachmentDto,
+  ProjectTaskCommentDto,
   ProjectTaskDto,
   ProjectTaskWorkLogDto,
   ProjectUserDto,
@@ -39,8 +40,10 @@ import { projectSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
+import { RichHtmlPipe } from '../../shared/rich-text/rich-html.pipe';
 import { RichTextEditorComponent } from '../../shared/rich-text/rich-text-editor.component';
 import { normalizeRichHtml } from '../../shared/rich-text/rich-text.util';
+import { IssuePersonChipComponent } from './issue-person-chip.component';
 import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
 import { TaskTagsInputComponent } from '../../shared/task-tags-input/task-tags-input.component';
 import { TaskTimeProgressComponent } from '../../shared/time-tracking/task-time-progress.component';
@@ -109,6 +112,8 @@ function formatAttachmentFileSize(bytes: number): string {
     TaskTypeBadgeComponent,
     TaskTagsInputComponent,
     ConfirmAlertDialogComponent,
+    IssuePersonChipComponent,
+    RichHtmlPipe,
     RichTextEditorComponent,
     ...HlmButtonImports,
     ...HlmDialogImports,
@@ -180,6 +185,12 @@ export class ProjectIssuePageComponent {
   readonly attachmentsLoading = signal(false);
   readonly attachmentUploading = signal(false);
   readonly attachmentError = signal<string | null>(null);
+
+  readonly comments = signal<ProjectTaskCommentDto[]>([]);
+  readonly commentsLoading = signal(false);
+  readonly commentDraft = signal('');
+  readonly commentSubmitting = signal(false);
+  readonly commentError = signal<string | null>(null);
 
   readonly projectCode = signal('');
 
@@ -761,6 +772,50 @@ export class ProjectIssuePageComponent {
     }
   }
 
+  private async loadComments(projectId: string, taskId: string): Promise<void> {
+    this.commentsLoading.set(true);
+    this.commentError.set(null);
+    try {
+      const items = await this.projectsService.listTaskComments(projectId, taskId);
+      this.comments.set(items);
+    } catch (err) {
+      this.comments.set([]);
+      this.commentError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.commentsLoading.set(false);
+    }
+  }
+
+  onCommentDraftChange(html: string): void {
+    this.commentDraft.set(html);
+  }
+
+  async submitComment(): Promise<void> {
+    const projectId = this.projectId;
+    const task = this.task();
+    if (!projectId || !task || this.commentSubmitting()) {
+      return;
+    }
+
+    const body = normalizeRichHtml(this.commentDraft());
+    if (!body) {
+      this.commentError.set('Comment cannot be empty.');
+      return;
+    }
+
+    this.commentSubmitting.set(true);
+    this.commentError.set(null);
+    try {
+      const created = await this.projectsService.createTaskComment(projectId, task.id, { body });
+      this.comments.update((items) => [created, ...items]);
+      this.commentDraft.set('');
+    } catch (err) {
+      this.commentError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.commentSubmitting.set(false);
+    }
+  }
+
   private async loadIssue(issueCode: string): Promise<void> {
     const projectCode =
       this.route.parent?.snapshot.paramMap.get('projectCode')?.trim().toUpperCase() ?? '';
@@ -777,6 +832,9 @@ export class ProjectIssuePageComponent {
     this.activeTab.set('acceptance');
     this.attachments.set([]);
     this.attachmentError.set(null);
+    this.comments.set([]);
+    this.commentDraft.set('');
+    this.commentError.set(null);
     this.pageOpenedDate = new Date();
     this.logDateDraft.set(toDateInputValue(this.pageOpenedDate));
 
@@ -816,11 +874,15 @@ export class ProjectIssuePageComponent {
       this.titleDraft.set(task.title);
       this.descriptionDraft.set(task.description ?? '');
       this.syncEstimateDrafts(task);
-      await this.loadAttachments(project.id, task.id);
+      await Promise.all([
+        this.loadAttachments(project.id, task.id),
+        this.loadComments(project.id, task.id),
+      ]);
     } catch (err) {
       this.loadError.set(problemDetailMessage(err as HttpErrorResponse));
       this.task.set(null);
       this.attachments.set([]);
+      this.comments.set([]);
     } finally {
       this.loading.set(false);
     }
