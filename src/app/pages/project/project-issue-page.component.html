@@ -745,22 +745,19 @@
         } @else if (comments().length === 0) {
           <p class="text-muted-foreground text-sm">No comments yet.</p>
         } @else {
-          <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+          <div class="divide-border border-border divide-y overflow-hidden rounded-lg border">
             @for (comment of comments(); track comment.id) {
-              <li class="space-y-3 px-3 py-3">
+              <article class="space-y-3 px-3 py-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <app-issue-person-chip [user]="comment.author" />
                   <time class="text-muted-foreground text-xs" [attr.datetime]="comment.createdAt">
                     {{ formatDateTime(comment.createdAt) }}
                   </time>
                 </div>
-                <div
-                  class="prose prose-sm dark:prose-invert text-foreground max-w-none text-sm [&_p]:my-1"
-                  [innerHTML]="comment.body | richHtml"
-                ></div>
-              </li>
+                <app-rich-html-view [html]="comment.body" />
+              </article>
             }
-          </ul>
+          </div>
         }
       </section>
 

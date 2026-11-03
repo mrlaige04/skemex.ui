@@ -69,6 +69,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
   readonly savingMapping = signal(false);
   readonly disconnecting = signal(false);
   readonly loadingProjects = signal(false);
+  readonly savingWebhookSettings = signal(false);
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
 
@@ -202,6 +203,44 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
     } finally {
       this.savingMapping.set(false);
+    }
+  }
+
+  async onWebhookEventToggle(eventKey: string, event: Event): Promise<void> {
+    if (!this.projectId || this.savingWebhookSettings()) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const enabled = input.checked;
+    const current = this.connection();
+    if (!current?.webhookEvents?.length) {
+      return;
+    }
+
+    const previous = current.webhookEvents.map((e) => ({ ...e }));
+    this.connection.set({
+      ...current,
+      webhookEvents: current.webhookEvents.map((e) =>
+        e.key === eventKey ? { ...e, enabled } : e,
+      ),
+    });
+
+    this.savingWebhookSettings.set(true);
+    this.error.set(null);
+    try {
+      const events: Record<string, boolean> = {};
+      for (const item of this.connection()!.webhookEvents!) {
+        events[item.key] = item.enabled;
+      }
+      const updated = await this.jiraService.updateWebhookSettings(this.projectId, { events });
+      this.connection.set(updated);
+    } catch (err) {
+      this.connection.set({ ...current, webhookEvents: previous });
+      input.checked = !enabled;
+      this.error.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.savingWebhookSettings.set(false);
     }
   }
 

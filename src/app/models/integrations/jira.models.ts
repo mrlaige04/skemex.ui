@@ -9,6 +9,13 @@ export interface JiraAuthorizeStartDto {
   authorizationUrl: string;
 }
 
+export interface JiraWebhookEventSettingDto {
+  key: string;
+  displayName: string;
+  jiraEventName: string;
+  enabled: boolean;
+}
+
 export interface JiraConnectionDto {
   id: string;
   projectId: string;
@@ -20,8 +27,18 @@ export interface JiraConnectionDto {
   externalProjectKey?: string | null;
   externalProjectName?: string | null;
   lastError?: string | null;
+  webhookRegistered?: boolean;
+  webhookCallbackUrl?: string | null;
+  /** True when callback is localhost — Jira Cloud cannot deliver events without a public tunnel. */
+  webhookUrlNotPubliclyReachable?: boolean;
+  webhookRegisteredAt?: string | null;
+  webhookEvents?: JiraWebhookEventSettingDto[];
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export interface UpdateJiraWebhookSettingsRequest {
+  events: Record<string, boolean>;
 }
 
 export interface JiraConnectionResponseDto {

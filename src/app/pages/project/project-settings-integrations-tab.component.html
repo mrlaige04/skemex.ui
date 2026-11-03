@@ -166,6 +166,72 @@
             </div>
           </div>
         }
+
+        @if (isConnected() && connection(); as conn) {
+          <div class="space-y-3 border-t pt-4">
+            <div class="space-y-1">
+              <h4 class="text-sm font-medium">Jira webhooks</h4>
+              <p class="text-muted-foreground text-xs">
+                One callback URL receives events from Jira. Auto-registration covers issue and comment
+                events (OAuth). Worklog / attachment / user need a manual admin webhook if you want them.
+                Toggles only change local processing — they do not re-register in Jira. After adding the
+                webhook scope, disconnect and reconnect Jira once.
+              </p>
+              <p class="text-xs">
+                Registration:
+                @if (conn.webhookRegistered) {
+                  <span class="font-medium text-emerald-700 dark:text-emerald-300">Active</span>
+                } @else {
+                  <span class="font-medium text-amber-700 dark:text-amber-300">Manual setup needed</span>
+                }
+              </p>
+              @if (conn.webhookUrlNotPubliclyReachable) {
+                <p
+                  class="rounded-md border border-amber-300/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
+                >
+                  Callback points to localhost. Jira Cloud cannot reach it, so events will never arrive.
+                  Expose the API with a tunnel (e.g. ngrok / Cloudflare Tunnel) and set
+                  <code class="font-mono">Jira:PublicApiBaseUrl</code> to that HTTPS origin, then reconnect
+                  or save mapping to re-register.
+                </p>
+              }
+            </div>
+
+            @if (conn.webhookCallbackUrl) {
+              <div class="space-y-1">
+                <label hlmLabel class="text-xs">Callback URL</label>
+                <code
+                  class="border-border bg-muted/40 block overflow-x-auto rounded-md border px-2 py-1.5 text-[11px] break-all"
+                  >{{ conn.webhookCallbackUrl }}</code
+                >
+              </div>
+            }
+
+            @if (conn.webhookEvents?.length) {
+              <div class="grid gap-2 sm:grid-cols-2">
+                @for (event of conn.webhookEvents; track event.key) {
+                  <label
+                    class="border-border hover:bg-muted/30 flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      class="mt-0.5"
+                      [checked]="event.enabled"
+                      [disabled]="savingWebhookSettings()"
+                      (change)="onWebhookEventToggle(event.key, $event)"
+                    />
+                    <span class="min-w-0">
+                      <span class="block font-medium leading-tight">{{ event.displayName }}</span>
+                      <span class="text-muted-foreground block font-mono text-[10px]">{{
+                        event.jiraEventName
+                      }}</span>
+                    </span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
     }
   </div>

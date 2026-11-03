@@ -13,6 +13,7 @@ import type {
   JiraProjectDto,
   JiraUserDto,
   MapJiraProjectRequest,
+  UpdateJiraWebhookSettingsRequest,
 } from '../../models/integrations/jira.models';
 import { BaseHttp } from '../http/base-http.service';
 
@@ -69,6 +70,18 @@ export class JiraIntegrationsService {
   disconnect(projectId: string): Promise<void> {
     return firstValueFrom(
       this.api.delete<void>(`api/projects/${projectId}/integrations/jira`),
+    );
+  }
+
+  updateWebhookSettings(
+    projectId: string,
+    body: UpdateJiraWebhookSettingsRequest,
+  ): Promise<JiraConnectionDto> {
+    return firstValueFrom(
+      this.api.put<UpdateJiraWebhookSettingsRequest, JiraConnectionDto>(
+        `api/projects/${projectId}/integrations/jira/webhook-settings`,
+        body,
+      ),
     );
   }
 

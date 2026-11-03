@@ -40,7 +40,7 @@ import { projectSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
-import { RichHtmlPipe } from '../../shared/rich-text/rich-html.pipe';
+import { RichHtmlViewComponent } from '../../shared/rich-text/rich-html-view.component';
 import { RichTextEditorComponent } from '../../shared/rich-text/rich-text-editor.component';
 import { normalizeRichHtml } from '../../shared/rich-text/rich-text.util';
 import { IssuePersonChipComponent } from './issue-person-chip.component';
@@ -113,7 +113,7 @@ function formatAttachmentFileSize(bytes: number): string {
     TaskTagsInputComponent,
     ConfirmAlertDialogComponent,
     IssuePersonChipComponent,
-    RichHtmlPipe,
+    RichHtmlViewComponent,
     RichTextEditorComponent,
     ...HlmButtonImports,
     ...HlmDialogImports,
