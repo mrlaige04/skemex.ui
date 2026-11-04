@@ -17,6 +17,7 @@ import type {
   ProjectSettingsDto,
   ProjectTaskAttachmentDto,
   ProjectTaskDto,
+  ProjectTaskGraphDto,
   ProjectTaskWorkLogDto,
   ProjectUserDto,
   ReorderProjectColumnsRequest,
@@ -184,6 +185,12 @@ export class ProjectsService {
     const normalized = encodeURIComponent(code.trim());
     return firstValueFrom(
       this.api.get<ProjectTaskDto>(`api/projects/${projectId}/tasks/by-code/${normalized}`),
+    );
+  }
+
+  getTaskGraph(projectId: string): Promise<ProjectTaskGraphDto> {
+    return firstValueFrom(
+      this.api.get<ProjectTaskGraphDto>(`api/projects/${projectId}/tasks/graph`),
     );
   }
 

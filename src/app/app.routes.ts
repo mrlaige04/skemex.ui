@@ -345,6 +345,15 @@ export const routes: Routes = [
         title: 'Issues',
       },
       {
+        path: 'graph',
+        loadComponent: () =>
+          import('./pages/project/project-task-graph-page.component').then(
+            (m) => m.ProjectTaskGraphPageComponent,
+          ),
+        data: { breadcrumb: 'Graph' },
+        title: 'Graph',
+      },
+      {
         path: 'users',
         pathMatch: 'full',
         canActivate: [

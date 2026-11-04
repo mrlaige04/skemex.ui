@@ -27,6 +27,7 @@ import {
   lucideFolderKanban,
   lucideKanbanSquare,
   lucideLogOut,
+  lucideNetwork,
   lucideSettings,
   lucideUserCircle,
 } from '@ng-icons/lucide';
@@ -75,6 +76,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
       lucideFolderKanban,
       lucideKanbanSquare,
       lucideLogOut,
+      lucideNetwork,
       lucideSettings,
       lucideUserCircle,
     }),

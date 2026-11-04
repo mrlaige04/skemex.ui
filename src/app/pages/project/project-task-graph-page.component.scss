@@ -1,0 +1,64 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.task-graph-viewport {
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--border) 65%, transparent) 1px, transparent 0)
+      0 0 / 22px 22px,
+    hsl(var(--background));
+}
+
+.task-graph-host {
+  min-height: 28rem;
+}
+
+.task-graph-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 0.25rem;
+  border: 1.5px solid;
+}
+
+.task-graph-swatch--task {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.task-graph-swatch--feature {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.task-graph-swatch--bug {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.task-graph-line {
+  width: 1.25rem;
+  border-top-width: 2px;
+}
+
+.task-graph-line--parent {
+  border-top-style: dashed;
+  border-top-color: #64748b;
+}
+
+.task-graph-line--blocked {
+  border-top-style: solid;
+  border-top-color: #ea580c;
+}
+
+.task-graph-line--relates {
+  border-top-style: solid;
+  border-top-color: #0d9488;
+}
+
+.task-graph-line--duplicates {
+  border-top-style: solid;
+  border-top-color: #9333ea;
+}

@@ -1,0 +1,123 @@
+<div class="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Graph</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Drag nodes, pan the canvas, zoom with the wheel. Double-click a node to open the issue.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="bg-muted/40 inline-flex rounded-md border p-0.5">
+        <button
+          type="button"
+          class="rounded px-2.5 py-1.5 text-xs font-medium transition-colors"
+          [class.bg-background]="edgeFilter() === 'all'"
+          [class.shadow-sm]="edgeFilter() === 'all'"
+          (click)="setEdgeFilter('all')"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          class="rounded px-2.5 py-1.5 text-xs font-medium transition-colors"
+          [class.bg-background]="edgeFilter() === 'hierarchy'"
+          [class.shadow-sm]="edgeFilter() === 'hierarchy'"
+          (click)="setEdgeFilter('hierarchy')"
+        >
+          Hierarchy
+        </button>
+        <button
+          type="button"
+          class="rounded px-2.5 py-1.5 text-xs font-medium transition-colors"
+          [class.bg-background]="edgeFilter() === 'relations'"
+          [class.shadow-sm]="edgeFilter() === 'relations'"
+          (click)="setEdgeFilter('relations')"
+        >
+          Relations
+        </button>
+      </div>
+
+      <button
+        type="button"
+        hlmBtn
+        variant="outline"
+        size="sm"
+        (click)="fitView()"
+        [disabled]="loading() || !!error() || nodeCount() === 0"
+      >
+        <ng-icon hlm name="lucideMaximize2" size="sm" />
+        Fit
+      </button>
+      <button type="button" hlmBtn variant="outline" size="sm" (click)="reload()" [disabled]="loading()">
+        <ng-icon hlm name="lucideRefreshCw" size="sm" [class.animate-spin]="loading()" />
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+    <span>{{ nodeCount() }} issues</span>
+    <span>{{ edgeCount() }} links</span>
+    @if (truncated()) {
+      <span class="text-amber-700 dark:text-amber-400">Showing first 1000 issues</span>
+    }
+  </div>
+
+  <div class="flex flex-wrap gap-3 text-xs">
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-swatch task-graph-swatch--task"></span>
+      Task
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-swatch task-graph-swatch--feature"></span>
+      Feature
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-swatch task-graph-swatch--bug"></span>
+      Bug
+    </span>
+    <span class="text-muted-foreground">|</span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-line task-graph-line--parent"></span>
+      Parent
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-line task-graph-line--blocked"></span>
+      Blocked by
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-line task-graph-line--relates"></span>
+      Relates
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="task-graph-line task-graph-line--duplicates"></span>
+      Duplicates
+    </span>
+  </div>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  <div class="task-graph-viewport border-border relative min-h-0 flex-1 overflow-hidden rounded-xl border">
+    @if (loading()) {
+      <div class="text-muted-foreground absolute inset-0 z-10 flex items-center justify-center gap-2 text-sm">
+        <ng-icon hlm name="lucideLoaderCircle" class="animate-spin" />
+        Loading graph…
+      </div>
+    } @else if (!error() && nodeCount() === 0) {
+      <div class="text-muted-foreground absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-sm">
+        <ng-icon hlm name="lucideNetwork" class="size-8 opacity-50" />
+        <p>No issues in this project yet.</p>
+      </div>
+    }
+
+    <div #graphHost class="task-graph-host h-full min-h-[28rem] w-full"></div>
+  </div>
+</div>
