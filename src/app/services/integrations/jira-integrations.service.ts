@@ -9,10 +9,14 @@ import type {
   JiraAuthorizeStartDto,
   JiraConnectionDto,
   JiraConnectionResponseDto,
+  JiraEntityMappingWorkspaceDto,
   JiraIssuePreviewDto,
+  JiraMappingLinkDto,
   JiraProjectDto,
   JiraUserDto,
   MapJiraProjectRequest,
+  UpdateJiraWebhookSettingsRequest,
+  UpsertJiraEntityMappingRequest,
 } from '../../models/integrations/jira.models';
 import { BaseHttp } from '../http/base-http.service';
 
@@ -72,6 +76,18 @@ export class JiraIntegrationsService {
     );
   }
 
+  updateWebhookSettings(
+    projectId: string,
+    body: UpdateJiraWebhookSettingsRequest,
+  ): Promise<JiraConnectionDto> {
+    return firstValueFrom(
+      this.api.put<UpdateJiraWebhookSettingsRequest, JiraConnectionDto>(
+        `api/projects/${projectId}/integrations/jira/webhook-settings`,
+        body,
+      ),
+    );
+  }
+
   exportTasks(
     projectId: string,
     body: ExportTasksToJiraRequest,
@@ -104,6 +120,38 @@ export class JiraIntegrationsService {
       this.api.post<ImportTasksFromJiraRequest, ImportTasksFromJiraResultDto>(
         `api/projects/${projectId}/integrations/jira/import-tasks`,
         body,
+      ),
+    );
+  }
+
+  getEntityMappings(
+    projectId: string,
+    localEntityType: string,
+  ): Promise<JiraEntityMappingWorkspaceDto> {
+    return firstValueFrom(
+      this.api.get<JiraEntityMappingWorkspaceDto>(
+        `api/projects/${projectId}/integrations/jira/entity-mappings`,
+        { localEntityType },
+      ),
+    );
+  }
+
+  upsertEntityMapping(
+    projectId: string,
+    body: UpsertJiraEntityMappingRequest,
+  ): Promise<JiraMappingLinkDto> {
+    return firstValueFrom(
+      this.api.put<UpsertJiraEntityMappingRequest, JiraMappingLinkDto>(
+        `api/projects/${projectId}/integrations/jira/entity-mappings`,
+        body,
+      ),
+    );
+  }
+
+  deleteEntityMapping(projectId: string, mappingId: string): Promise<void> {
+    return firstValueFrom(
+      this.api.delete<void>(
+        `api/projects/${projectId}/integrations/jira/entity-mappings/${mappingId}`,
       ),
     );
   }

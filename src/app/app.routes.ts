@@ -72,11 +72,6 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'tenant-select',
-    loadComponent: () =>
-      import('./pages/auth/select-tenant/select-tenant-page.component').then((m) => m.SelectTenantPageComponent),
-  },
-  {
     path: 'no-access',
     loadComponent: () =>
       import('./pages/no-access/no-access-page.component').then((m) => m.NoAccessPageComponent),

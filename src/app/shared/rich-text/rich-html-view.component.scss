@@ -1,0 +1,36 @@
+.rich-html-view {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--foreground);
+  word-wrap: break-word;
+}
+
+.rich-html-view > *:first-child {
+  margin-top: 0;
+}
+
+.rich-html-view > *:last-child {
+  margin-bottom: 0;
+}
+
+.rich-html-view p {
+  margin: 0.35em 0;
+}
+
+.rich-html-view h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0.5em 0 0.35em;
+}
+
+.rich-html-view h2 {
+  font-size: 1.25em;
+  font-weight: 700;
+  margin: 0.5em 0 0.35em;
+}
+
+.rich-html-view h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.5em 0 0.35em;
+}

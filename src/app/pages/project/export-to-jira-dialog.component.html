@@ -23,6 +23,41 @@
         <div class="grid gap-2">
           <button
             type="button"
+            class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm disabled:pointer-events-none disabled:opacity-50"
+            [class.border-primary]="scope() === 'AllFiltered'"
+            [class.bg-accent]="scope() === 'AllFiltered'"
+            (click)="setScope('AllFiltered')"
+          >
+            <span class="font-medium">Current filters</span>
+            <span class="text-muted-foreground mt-0.5 block text-xs">
+              @if (hasFilterContext()) {
+                Same search / status / assignee as the Issues list (~{{ context()?.filteredTotalHint ?? 0 }} on list)
+              } @else {
+                All tasks matching the Issues list (no extra filters applied)
+              }
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm disabled:pointer-events-none disabled:opacity-50"
+            [class.border-primary]="scope() === 'Selected'"
+            [class.bg-accent]="scope() === 'Selected'"
+            [disabled]="!hasSelection()"
+            (click)="setScope('Selected')"
+          >
+            <span class="font-medium">Selected tasks</span>
+            <span class="text-muted-foreground mt-0.5 block text-xs">
+              @if (hasSelection()) {
+                {{ context()?.selectedTaskIds?.length }} selected task(s)
+              } @else {
+                Select tasks on the Issues list, then open Export again
+              }
+            </span>
+          </button>
+
+          <button
+            type="button"
             class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
             [class.border-primary]="scope() === 'All'"
             [class.bg-accent]="scope() === 'All'"
@@ -33,32 +68,6 @@
               Export every Skemex task in this project (max 200)
             </span>
           </button>
-          @if (hasSelection()) {
-            <button
-              type="button"
-              class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
-              [class.border-primary]="scope() === 'Selected'"
-              [class.bg-accent]="scope() === 'Selected'"
-              (click)="setScope('Selected')"
-            >
-              <span class="font-medium">Selected tasks</span>
-              <span class="text-muted-foreground mt-0.5 block text-xs">{{ scopeHint() }}</span>
-            </button>
-          }
-          @if (hasFilterContext()) {
-            <button
-              type="button"
-              class="hover:bg-accent rounded-md border px-3 py-2 text-left text-sm"
-              [class.border-primary]="scope() === 'AllFiltered'"
-              [class.bg-accent]="scope() === 'AllFiltered'"
-              (click)="setScope('AllFiltered')"
-            >
-              <span class="font-medium">Current filters</span>
-              <span class="text-muted-foreground mt-0.5 block text-xs">
-                Same search / status / assignee as the Issues list
-              </span>
-            </button>
-          }
         </div>
         <p class="text-muted-foreground text-xs">{{ scopeHint() }}</p>
       </div>

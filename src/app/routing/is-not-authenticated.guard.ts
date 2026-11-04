@@ -31,5 +31,7 @@ export const isNotAuthenticatedGuard: CanActivateFn = async () => {
     return router.createUrlTree([APP_PATHS.dashboard]);
   }
 
-  return router.createUrlTree([APP_PATHS.select]);
+  // Stale token without workspace context — clear session and re-enter login.
+  await auth.logout();
+  return false;
 };

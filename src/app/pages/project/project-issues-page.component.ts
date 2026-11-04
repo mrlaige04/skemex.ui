@@ -20,6 +20,7 @@ import {
   lucideSearch,
   lucideSparkles,
   lucideTrash2,
+  lucideUpload,
 } from '@ng-icons/lucide';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -47,6 +48,7 @@ import type {
 import { PERMISSIONS } from '../../models/auth/permissions';
 import { APP_PATHS } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
+import { ProjectIntegrationsService } from '../../services/integrations/project-integrations.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { ConfirmAlertDialogComponent } from '../../shared/confirm-alert-dialog/confirm-alert-dialog.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
@@ -58,6 +60,10 @@ import {
 import { IssuesKeyCellComponent } from './issues-key-cell.component';
 import { IssuesPersonCellComponent } from './issues-person-cell.component';
 import { IssuesTableActionsCellComponent } from './issues-table-actions-cell.component';
+import {
+  ExportToJiraDialogComponent,
+  type ExportToJiraDialogContext,
+} from './export-to-jira-dialog.component';
 import {
   PROJECT_ISSUES_TABLE_HOST,
   type ProjectIssuesTableHost,
@@ -109,6 +115,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
     NgIcon,
     RichTableComponent,
     ConfirmAlertDialogComponent,
+    ExportToJiraDialogComponent,
     HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmButtonGroupImports,
@@ -127,6 +134,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
       lucideSearch,
       lucideSparkles,
       lucideTrash2,
+      lucideUpload,
     }),
     { provide: PROJECT_ISSUES_TABLE_HOST, useExisting: ProjectIssuesPageComponent },
   ],
@@ -137,6 +145,7 @@ function personName(user?: { firstName: string; lastName: string; email: string 
 export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHost {
   private readonly route = inject(ActivatedRoute);
   private readonly projectsService = inject(ProjectsService);
+  private readonly integrationsService = inject(ProjectIntegrationsService);
   private readonly destroyRef = inject(DestroyRef);
   readonly aiChat = inject(AiChatService);
   readonly permissions = PERMISSIONS;
@@ -175,16 +184,22 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
   readonly confirmDialogState = signal<'open' | 'closed'>('closed');
   readonly confirmMode = signal<'single' | 'bulk'>('single');
   readonly pendingDeleteIssue = signal<ProjectTaskDto | null>(null);
+  readonly jiraExportDialogState = signal<'open' | 'closed'>('closed');
+  readonly jiraExportContext = signal<ExportToJiraDialogContext | null>(null);
   readonly allValue = ALL_VALUE;
   readonly unassignedValue = UNASSIGNED_VALUE;
   readonly sortOptions = SORT_OPTIONS;
 
   private projectId: string | null = null;
+  private readonly projectIdSignal = signal<string | null>(null);
   private pagingEnabled = false;
   private suppressPagingEffect = false;
 
   readonly selectedCount = computed(() => this.selectedIds().length);
   readonly hasSelection = computed(() => this.selectedCount() > 0);
+  readonly jiraConfigured = computed(() =>
+    this.integrationsService.isConfigured(this.projectIdSignal(), 'jira'),
+  );
 
   readonly confirmTitle = computed(() =>
     this.confirmMode() === 'bulk' ? 'Delete selected issues?' : 'Delete issue?',
@@ -324,6 +339,25 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
     void this.exportTasks('AllFiltered', 'Xlsx');
   }
 
+  openJiraExportDialog(): void {
+    if (!this.projectId) {
+      return;
+    }
+
+    const columnId = this.columnFilter();
+    const assignee = this.assigneeFilter();
+    this.jiraExportContext.set({
+      projectId: this.projectId,
+      search: this.searchInput().trim(),
+      columnId: columnId === ALL_VALUE ? null : columnId,
+      assigneeId: assignee === ALL_VALUE || assignee === UNASSIGNED_VALUE ? null : assignee,
+      unassigned: assignee === UNASSIGNED_VALUE,
+      selectedTaskIds: [...this.selectedIds()],
+      filteredTotalHint: this.totalItems(),
+    });
+    this.jiraExportDialogState.set('open');
+  }
+
   exportTasks(scope: ExportTasksScope, format: ExportTasksFormat): void {
     void this.runExport(scope, format);
   }
@@ -456,17 +490,20 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
       if (!project) {
         this.listError.set('Project was not found.');
         this.projectId = null;
+        this.projectIdSignal.set(null);
         return;
       }
 
       this.projectName.set(project.name);
       this.projectCode.set(project.code);
       this.projectId = project.id;
+      this.projectIdSignal.set(project.id);
       this.createLink.set([APP_PATHS.projectTaskNew(project.code)]);
 
       const [columns, members] = await Promise.all([
         this.projectsService.listColumns(project.id),
         this.projectsService.listUsers(project.id, undefined, 1, 100),
+        this.integrationsService.refresh(project.id, 'jira').catch(() => false),
       ]);
       this.columns.set(columns);
       this.members.set(members.items);
@@ -476,6 +513,7 @@ export class ProjectIssuesPageComponent implements OnInit, ProjectIssuesTableHos
         this.listError.set(problemDetailMessage(err as HttpErrorResponse));
       }
       this.projectId = null;
+      this.projectIdSignal.set(null);
     } finally {
       this.loading.set(false);
     }

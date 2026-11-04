@@ -35,5 +35,5 @@ export class NoAccessPageComponent {
     ? APP_PATHS.adminDashboard
     : this.auth.workspaceContext()
       ? APP_PATHS.dashboard
-      : APP_PATHS.select;
+      : '/auth/login';
 }

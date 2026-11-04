@@ -54,6 +54,9 @@ export interface CurrentUserResponse {
 export interface LoginResponse {
   token: AccessTokenResponse;
   user: CurrentUserResponse;
+  /** Selected workspace for normal users; null for platform admins. */
+  tenantId?: string | null;
+  tenantName?: string | null;
 }
 
 export interface ExternalAuthProviderDto {

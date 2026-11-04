@@ -94,69 +94,67 @@ import {
     }
 
     <div class="overflow-hidden">
-      @defer {
-        <div hlmTableContainer>
-          <table hlmTable>
-            <thead hlmTHead>
-              @for (headerGroup of table().getHeaderGroups(); track headerGroup.id) {
-                <tr hlmTr>
-                  @for (header of headerGroup.headers; track header.id) {
-                    <th
-                      hlmTh
-                      [attr.colSpan]="header.colSpan"
-                      [class.w-10]="header.column.id === '_select'"
-                      [class.px-3]="header.column.id === '_select'"
-                    >
-                      @if (!header.isPlaceholder) {
-                        <ng-container
-                          *flexRender="
-                            header.column.columnDef.header;
-                            props: header.getContext();
-                            let headerText
-                          "
-                        >
-                          @if (headerText) {
-                            <div [innerHTML]="headerText"></div>
-                          }
-                        </ng-container>
-                      }
-                    </th>
-                  }
-                </tr>
-              }
-            </thead>
-            <tbody hlmTBody>
-              @for (row of table().getRowModel().rows; track row.id) {
-                <tr hlmTr [attr.data-state]="row.getIsSelected() && 'selected'">
-                  @for (cell of row.getVisibleCells(); track cell.id) {
-                    <td
-                      hlmTd
-                      [class.w-10]="cell.column.id === '_select'"
-                      [class.px-3]="cell.column.id === '_select'"
-                    >
+      <div hlmTableContainer>
+        <table hlmTable>
+          <thead hlmTHead>
+            @for (headerGroup of table().getHeaderGroups(); track headerGroup.id) {
+              <tr hlmTr>
+                @for (header of headerGroup.headers; track header.id) {
+                  <th
+                    hlmTh
+                    [attr.colSpan]="header.colSpan"
+                    [class.w-10]="header.column.id === '_select'"
+                    [class.px-3]="header.column.id === '_select'"
+                  >
+                    @if (!header.isPlaceholder) {
                       <ng-container
-                        *flexRender="cell.column.columnDef.cell; props: cell.getContext(); let cellContent"
+                        *flexRender="
+                          header.column.columnDef.header;
+                          props: header.getContext();
+                          let headerText
+                        "
                       >
-                        @if (cellContent) {
-                          <div [innerHTML]="cellContent"></div>
+                        @if (headerText) {
+                          <div [innerHTML]="headerText"></div>
                         }
                       </ng-container>
-                    </td>
-                  }
-                </tr>
-              } @empty {
-                @if (!loading()) {
-                  <tr hlmTr>
-                    <td hlmTd class="h-24 text-center" [attr.colspan]="table().getAllLeafColumns().length">
-                      <span class="text-muted-foreground text-sm">{{ emptyMessage() }}</span>
-                    </td>
-                  </tr>
+                    }
+                  </th>
                 }
+              </tr>
+            }
+          </thead>
+          <tbody hlmTBody>
+            @for (row of table().getRowModel().rows; track row.id) {
+              <tr hlmTr [attr.data-state]="row.getIsSelected() && 'selected'">
+                @for (cell of row.getVisibleCells(); track cell.id) {
+                  <td
+                    hlmTd
+                    [class.w-10]="cell.column.id === '_select'"
+                    [class.px-3]="cell.column.id === '_select'"
+                  >
+                    <ng-container
+                      *flexRender="cell.column.columnDef.cell; props: cell.getContext(); let cellContent"
+                    >
+                      @if (cellContent) {
+                        <div [innerHTML]="cellContent"></div>
+                      }
+                    </ng-container>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr hlmTr>
+                  <td hlmTd class="h-24 text-center" [attr.colspan]="table().getAllLeafColumns().length">
+                    <span class="text-muted-foreground text-sm">{{ emptyMessage() }}</span>
+                  </td>
+                </tr>
               }
-            </tbody>
-          </table>
-        </div>
-      }
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
     @if (showPagination()) {

@@ -58,7 +58,7 @@ export class ExternalAuthCallbackPageComponent implements OnInit {
       if (this.auth.isSuperAdmin()) {
         await this.router.navigate([APP_PATHS.adminDashboard]);
       } else {
-        await this.router.navigate([APP_PATHS.select]);
+        await this.router.navigate([APP_PATHS.dashboard]);
       }
     } catch (err) {
       this.error.set(formatError(err));

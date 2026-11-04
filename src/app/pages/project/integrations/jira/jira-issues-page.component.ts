@@ -9,13 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import {
-  lucideDownload,
-  lucideLoaderCircle,
-  lucideRefreshCw,
-  lucideSearch,
-  lucideUpload,
-} from '@ng-icons/lucide';
+import { lucideDownload, lucideRefreshCw, lucideSearch } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
@@ -31,10 +25,6 @@ import {
   type RichTableColumn,
   type RichTablePaginationChange,
 } from '../../../../shared/rich-table';
-import {
-  ExportToJiraDialogComponent,
-  type ExportToJiraDialogContext,
-} from '../../export-to-jira-dialog.component';
 import { ImportFromJiraDialogComponent } from '../../import-from-jira-dialog.component';
 
 function escapeHtml(value: string): string {
@@ -51,16 +41,13 @@ function escapeHtml(value: string): string {
     NgIcon,
     RouterLink,
     RichTableComponent,
-    ExportToJiraDialogComponent,
     ImportFromJiraDialogComponent,
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
     ...HlmInputGroupImports,
   ],
-  providers: [
-    provideIcons({ lucideDownload, lucideLoaderCircle, lucideRefreshCw, lucideSearch, lucideUpload }),
-  ],
+  providers: [provideIcons({ lucideDownload, lucideRefreshCw, lucideSearch })],
   templateUrl: './jira-issues-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-h-0 overflow-y-auto' },
@@ -70,22 +57,25 @@ export class JiraIssuesPageComponent implements OnInit {
   private readonly projectsService = inject(ProjectsService);
   private readonly jiraService = inject(JiraIntegrationsService);
 
+  /** Initial page bootstrap (table skeleton only — toolbar stays stable). */
   readonly loading = signal(true);
+  /** Issue list refresh in progress (spins the Refresh icon). */
+  readonly refreshing = signal(false);
   readonly error = signal<string | null>(null);
   readonly issues = signal<JiraIssuePreviewDto[]>([]);
   readonly searchInput = signal('');
   readonly currentPage = signal(1);
   readonly pageSize = signal(20);
   readonly projectCode = signal('');
+  readonly siteUrl = signal<string | null>(null);
   readonly settingsLink = computed(() => {
     const code = this.projectCode();
     return code ? APP_PATHS.projectSettings(code) : APP_PATHS.projects;
   });
 
-  readonly jiraExportDialogState = signal<'open' | 'closed'>('closed');
-  readonly jiraExportContext = signal<ExportToJiraDialogContext | null>(null);
   readonly jiraImportDialogState = signal<'open' | 'closed'>('closed');
 
+  /** Used by the template to enable toolbar actions after bootstrap. */
   projectId: string | null = null;
 
   readonly filteredIssues = computed(() => {
@@ -126,7 +116,7 @@ export class JiraIssuesPageComponent implements OnInit {
       key: 'key',
       label: 'Key',
       accessorFn: (row) => row.key,
-      render: (row) => `<span class="font-mono text-sm font-medium">${escapeHtml(row.key)}</span>`,
+      render: (row) => this.renderIssueLink(row.key, 'font-mono text-sm font-medium'),
       enableHiding: false,
     },
     {
@@ -158,7 +148,9 @@ export class JiraIssuesPageComponent implements OnInit {
       key: 'parent',
       label: 'Parent',
       render: (row) =>
-        `<span class="font-mono text-muted-foreground text-sm">${escapeHtml(row.parentKey || '—')}</span>`,
+        row.parentKey
+          ? this.renderIssueLink(row.parentKey, 'font-mono text-muted-foreground text-sm')
+          : `<span class="text-muted-foreground text-sm">—</span>`,
     },
     {
       key: 'imported',
@@ -195,22 +187,6 @@ export class JiraIssuesPageComponent implements OnInit {
     this.jiraImportDialogState.set('open');
   }
 
-  openJiraExportDialog(): void {
-    if (!this.projectId) {
-      return;
-    }
-    this.jiraExportContext.set({
-      projectId: this.projectId,
-      search: '',
-      columnId: null,
-      assigneeId: null,
-      unassigned: false,
-      selectedTaskIds: [],
-      filteredTotalHint: 0,
-    });
-    this.jiraExportDialogState.set('open');
-  }
-
   onJiraImported(didImport: boolean): void {
     if (didImport) {
       void this.loadIssues();
@@ -226,27 +202,47 @@ export class JiraIssuesPageComponent implements OnInit {
       return;
     }
 
+    this.loading.set(true);
     try {
       const project = await this.projectsService.getByCode(code);
       if (!project?.id) {
         this.error.set('Project was not found.');
-        this.loading.set(false);
         return;
       }
       this.projectId = project.id;
-      await this.loadIssues();
+      await this.loadConnection();
+      await this.loadIssues({ showRefreshing: false });
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
+      this.issues.set([]);
+    } finally {
       this.loading.set(false);
     }
   }
 
-  private async loadIssues(): Promise<void> {
+  private async loadConnection(): Promise<void> {
     if (!this.projectId) {
       return;
     }
 
-    this.loading.set(true);
+    try {
+      const connection = await this.jiraService.getConnection(this.projectId);
+      const raw = connection?.siteUrl?.trim() || null;
+      this.siteUrl.set(raw ? raw.replace(/\/+$/, '') : null);
+    } catch {
+      this.siteUrl.set(null);
+    }
+  }
+
+  private async loadIssues(options?: { showRefreshing?: boolean }): Promise<void> {
+    if (!this.projectId) {
+      return;
+    }
+
+    const showRefreshing = options?.showRefreshing !== false;
+    if (showRefreshing) {
+      this.refreshing.set(true);
+    }
     this.error.set(null);
     try {
       const issues = await this.jiraService.listRemoteIssues(this.projectId);
@@ -256,7 +252,27 @@ export class JiraIssuesPageComponent implements OnInit {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
       this.issues.set([]);
     } finally {
-      this.loading.set(false);
+      if (showRefreshing) {
+        this.refreshing.set(false);
+      }
     }
+  }
+
+  private browseUrl(issueKey: string): string | null {
+    const base = this.siteUrl();
+    const key = issueKey.trim();
+    if (!base || !key) {
+      return null;
+    }
+    return `${base}/browse/${encodeURIComponent(key)}`;
+  }
+
+  private renderIssueLink(issueKey: string, className: string): string {
+    const key = escapeHtml(issueKey);
+    const url = this.browseUrl(issueKey);
+    if (!url) {
+      return `<span class="${className}">${key}</span>`;
+    }
+    return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="${className} text-primary underline-offset-2 hover:underline">${key}</a>`;
   }
 }

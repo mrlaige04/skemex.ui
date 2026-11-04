@@ -8,6 +8,13 @@
     <div hlmTabsList variant="line">
       <button
         type="button"
+        hlmTabsTrigger="workspace"
+        *hasPermission="permissions.settingsWorkspaceView"
+      >
+        Workspace
+      </button>
+      <button
+        type="button"
         hlmTabsTrigger="columns"
         *hasPermission="permissions.settingsColumnsView"
       >
@@ -23,6 +30,10 @@
       <button type="button" hlmTabsTrigger="roles" *hasPermission="permissions.settingsRolesView">
         Roles
       </button>
+    </div>
+
+    <div hlmTabsContent="workspace" class="pt-4" *hasPermission="permissions.settingsWorkspaceView">
+      <app-settings-workspace-tab />
     </div>
 
     <div hlmTabsContent="columns" class="pt-4" *hasPermission="permissions.settingsColumnsView">

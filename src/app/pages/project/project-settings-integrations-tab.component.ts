@@ -9,8 +9,10 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { findRouteParam } from '../../routing/find-route-param';
 import {
   lucideCheck,
+  lucideChevronDown,
   lucideExternalLink,
   lucideLink2,
   lucideLoaderCircle,
@@ -18,6 +20,7 @@ import {
 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
+import { HlmCollapsibleImports } from 'spartan/collapsible';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
@@ -29,6 +32,7 @@ import type {
 } from '../../models/integrations/jira.models';
 import { PERMISSIONS } from '../../models/auth/permissions';
 import { JiraIntegrationsService } from '../../services/integrations/jira-integrations.service';
+import { ProjectIntegrationsService } from '../../services/integrations/project-integrations.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 
@@ -39,6 +43,7 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
     HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmCardImports,
+    ...HlmCollapsibleImports,
     ...HlmIconImports,
     ...HlmLabelImports,
     ...HlmSelectImports,
@@ -46,6 +51,7 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
   providers: [
     provideIcons({
       lucideCheck,
+      lucideChevronDown,
       lucideExternalLink,
       lucideLink2,
       lucideLoaderCircle,
@@ -59,6 +65,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly projectsService = inject(ProjectsService);
   private readonly jiraService = inject(JiraIntegrationsService);
+  private readonly integrationsService = inject(ProjectIntegrationsService);
 
   readonly permissions = PERMISSIONS;
 
@@ -67,6 +74,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
   readonly savingMapping = signal(false);
   readonly disconnecting = signal(false);
   readonly loadingProjects = signal(false);
+  readonly savingWebhookSettings = signal(false);
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
 
@@ -76,6 +84,8 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
 
   readonly selectedCloudId = signal<string | null>(null);
   readonly selectedProjectId = signal<string | null>(null);
+  /** Connection details (site/project mapping + webhooks) accordion. */
+  readonly detailsOpen = signal(true);
 
   private projectId: string | null = null;
 
@@ -88,6 +98,10 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
     const c = this.connection();
     return !!c && c.status === 'Connected';
   });
+
+  readonly hasDetails = computed(
+    () => !!this.connection() && (this.needsMapping() || this.isConnected()),
+  );
 
   readonly selectedSite = computed(() => {
     const id = this.selectedCloudId();
@@ -190,11 +204,54 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
         externalProjectName: project.name,
       });
       this.connection.set(updated);
+      this.integrationsService.setConfigured(
+        this.projectId,
+        'jira',
+        updated.status === 'Connected',
+      );
       this.info.set(`Linked to Jira project ${updated.externalProjectKey}.`);
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
     } finally {
       this.savingMapping.set(false);
+    }
+  }
+
+  async onWebhookEventToggle(eventKey: string, event: Event): Promise<void> {
+    if (!this.projectId || this.savingWebhookSettings()) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const enabled = input.checked;
+    const current = this.connection();
+    if (!current?.webhookEvents?.length) {
+      return;
+    }
+
+    const previous = current.webhookEvents.map((e) => ({ ...e }));
+    this.connection.set({
+      ...current,
+      webhookEvents: current.webhookEvents.map((e) =>
+        e.key === eventKey ? { ...e, enabled } : e,
+      ),
+    });
+
+    this.savingWebhookSettings.set(true);
+    this.error.set(null);
+    try {
+      const events: Record<string, boolean> = {};
+      for (const item of this.connection()!.webhookEvents!) {
+        events[item.key] = item.enabled;
+      }
+      const updated = await this.jiraService.updateWebhookSettings(this.projectId, { events });
+      this.connection.set(updated);
+    } catch (err) {
+      this.connection.set({ ...current, webhookEvents: previous });
+      input.checked = !enabled;
+      this.error.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.savingWebhookSettings.set(false);
     }
   }
 
@@ -213,6 +270,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
       this.jiraProjects.set([]);
       this.selectedCloudId.set(null);
       this.selectedProjectId.set(null);
+      this.integrationsService.setConfigured(this.projectId, 'jira', false);
       this.info.set('Jira integration disconnected.');
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
@@ -236,7 +294,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const projectCode = this.route.parent?.snapshot.paramMap.get('projectCode')?.trim();
+      const projectCode = findRouteParam(this.route, 'projectCode')?.trim();
       if (!projectCode) {
         this.error.set('Project was not found.');
         return;
@@ -251,6 +309,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
       this.projectId = project.id;
       const connection = await this.jiraService.getConnection(project.id);
       this.connection.set(connection);
+      await this.integrationsService.refresh(project.id, 'jira');
 
       if (connection && connection.status !== 'Disconnected') {
         await this.loadSitesAndProjects(connection);

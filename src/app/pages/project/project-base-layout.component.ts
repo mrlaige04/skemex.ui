@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -13,7 +14,6 @@ import {
   NavigationEnd,
   Router,
   RouterLink,
-  RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -42,6 +42,7 @@ import type { ProjectDto } from '../../models/projects/projects.models';
 import { APP_PATHS, projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { ProjectIntegrationsService } from '../../services/integrations/project-integrations.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { AiChatPanelComponent } from '../../shared/ai-chat/ai-chat-panel.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
@@ -51,7 +52,6 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
   selector: 'app-project-base-layout',
   imports: [
     RouterLink,
-    RouterLinkActive,
     RouterOutlet,
     NgIcon,
     AiChatPanelComponent,
@@ -94,10 +94,16 @@ export class ProjectBaseLayoutComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly sidebar = inject(HlmSidebarService);
   private readonly projectsService = inject(ProjectsService);
+  private readonly integrationsService = inject(ProjectIntegrationsService);
   readonly project = signal<ProjectDto | null>(null);
   readonly projectCode = signal('');
   readonly breadcrumbPage = signal('');
   readonly jiraNavOpen = signal(false);
+  /** Current path without query/hash — drives sidebar active states. */
+  readonly activePath = signal('');
+  readonly jiraConfigured = computed(() =>
+    this.integrationsService.isConfigured(this.project()?.id, 'jira'),
+  );
   readonly userAvatarLoadFailed = signal(false);
   readonly projectLogoLoadFailed = signal(false);
   private readonly resetUserAvatarError = effect(() => {
@@ -127,9 +133,10 @@ export class ProjectBaseLayoutComponent implements OnInit {
       const label = (child?.snapshot?.data?.['breadcrumb'] as string) ?? '';
       this.breadcrumbPage.set(label);
     };
-    const syncJiraNav = (): void => {
-      const url = this.router.url;
-      if (url.includes('/integrations/jira')) {
+    const syncNav = (): void => {
+      const path = this.router.url.split(/[?#]/)[0] ?? '';
+      this.activePath.set(path);
+      if (path.includes('/integrations/jira')) {
         this.jiraNavOpen.set(true);
       }
     };
@@ -140,7 +147,7 @@ export class ProjectBaseLayoutComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         refreshCrumb();
-        syncJiraNav();
+        syncNav();
       });
   }
   ngOnInit(): void {
@@ -153,12 +160,49 @@ export class ProjectBaseLayoutComponent implements OnInit {
     return code ? projectSectionPath(code, segment) : [APP_PATHS.projects];
   }
 
+  jiraSettingsLink(): string[] {
+    return this.projectSection('integrations/jira/settings');
+  }
+
   jiraIssuesLink(): string[] {
     return this.projectSection('integrations/jira/issues');
   }
 
   jiraUsersLink(): string[] {
     return this.projectSection('integrations/jira/users');
+  }
+
+  jiraMappingsLink(): string[] {
+    return this.projectSection('integrations/jira/mappings');
+  }
+
+  /**
+   * Project nav must not stay active on `/integrations/...` routes.
+   * (Default routerLinkActive subset matching wrongly keeps "Issues" lit under
+   * `/{code}/integrations/jira/issues` when the project code is also involved.)
+   */
+  isProjectSectionActive(section: string): boolean {
+    const code = this.projectCode();
+    const path = this.activePath();
+    if (!code || !path) {
+      return false;
+    }
+    const integrationsRoot = `/${code}/integrations`;
+    if (path === integrationsRoot || path.startsWith(`${integrationsRoot}/`)) {
+      return false;
+    }
+    const base = `/${code}/${section}`;
+    return path === base || path.startsWith(`${base}/`);
+  }
+
+  isJiraSectionActive(section: 'settings' | 'issues' | 'users' | 'mappings'): boolean {
+    const code = this.projectCode();
+    const path = this.activePath();
+    if (!code || !path) {
+      return false;
+    }
+    const base = `/${code}/integrations/jira/${section}`;
+    return path === base || path.startsWith(`${base}/`);
   }
   goBackToWorkspace(): void {
     void this.router.navigate([APP_PATHS.projects]);
@@ -233,6 +277,16 @@ export class ProjectBaseLayoutComponent implements OnInit {
       this.aiChat.setProjectContext(loaded?.id ?? null, loaded?.code ?? code);
       if (loaded && loaded.code !== code) {
         void this.router.navigateByUrl(`/${loaded.code}`, { replaceUrl: true });
+      }
+      if (loaded?.id) {
+        try {
+          await this.integrationsService.refresh(loaded.id, 'jira');
+        } catch {
+          /* sidebar still shows Jira → Settings for connect */
+        }
+        if (this.activePath().includes('/integrations/jira')) {
+          this.jiraNavOpen.set(true);
+        }
       }
     } catch {
       this.project.set(null);

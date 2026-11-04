@@ -39,8 +39,9 @@ import { HlmDropdownMenuImports } from 'spartan/dropdown-menu';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmSidebarImports, HlmSidebarService, provideHlmSidebarConfig } from 'spartan/sidebar';
 import { PERMISSIONS } from '../../models/auth/permissions';
-import { APP_PATHS, adminSectionPath, workspaceSectionPath } from '../../routing/app-paths';
+import { adminSectionPath, workspaceSectionPath } from '../../routing/app-paths';
 import { AuthService } from '../../services/auth/auth.service';
+import { CreateCompanyDialogComponent } from '../../shared/create-company-dialog/create-company-dialog.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { NotificationsBellComponent } from '../../shared/notifications/notifications-bell.component';
 
@@ -52,6 +53,7 @@ import { NotificationsBellComponent } from '../../shared/notifications/notificat
     RouterOutlet,
     NgIcon,
     NotificationsBellComponent,
+    CreateCompanyDialogComponent,
     HasPermissionDirective,
     ...HlmSidebarImports,
     ...HlmBreadcrumbImports,
@@ -92,6 +94,7 @@ export class TenantBaseLayoutComponent {
   private readonly sidebar = inject(HlmSidebarService);
 
   readonly breadcrumbPage = signal('');
+  readonly createCompanyDialogState = signal<'open' | 'closed'>('closed');
   /** Hide broken image and show initials again after URL changes. */
   readonly userAvatarLoadFailed = signal(false);
 
@@ -204,7 +207,7 @@ export class TenantBaseLayoutComponent {
   /** Paths under the workspace layout (tenant id is stored, not in the URL). */
   tenantSection(segment: string): string[] {
     if (!this.auth.workspaceContext()?.tenantId) {
-      return [APP_PATHS.select];
+      return ['/auth', 'login'];
     }
     return workspaceSectionPath(segment);
   }
@@ -220,14 +223,22 @@ export class TenantBaseLayoutComponent {
     const leaf = this.route.firstChild?.snapshot.routeConfig?.path ?? 'dashboard';
     try {
       await this.auth.selectTenant(tenantId);
-      await this.router.navigate(workspaceSectionPath(leaf));
+      // Hard reload so tenant-scoped caches/services do not keep the previous workspace.
+      const target = `/${workspaceSectionPath(leaf).join('/')}`;
+      window.location.assign(target);
     } catch {
       /* menu closes; optional: surface toast */
     }
   }
 
   goCreateCompany(): void {
-    void this.router.navigate([APP_PATHS.select], { queryParams: { create: '1' } });
+    // Toggle closed→open so the dialog always resets prefill even if reopened quickly.
+    this.createCompanyDialogState.set('closed');
+    queueMicrotask(() => this.createCompanyDialogState.set('open'));
+  }
+
+  onCreateCompanyDialogState(state: 'open' | 'closed'): void {
+    this.createCompanyDialogState.set(state);
   }
 
   /** User dropdown: CDK menu can block <code>routerLink</code> on anchors — navigate explicitly. */

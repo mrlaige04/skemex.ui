@@ -9,6 +9,13 @@ export interface JiraAuthorizeStartDto {
   authorizationUrl: string;
 }
 
+export interface JiraWebhookEventSettingDto {
+  key: string;
+  displayName: string;
+  jiraEventName: string;
+  enabled: boolean;
+}
+
 export interface JiraConnectionDto {
   id: string;
   projectId: string;
@@ -20,8 +27,18 @@ export interface JiraConnectionDto {
   externalProjectKey?: string | null;
   externalProjectName?: string | null;
   lastError?: string | null;
+  webhookRegistered?: boolean;
+  webhookCallbackUrl?: string | null;
+  /** True when callback is localhost — Jira Cloud cannot deliver events without a public tunnel. */
+  webhookUrlNotPubliclyReachable?: boolean;
+  webhookRegisteredAt?: string | null;
+  webhookEvents?: JiraWebhookEventSettingDto[];
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export interface UpdateJiraWebhookSettingsRequest {
+  events: Record<string, boolean>;
 }
 
 export interface JiraConnectionResponseDto {
@@ -119,4 +136,53 @@ export interface ImportTasksFromJiraResultDto {
   skipped: number;
   failed: number;
   items: ImportTasksFromJiraItemResultDto[];
+}
+
+export type JiraMappingLocalEntityType =
+  | 'Task'
+  | 'ProjectUser'
+  | 'TaskComment'
+  | 'TaskWorkLog'
+  | 'TaskAttachment';
+
+export type IntegrationMappingStatus = 'Active' | 'Outdated' | string;
+
+export interface JiraMappingLinkDto {
+  id: string;
+  status: IntegrationMappingStatus;
+  externalEntityId: string;
+  externalEntityKey?: string | null;
+  lastSyncedAt?: string | null;
+}
+
+export interface JiraMappingLocalItemDto {
+  id: string;
+  displayName: string;
+  secondaryText?: string | null;
+  parentTaskId?: string | null;
+  parentTaskCode?: string | null;
+  mapping?: JiraMappingLinkDto | null;
+}
+
+export interface JiraMappingRemoteItemDto {
+  id: string;
+  key?: string | null;
+  displayName: string;
+  secondaryText?: string | null;
+  mappedLocalEntityId?: string | null;
+}
+
+export interface JiraEntityMappingWorkspaceDto {
+  localEntityType: JiraMappingLocalEntityType | string;
+  externalEntityType: string;
+  localItems: JiraMappingLocalItemDto[];
+  remoteItems: JiraMappingRemoteItemDto[];
+}
+
+export interface UpsertJiraEntityMappingRequest {
+  localEntityType: string;
+  localEntityId: string;
+  externalEntityId: string;
+  externalEntityKey?: string | null;
+  status?: string | null;
 }

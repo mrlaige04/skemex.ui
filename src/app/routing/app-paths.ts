@@ -2,7 +2,6 @@
 export const APP_PATHS = {
   landing: '/',
   pricing: '/pricing',
-  select: '/tenant-select',
   dashboard: '/dashboard',
   users: '/users',
   usersNew: '/users/new',
@@ -27,8 +26,10 @@ export const APP_PATHS = {
   projectSettings: (projectCode: string) => `/${projectCode}/settings`,
   projectIntegrations: (projectCode: string) => `/${projectCode}/integrations`,
   projectJira: (projectCode: string) => `/${projectCode}/integrations/jira`,
+  projectJiraSettings: (projectCode: string) => `/${projectCode}/integrations/jira/settings`,
   projectJiraIssues: (projectCode: string) => `/${projectCode}/integrations/jira/issues`,
   projectJiraUsers: (projectCode: string) => `/${projectCode}/integrations/jira/users`,
+  projectJiraMappings: (projectCode: string) => `/${projectCode}/integrations/jira/mappings`,
   settings: '/settings',
   notifications: '/notifications',
   noAccess: '/no-access',

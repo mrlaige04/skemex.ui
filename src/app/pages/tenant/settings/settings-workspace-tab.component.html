@@ -1,0 +1,44 @@
+<section hlmCard>
+  <div hlmCardHeader>
+    <div>
+      <h2 hlmCardTitle>Workspace</h2>
+      <p hlmCardDescription>
+        Rename this workspace. Members see the new name after refresh.
+      </p>
+    </div>
+  </div>
+
+  <div hlmCardContent>
+    <form novalidate (submit)="onSubmit($event)" class="flex max-w-lg flex-col gap-4">
+      @if (error(); as err) {
+        <p class="text-destructive text-sm" role="alert">{{ err }}</p>
+      }
+      @if (saved()) {
+        <p class="text-sm text-emerald-700" role="status">Workspace name saved.</p>
+      }
+
+      <div class="space-y-2">
+        <label hlmLabel for="workspace-name">Name</label>
+        <input
+          hlmInput
+          id="workspace-name"
+          type="text"
+          autocomplete="organization"
+          [formField]="workspaceForm.name"
+          placeholder="Workspace name"
+        />
+      </div>
+
+      <div *hasPermission="permissions.settingsWorkspaceEdit">
+        <button type="submit" hlmBtn [disabled]="saving()">
+          @if (saving()) {
+            <ng-icon hlm name="lucideLoaderCircle" class="animate-spin" />
+            Saving…
+          } @else {
+            Save changes
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

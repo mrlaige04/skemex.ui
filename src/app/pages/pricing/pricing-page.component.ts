@@ -53,7 +53,7 @@ export class PricingPageComponent {
   readonly footerAccountLinks = [
     { label: 'Sign in', routerLink: ['/auth/login'] as const },
     { label: 'Create account', routerLink: ['/auth/register'] as const },
-    { label: 'Select workspace', routerLink: [APP_PATHS.select] as const },
+    { label: 'Open workspace', routerLink: [APP_PATHS.dashboard] as const },
   ] as const;
 
   readonly footerLegalLinks = [
@@ -79,10 +79,6 @@ export class PricingPageComponent {
 
     if (this.auth.isSuperAdmin()) {
       return { label: 'Open admin console', link: [APP_PATHS.adminDashboard] };
-    }
-
-    if (!this.auth.workspaceContext()?.tenantId) {
-      return { label: 'Choose workspace', link: [APP_PATHS.select] };
     }
 
     return { label: 'Open workspace', link: [APP_PATHS.dashboard] };

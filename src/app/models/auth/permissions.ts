@@ -30,6 +30,9 @@ export const PERMISSIONS = {
   settingsRolesEdit: 'settings:roles_edit',
   settingsRolesDelete: 'settings:roles_delete',
 
+  settingsWorkspaceView: 'settings:workspace_view',
+  settingsWorkspaceEdit: 'settings:workspace_edit',
+
   tasksCreate: 'tasks:create',
   tasksView: 'tasks:view',
   tasksEdit: 'tasks:edit',

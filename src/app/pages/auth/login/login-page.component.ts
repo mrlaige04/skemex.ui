@@ -72,7 +72,7 @@ export class LoginPageComponent {
           if (this.auth.isSuperAdmin()) {
             await this.router.navigate([APP_PATHS.adminDashboard]);
           } else {
-            await this.router.navigate([APP_PATHS.select]);
+            await this.router.navigate([APP_PATHS.dashboard]);
           }
           return;
         } catch (err) {

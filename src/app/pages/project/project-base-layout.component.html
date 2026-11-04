@@ -40,9 +40,7 @@
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('board')"
-                routerLinkActive
-                #boardRla="routerLinkActive"
-                [isActive]="boardRla.isActive"
+                [isActive]="isProjectSectionActive('board')"
               >
                 <ng-icon hlm name="lucideKanbanSquare" />
                 <span>Board</span>
@@ -52,9 +50,7 @@
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('issues')"
-                routerLinkActive
-                #issuesRla="routerLinkActive"
-                [isActive]="issuesRla.isActive"
+                [isActive]="isProjectSectionActive('issues')"
               >
                 <ng-icon hlm name="lucideCircleAlert" />
                 <span>Issues</span>
@@ -64,9 +60,7 @@
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('documents')"
-                routerLinkActive
-                #documentsRla="routerLinkActive"
-                [isActive]="documentsRla.isActive"
+                [isActive]="isProjectSectionActive('documents')"
               >
                 <ng-icon hlm name="lucideFileText" />
                 <span>Documents</span>
@@ -76,9 +70,7 @@
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('ai-usage')"
-                routerLinkActive
-                #aiUsageRla="routerLinkActive"
-                [isActive]="aiUsageRla.isActive"
+                [isActive]="isProjectSectionActive('ai-usage')"
               >
                 <ng-icon hlm name="lucideActivity" />
                 <span>AI Usage</span>
@@ -88,9 +80,7 @@
               <a
                 hlmSidebarMenuButton
                 [routerLink]="projectSection('settings')"
-                routerLinkActive
-                #settingsRla="routerLinkActive"
-                [isActive]="settingsRla.isActive"
+                [isActive]="isProjectSectionActive('settings')"
               >
                 <ng-icon hlm name="lucideSettings" />
                 <span>Settings</span>
@@ -132,25 +122,41 @@
                     <li hlmSidebarMenuItem>
                       <a
                         hlmSidebarMenuButton
-                        [routerLink]="jiraIssuesLink()"
-                        routerLinkActive
-                        #jiraIssuesRla="routerLinkActive"
-                        [isActive]="jiraIssuesRla.isActive"
+                        [routerLink]="jiraSettingsLink()"
+                        [isActive]="isJiraSectionActive('settings')"
                       >
-                        <span>Issues</span>
+                        <span>Settings</span>
                       </a>
                     </li>
-                    <li hlmSidebarMenuItem>
-                      <a
-                        hlmSidebarMenuButton
-                        [routerLink]="jiraUsersLink()"
-                        routerLinkActive
-                        #jiraUsersRla="routerLinkActive"
-                        [isActive]="jiraUsersRla.isActive"
-                      >
-                        <span>Users</span>
-                      </a>
-                    </li>
+                    @if (jiraConfigured()) {
+                      <li hlmSidebarMenuItem>
+                        <a
+                          hlmSidebarMenuButton
+                          [routerLink]="jiraIssuesLink()"
+                          [isActive]="isJiraSectionActive('issues')"
+                        >
+                          <span>Issues</span>
+                        </a>
+                      </li>
+                      <li hlmSidebarMenuItem>
+                        <a
+                          hlmSidebarMenuButton
+                          [routerLink]="jiraUsersLink()"
+                          [isActive]="isJiraSectionActive('users')"
+                        >
+                          <span>Users</span>
+                        </a>
+                      </li>
+                      <li hlmSidebarMenuItem>
+                        <a
+                          hlmSidebarMenuButton
+                          [routerLink]="jiraMappingsLink()"
+                          [isActive]="isJiraSectionActive('mappings')"
+                        >
+                          <span>Mappings</span>
+                        </a>
+                      </li>
+                    }
                   </ul>
                 </div>
               </div>

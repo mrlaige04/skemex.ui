@@ -2,15 +2,24 @@
   display: block;
   width: 100%;
   min-width: 0;
+  /* Link/tooltip popovers must not be clipped by ancestors. */
+  overflow: visible;
+}
+
+.rich-text-editor {
+  overflow: visible;
 }
 
 .rich-text-editor ::ng-deep quill-editor {
   display: block;
+  overflow: visible;
 }
 
 .rich-text-editor ::ng-deep .ql-toolbar.ql-snow {
   border: 0;
   border-bottom: 1px solid var(--border);
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
   background: color-mix(in oklab, var(--muted) 45%, transparent);
   font-family: inherit;
 }
@@ -19,6 +28,11 @@
   border: 0;
   font-family: inherit;
   font-size: 0.875rem;
+  overflow: visible;
+}
+
+.rich-text-editor ::ng-deep .ql-tooltip {
+  z-index: 40;
 }
 
 .rich-text-editor ::ng-deep .ql-editor {

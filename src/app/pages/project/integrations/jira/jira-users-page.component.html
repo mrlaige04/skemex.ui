@@ -13,15 +13,18 @@
       type="button"
       variant="outline"
       size="sm"
-      [disabled]="loading()"
+      class="inline-flex shrink-0 items-center gap-2"
+      [disabled]="refreshing()"
       (click)="refresh()"
     >
-      @if (loading()) {
-        <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
-      } @else {
-        <ng-icon hlm name="lucideRefreshCw" size="sm" />
-      }
-      Refresh
+      <ng-icon
+        hlm
+        name="lucideRefreshCw"
+        size="sm"
+        class="pointer-events-none"
+        [class.animate-spin]="refreshing()"
+      />
+      <span>Refresh</span>
     </button>
   </div>
 
