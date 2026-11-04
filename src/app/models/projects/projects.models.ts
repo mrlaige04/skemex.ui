@@ -155,6 +155,19 @@ export interface CreateProjectTaskCommentRequest {
   body: string;
 }
 
+export type TaskRelationType = 'BlockedBy' | 'RelatesTo' | 'Duplicates';
+export type TaskRelationDirection = 'Outgoing' | 'Incoming';
+
+export interface ProjectTaskRelationDto {
+  id: string;
+  relationType: TaskRelationType | string;
+  direction: TaskRelationDirection | string;
+  relatedTaskId: string;
+  relatedTaskCode: string;
+  relatedTaskTitle: string;
+  relatedTaskType?: string;
+}
+
 export interface ProjectTaskDto {
   id: string;
   projectId: string;
@@ -180,6 +193,7 @@ export interface ProjectTaskDto {
   assignee?: ProjectTaskUserDto | null;
   reporter: ProjectTaskUserDto;
   subtasks: ProjectTaskDto[];
+  relations?: ProjectTaskRelationDto[];
 }
 
 export type ProjectTaskSort =

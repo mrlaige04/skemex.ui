@@ -322,6 +322,7 @@
           <button type="button" hlmTabsTrigger="risks">Risks</button>
           <button type="button" hlmTabsTrigger="time">Time tracking</button>
           <button type="button" hlmTabsTrigger="subtasks">Sub-tasks</button>
+          <button type="button" hlmTabsTrigger="relations">Relations</button>
         </div>
 
         <div hlmTabsContent="time" class="pt-4">
@@ -692,6 +693,36 @@
                       />
                     </div>
                   }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <div hlmTabsContent="relations" class="pt-4">
+          @if (relations().length === 0) {
+            <p class="text-muted-foreground text-sm">No relations for this task.</p>
+          } @else {
+            <ul class="divide-border border-border divide-y overflow-hidden rounded-lg border">
+              @for (relation of relations(); track relation.id) {
+                <li>
+                  <a
+                    class="hover:bg-muted/40 flex items-center gap-3 px-3 py-2.5 transition-colors"
+                    [routerLink]="issueLink(relation.relatedTaskCode)"
+                  >
+                    <span
+                      class="bg-muted text-muted-foreground shrink-0 rounded px-2 py-0.5 text-xs font-medium"
+                    >
+                      {{ relationVerb(relation) }}
+                    </span>
+                    <span class="text-muted-foreground shrink-0 font-mono text-xs font-semibold">{{
+                      relation.relatedTaskCode
+                    }}</span>
+                    <app-task-type-badge [type]="relation.relatedTaskType" />
+                    <span class="min-w-0 flex-1 truncate text-sm font-medium">{{
+                      relation.relatedTaskTitle
+                    }}</span>
+                  </a>
                 </li>
               }
             </ul>
