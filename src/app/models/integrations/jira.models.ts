@@ -137,3 +137,52 @@ export interface ImportTasksFromJiraResultDto {
   failed: number;
   items: ImportTasksFromJiraItemResultDto[];
 }
+
+export type JiraMappingLocalEntityType =
+  | 'Task'
+  | 'ProjectUser'
+  | 'TaskComment'
+  | 'TaskWorkLog'
+  | 'TaskAttachment';
+
+export type IntegrationMappingStatus = 'Active' | 'Outdated' | string;
+
+export interface JiraMappingLinkDto {
+  id: string;
+  status: IntegrationMappingStatus;
+  externalEntityId: string;
+  externalEntityKey?: string | null;
+  lastSyncedAt?: string | null;
+}
+
+export interface JiraMappingLocalItemDto {
+  id: string;
+  displayName: string;
+  secondaryText?: string | null;
+  parentTaskId?: string | null;
+  parentTaskCode?: string | null;
+  mapping?: JiraMappingLinkDto | null;
+}
+
+export interface JiraMappingRemoteItemDto {
+  id: string;
+  key?: string | null;
+  displayName: string;
+  secondaryText?: string | null;
+  mappedLocalEntityId?: string | null;
+}
+
+export interface JiraEntityMappingWorkspaceDto {
+  localEntityType: JiraMappingLocalEntityType | string;
+  externalEntityType: string;
+  localItems: JiraMappingLocalItemDto[];
+  remoteItems: JiraMappingRemoteItemDto[];
+}
+
+export interface UpsertJiraEntityMappingRequest {
+  localEntityType: string;
+  localEntityId: string;
+  externalEntityId: string;
+  externalEntityKey?: string | null;
+  status?: string | null;
+}

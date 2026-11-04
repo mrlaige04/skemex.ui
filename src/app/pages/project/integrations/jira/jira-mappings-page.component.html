@@ -1,0 +1,213 @@
+<div class="flex flex-col gap-6 p-4 md:p-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Jira mappings</h1>
+      <p class="text-muted-foreground mt-1 text-sm">
+        Link local project entities to Jira. Configure the integration in
+        <a class="text-primary underline-offset-2 hover:underline" [routerLink]="settingsLink()">Settings</a>
+        if lists are empty.
+      </p>
+    </div>
+    <button
+      hlmBtn
+      type="button"
+      variant="outline"
+      size="sm"
+      class="inline-flex shrink-0 items-center gap-2"
+      [disabled]="refreshing() || loading()"
+      (click)="refresh()"
+    >
+      <ng-icon
+        hlm
+        name="lucideRefreshCw"
+        size="sm"
+        class="pointer-events-none"
+        [class.animate-spin]="refreshing()"
+      />
+      <span>Refresh</span>
+    </button>
+  </div>
+
+  @if (error(); as err) {
+    <p
+      class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+      role="alert"
+    >
+      {{ err }}
+    </p>
+  }
+
+  <div hlmTabs [tab]="activeTab()" (tabActivated)="onTabActivated($event)">
+    <div hlmTabsList variant="line" class="flex h-auto flex-wrap gap-1">
+      <button type="button" hlmTabsTrigger="Task">Tasks</button>
+      <button type="button" hlmTabsTrigger="ProjectUser">Users</button>
+      <button type="button" hlmTabsTrigger="TaskComment">Comments</button>
+      <button type="button" hlmTabsTrigger="TaskWorkLog">Work logs</button>
+      <button type="button" hlmTabsTrigger="TaskAttachment">Attachments</button>
+    </div>
+
+    <div hlmTabsContent="Task" class="pt-4">
+      @if (activeTab() === 'Task') {
+        <ng-container *ngTemplateOutlet="mappingPanel" />
+      }
+    </div>
+    <div hlmTabsContent="ProjectUser" class="pt-4">
+      @if (activeTab() === 'ProjectUser') {
+        <ng-container *ngTemplateOutlet="mappingPanel" />
+      }
+    </div>
+    <div hlmTabsContent="TaskComment" class="pt-4">
+      @if (activeTab() === 'TaskComment') {
+        <ng-container *ngTemplateOutlet="mappingPanel" />
+      }
+    </div>
+    <div hlmTabsContent="TaskWorkLog" class="pt-4">
+      @if (activeTab() === 'TaskWorkLog') {
+        <ng-container *ngTemplateOutlet="mappingPanel" />
+      }
+    </div>
+    <div hlmTabsContent="TaskAttachment" class="pt-4">
+      @if (activeTab() === 'TaskAttachment') {
+        <ng-container *ngTemplateOutlet="mappingPanel" />
+      }
+    </div>
+  </div>
+</div>
+
+<ng-template #mappingPanel>
+  <section hlmCard>
+    <div class="flex flex-col gap-4 p-4 sm:p-5">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-sm text-muted-foreground">{{ activeTabMeta().hint }}</p>
+          @if (workspace(); as ws) {
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ mappedCount() }} / {{ ws.localItems.length }} mapped ·
+              {{ ws.remoteItems.length }} Jira {{ ws.externalEntityType.toLowerCase() }}(s)
+            </p>
+          }
+        </div>
+        <input
+          hlmInput
+          class="w-full sm:max-w-xs"
+          type="search"
+          placeholder="Filter…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+      </div>
+
+      @if (loading()) {
+        <p class="text-sm text-muted-foreground">Loading mappings…</p>
+      } @else if (filteredLocals().length === 0) {
+        <p class="text-sm text-muted-foreground">No local entities for this type.</p>
+      } @else {
+        <div class="overflow-x-auto rounded-md border">
+          <table class="w-full min-w-[720px] border-collapse text-sm">
+            <thead class="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th class="px-3 py-2 font-medium">Local</th>
+                <th class="px-3 py-2 font-medium">Status</th>
+                <th class="px-3 py-2 font-medium">Jira</th>
+                <th class="px-3 py-2 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (local of filteredLocals(); track local.id) {
+                <tr class="border-t align-top">
+                  <td class="px-3 py-3">
+                    <div class="font-medium leading-snug">{{ local.displayName || '—' }}</div>
+                    <div class="text-muted-foreground mt-0.5 text-xs">
+                      @if (local.parentTaskCode) {
+                        <span>{{ local.parentTaskCode }}</span>
+                        @if (local.secondaryText) {
+                          <span> · </span>
+                        }
+                      }
+                      @if (local.secondaryText) {
+                        <span>{{ local.secondaryText }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="px-3 py-3">
+                    @if (local.mapping; as mapping) {
+                      <span hlmBadge [variant]="statusVariant(mapping.status)">
+                        {{ mapping.status }}
+                      </span>
+                    } @else {
+                      <span hlmBadge variant="outline">Unmapped</span>
+                    }
+                  </td>
+                  <td class="px-3 py-3">
+                    <div class="flex min-w-[240px] flex-col gap-2">
+                      <hlm-select
+                        class="w-full"
+                        [value]="selectedRemoteId(local)"
+                        [itemToString]="remoteLabel"
+                        (valueChange)="onRemoteChange(local.id, $event)"
+                      >
+                        <hlm-select-trigger class="w-full">
+                          <hlm-select-value placeholder="Select Jira entity" />
+                        </hlm-select-trigger>
+                        <hlm-select-content *hlmSelectPortal>
+                          <hlm-select-group>
+                            @for (remote of remoteOptionsFor(local); track remote.id) {
+                              <hlm-select-item [value]="remote.id">
+                                {{ remote.displayName }}
+                                @if (remote.secondaryText) {
+                                  <span class="text-muted-foreground"> · {{ remote.secondaryText }}</span>
+                                }
+                              </hlm-select-item>
+                            }
+                          </hlm-select-group>
+                        </hlm-select-content>
+                      </hlm-select>
+
+                      @if (activeTabMeta().allowCustomExternalId) {
+                        <input
+                          hlmInput
+                          class="w-full"
+                          type="text"
+                          placeholder="Or paste Jira entity id"
+                          [ngModel]="customId(local.id)"
+                          (ngModelChange)="onCustomIdChange(local.id, $event)"
+                        />
+                      }
+                    </div>
+                  </td>
+                  <td class="px-3 py-3">
+                    <div class="flex justify-end gap-2">
+                      <button
+                        hlmBtn
+                        type="button"
+                        size="sm"
+                        class="inline-flex items-center gap-1.5"
+                        [disabled]="savingLocalId() === local.id"
+                        (click)="saveMapping(local)"
+                      >
+                        <ng-icon hlm name="lucideLink2" size="sm" />
+                        Save
+                      </button>
+                      <button
+                        hlmBtn
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        class="inline-flex items-center gap-1.5"
+                        [disabled]="!local.mapping || savingLocalId() === local.id"
+                        (click)="clearMapping(local)"
+                      >
+                        <ng-icon hlm name="lucideUnlink" size="sm" />
+                        Clear
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </section>
+</ng-template>

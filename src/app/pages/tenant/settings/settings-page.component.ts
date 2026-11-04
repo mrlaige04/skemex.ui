@@ -7,10 +7,12 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { RolesPageComponent } from '../roles/roles-page.component';
 import { SettingsColumnsTabComponent } from './settings-columns-tab.component';
 import { SettingsSpecializationsTabComponent } from './settings-specializations-tab.component';
+import { SettingsWorkspaceTabComponent } from './settings-workspace-tab.component';
 
 @Component({
   selector: 'app-settings-page',
   imports: [
+    SettingsWorkspaceTabComponent,
     SettingsColumnsTabComponent,
     SettingsSpecializationsTabComponent,
     RolesPageComponent,
@@ -27,12 +29,14 @@ export class SettingsPageComponent implements OnInit {
   readonly auth = inject(AuthService);
   readonly permissions = PERMISSIONS;
 
-  readonly activeTab = signal('columns');
+  readonly activeTab = signal('workspace');
 
   ngOnInit(): void {
     const tab = this.route.snapshot.queryParamMap.get('tab');
-    if (tab === 'roles' || tab === 'specializations' || tab === 'columns') {
+    if (tab === 'workspace' || tab === 'roles' || tab === 'specializations' || tab === 'columns') {
       this.activeTab.set(tab);
+    } else if (this.auth.hasPermission(PERMISSIONS.settingsWorkspaceView)) {
+      this.activeTab.set('workspace');
     } else if (this.auth.hasPermission(PERMISSIONS.settingsColumnsView)) {
       this.activeTab.set('columns');
     } else if (this.auth.hasPermission(PERMISSIONS.settingsSpecializationsView)) {

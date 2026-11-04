@@ -190,6 +190,7 @@
                 </a>
               </li>
               @if (
+                auth.hasPermission(permissions.settingsWorkspaceView) ||
                 auth.hasPermission(permissions.settingsColumnsView) ||
                 auth.hasPermission(permissions.settingsSpecializationsView) ||
                 auth.hasPermission(permissions.settingsRolesView)
@@ -321,3 +322,10 @@
     </div>
   </main>
 </div>
+
+@if (!auth.isSuperAdmin()) {
+  <app-create-company-dialog
+    [state]="createCompanyDialogState()"
+    (stateChange)="onCreateCompanyDialogState($event)"
+  />
+}

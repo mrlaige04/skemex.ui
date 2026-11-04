@@ -1,9 +1,9 @@
 <section hlmCard>
   <div hlmCardHeader>
-    <h2 hlmCardTitle>Integrations</h2>
+    <h2 hlmCardTitle>Jira Cloud</h2>
     <p hlmCardDescription>
-      Connect external tools to this project. Jira Cloud uses Atlassian OAuth so tokens stay encrypted
-      on the server.
+      Authorize Skemex against Atlassian (OAuth tokens stay encrypted on the server), map a Jira
+      project, and configure inbound webhooks.
     </p>
   </div>
 
@@ -29,12 +29,30 @@
         </p>
       }
 
-      <div class="space-y-4 rounded-lg border p-4">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0 space-y-1">
+      <div
+        hlmCollapsible
+        class="group/collapsible overflow-hidden rounded-lg border"
+        [expanded]="detailsOpen()"
+        (expandedChange)="detailsOpen.set($event)"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-3 p-4">
+          <button
+            type="button"
+            hlmCollapsibleTrigger
+            class="min-w-0 flex-1 space-y-1 text-left outline-none"
+            [disabled]="!hasDetails()"
+          >
             <div class="flex items-center gap-2">
               <ng-icon hlm name="lucideLink2" size="sm" />
               <h3 class="font-medium">Jira Cloud</h3>
+              @if (hasDetails()) {
+                <ng-icon
+                  hlm
+                  name="lucideChevronDown"
+                  size="sm"
+                  class="text-muted-foreground ml-auto shrink-0 opacity-60 transition-transform group-data-[state=closed]/collapsible:-rotate-90 sm:ml-1"
+                />
+              }
             </div>
             <p class="text-muted-foreground text-sm">
               Authorize Skemex against Atlassian, then map a Jira project for future sync.
@@ -51,9 +69,13 @@
                 }
               </p>
             }
-          </div>
+          </button>
 
-          <div class="flex flex-wrap items-center gap-2" *hasPermission="permissions.projectsEdit">
+          <div
+            class="flex flex-wrap items-center gap-2"
+            *hasPermission="permissions.projectsEdit"
+            (click)="$event.stopPropagation()"
+          >
             @if (!connection()) {
               <button
                 hlmBtn
@@ -95,138 +117,144 @@
           </div>
         </div>
 
-        @if (connection() && (needsMapping() || isConnected())) {
-          <div class="grid gap-4 border-t pt-4 md:grid-cols-2">
-            <div class="space-y-2">
-              <label hlmLabel id="jira-site-label">Jira site</label>
-              <hlm-select
-                class="w-full"
-                [value]="selectedCloudId()"
-                [itemToString]="siteLabel"
-                (valueChange)="onSiteChange($event)"
-                aria-labelledby="jira-site-label"
-              >
-                <hlm-select-trigger class="w-full">
-                  <hlm-select-value placeholder="Select a Jira site" />
-                </hlm-select-trigger>
-                <hlm-select-content *hlmSelectPortal>
-                  <hlm-select-group>
-                    @for (site of sites(); track site.id) {
-                      <hlm-select-item [value]="site.id">{{ site.name }}</hlm-select-item>
+        @if (hasDetails()) {
+          <div hlmCollapsibleContent>
+            @if (connection() && (needsMapping() || isConnected())) {
+              <div class="grid gap-4 border-t px-4 pt-4 pb-4 md:grid-cols-2">
+                <div class="space-y-2">
+                  <label hlmLabel id="jira-site-label">Jira site</label>
+                  <hlm-select
+                    class="w-full"
+                    [value]="selectedCloudId()"
+                    [itemToString]="siteLabel"
+                    (valueChange)="onSiteChange($event)"
+                    aria-labelledby="jira-site-label"
+                  >
+                    <hlm-select-trigger class="w-full">
+                      <hlm-select-value placeholder="Select a Jira site" />
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        @for (site of sites(); track site.id) {
+                          <hlm-select-item [value]="site.id">{{ site.name }}</hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                </div>
+
+                <div class="space-y-2">
+                  <label hlmLabel id="jira-project-label">Jira project</label>
+                  <hlm-select
+                    class="w-full"
+                    [value]="selectedProjectId()"
+                    [itemToString]="projectLabel"
+                    (valueChange)="onProjectChange($event)"
+                    aria-labelledby="jira-project-label"
+                  >
+                    <hlm-select-trigger class="w-full">
+                      @if (loadingProjects()) {
+                        <span class="text-muted-foreground">Loading projects…</span>
+                      } @else {
+                        <hlm-select-value placeholder="Select a Jira project" />
+                      }
+                    </hlm-select-trigger>
+                    <hlm-select-content *hlmSelectPortal>
+                      <hlm-select-group>
+                        @for (project of jiraProjects(); track project.id) {
+                          <hlm-select-item [value]="project.id">
+                            {{ project.key }} — {{ project.name }}
+                          </hlm-select-item>
+                        }
+                      </hlm-select-group>
+                    </hlm-select-content>
+                  </hlm-select>
+                </div>
+
+                <div class="md:col-span-2">
+                  <button
+                    hlmBtn
+                    type="button"
+                    size="sm"
+                    *hasPermission="permissions.projectsEdit"
+                    [disabled]="!canSaveMapping()"
+                    (click)="saveMapping()"
+                  >
+                    @if (savingMapping()) {
+                      <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+                    } @else {
+                      <ng-icon hlm name="lucideCheck" size="sm" />
                     }
-                  </hlm-select-group>
-                </hlm-select-content>
-              </hlm-select>
-            </div>
-
-            <div class="space-y-2">
-              <label hlmLabel id="jira-project-label">Jira project</label>
-              <hlm-select
-                class="w-full"
-                [value]="selectedProjectId()"
-                [itemToString]="projectLabel"
-                (valueChange)="onProjectChange($event)"
-                aria-labelledby="jira-project-label"
-              >
-                <hlm-select-trigger class="w-full">
-                  @if (loadingProjects()) {
-                    <span class="text-muted-foreground">Loading projects…</span>
-                  } @else {
-                    <hlm-select-value placeholder="Select a Jira project" />
-                  }
-                </hlm-select-trigger>
-                <hlm-select-content *hlmSelectPortal>
-                  <hlm-select-group>
-                    @for (project of jiraProjects(); track project.id) {
-                      <hlm-select-item [value]="project.id">
-                        {{ project.key }} — {{ project.name }}
-                      </hlm-select-item>
-                    }
-                  </hlm-select-group>
-                </hlm-select-content>
-              </hlm-select>
-            </div>
-
-            <div class="md:col-span-2">
-              <button
-                hlmBtn
-                type="button"
-                size="sm"
-                *hasPermission="permissions.projectsEdit"
-                [disabled]="!canSaveMapping()"
-                (click)="saveMapping()"
-              >
-                @if (savingMapping()) {
-                  <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
-                } @else {
-                  <ng-icon hlm name="lucideCheck" size="sm" />
-                }
-                Save project mapping
-              </button>
-            </div>
-          </div>
-        }
-
-        @if (isConnected() && connection(); as conn) {
-          <div class="space-y-3 border-t pt-4">
-            <div class="space-y-1">
-              <h4 class="text-sm font-medium">Jira webhooks</h4>
-              <p class="text-muted-foreground text-xs">
-                One callback URL receives events from Jira. Auto-registration covers issue and comment
-                events (OAuth). Worklog / attachment / user need a manual admin webhook if you want them.
-                Toggles only change local processing — they do not re-register in Jira. After adding the
-                webhook scope, disconnect and reconnect Jira once.
-              </p>
-              <p class="text-xs">
-                Registration:
-                @if (conn.webhookRegistered) {
-                  <span class="font-medium text-emerald-700 dark:text-emerald-300">Active</span>
-                } @else {
-                  <span class="font-medium text-amber-700 dark:text-amber-300">Manual setup needed</span>
-                }
-              </p>
-              @if (conn.webhookUrlNotPubliclyReachable) {
-                <p
-                  class="rounded-md border border-amber-300/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
-                >
-                  Callback points to localhost. Jira Cloud cannot reach it, so events will never arrive.
-                  Expose the API with a tunnel (e.g. ngrok / Cloudflare Tunnel) and set
-                  <code class="font-mono">Jira:PublicApiBaseUrl</code> to that HTTPS origin, then reconnect
-                  or save mapping to re-register.
-                </p>
-              }
-            </div>
-
-            @if (conn.webhookCallbackUrl) {
-              <div class="space-y-1">
-                <label hlmLabel class="text-xs">Callback URL</label>
-                <code
-                  class="border-border bg-muted/40 block overflow-x-auto rounded-md border px-2 py-1.5 text-[11px] break-all"
-                  >{{ conn.webhookCallbackUrl }}</code
-                >
+                    Save project mapping
+                  </button>
+                </div>
               </div>
             }
 
-            @if (conn.webhookEvents?.length) {
-              <div class="grid gap-2 sm:grid-cols-2">
-                @for (event of conn.webhookEvents; track event.key) {
-                  <label
-                    class="border-border hover:bg-muted/30 flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      class="mt-0.5"
-                      [checked]="event.enabled"
-                      [disabled]="savingWebhookSettings()"
-                      (change)="onWebhookEventToggle(event.key, $event)"
-                    />
-                    <span class="min-w-0">
-                      <span class="block font-medium leading-tight">{{ event.displayName }}</span>
-                      <span class="text-muted-foreground block font-mono text-[10px]">{{
-                        event.jiraEventName
-                      }}</span>
-                    </span>
-                  </label>
+            @if (isConnected() && connection(); as conn) {
+              <div class="space-y-3 border-t px-4 pt-4 pb-4">
+                <div class="space-y-1">
+                  <h4 class="text-sm font-medium">Jira webhooks</h4>
+                  <p class="text-muted-foreground text-xs">
+                    One callback URL receives events from Jira. Auto-registration covers issue and
+                    comment events (OAuth). Worklog / attachment / user require a manual admin
+                    webhook pointing at the same URL. Toggles only change local processing. After
+                    adding webhook scopes, disconnect and reconnect Jira once.
+                  </p>
+                  <p class="text-xs">
+                    Registration:
+                    @if (conn.webhookRegistered) {
+                      <span class="font-medium text-emerald-700 dark:text-emerald-300">Active</span>
+                    } @else {
+                      <span class="font-medium text-amber-700 dark:text-amber-300"
+                        >Manual setup needed</span
+                      >
+                    }
+                  </p>
+                  @if (conn.webhookUrlNotPubliclyReachable) {
+                    <p
+                      class="rounded-md border border-amber-300/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-950 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-100"
+                    >
+                      Callback points to localhost. Jira Cloud cannot reach it, so events will never
+                      arrive. Expose the API with a tunnel (e.g. ngrok / Cloudflare Tunnel) and set
+                      <code class="font-mono">Jira:PublicApiBaseUrl</code> to that HTTPS origin, then
+                      reconnect or save mapping to re-register.
+                    </p>
+                  }
+                </div>
+
+                @if (conn.webhookCallbackUrl) {
+                  <div class="space-y-1">
+                    <label hlmLabel class="text-xs">Callback URL</label>
+                    <code
+                      class="border-border bg-muted/40 block overflow-x-auto rounded-md border px-2 py-1.5 text-[11px] break-all"
+                      >{{ conn.webhookCallbackUrl }}</code
+                    >
+                  </div>
+                }
+
+                @if (conn.webhookEvents?.length) {
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    @for (event of conn.webhookEvents; track event.key) {
+                      <label
+                        class="border-border hover:bg-muted/30 flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          class="mt-0.5"
+                          [checked]="event.enabled"
+                          [disabled]="savingWebhookSettings()"
+                          (change)="onWebhookEventToggle(event.key, $event)"
+                        />
+                        <span class="min-w-0">
+                          <span class="block font-medium leading-tight">{{ event.displayName }}</span>
+                          <span class="text-muted-foreground block font-mono text-[10px]">{{
+                            event.jiraEventName
+                          }}</span>
+                        </span>
+                      </label>
+                    }
+                  </div>
                 }
               </div>
             }

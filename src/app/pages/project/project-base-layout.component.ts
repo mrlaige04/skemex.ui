@@ -160,12 +160,20 @@ export class ProjectBaseLayoutComponent implements OnInit {
     return code ? projectSectionPath(code, segment) : [APP_PATHS.projects];
   }
 
+  jiraSettingsLink(): string[] {
+    return this.projectSection('integrations/jira/settings');
+  }
+
   jiraIssuesLink(): string[] {
     return this.projectSection('integrations/jira/issues');
   }
 
   jiraUsersLink(): string[] {
     return this.projectSection('integrations/jira/users');
+  }
+
+  jiraMappingsLink(): string[] {
+    return this.projectSection('integrations/jira/mappings');
   }
 
   /**
@@ -187,7 +195,7 @@ export class ProjectBaseLayoutComponent implements OnInit {
     return path === base || path.startsWith(`${base}/`);
   }
 
-  isJiraSectionActive(section: 'issues' | 'users'): boolean {
+  isJiraSectionActive(section: 'settings' | 'issues' | 'users' | 'mappings'): boolean {
     const code = this.projectCode();
     const path = this.activePath();
     if (!code || !path) {
@@ -272,12 +280,12 @@ export class ProjectBaseLayoutComponent implements OnInit {
       }
       if (loaded?.id) {
         try {
-          const configured = await this.integrationsService.refresh(loaded.id, 'jira');
-          if (!configured) {
-            this.jiraNavOpen.set(false);
-          }
+          await this.integrationsService.refresh(loaded.id, 'jira');
         } catch {
-          this.jiraNavOpen.set(false);
+          /* sidebar still shows Jira → Settings for connect */
+        }
+        if (this.activePath().includes('/integrations/jira')) {
+          this.jiraNavOpen.set(true);
         }
       }
     } catch {

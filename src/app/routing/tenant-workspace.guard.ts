@@ -28,7 +28,7 @@ export const tenantWorkspaceGuard: CanActivateFn = async () => {
   }
 
   if (!auth.workspaceContext()?.tenantId) {
-    return router.createUrlTree([APP_PATHS.select]);
+    return router.createUrlTree(['/auth', 'login']);
   }
 
   // Always load tenant-scoped roles/permissions from GET api/auth/session (not JWT).

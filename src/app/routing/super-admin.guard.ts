@@ -27,7 +27,7 @@ export const superAdminGuard: CanActivateFn = async () => {
     if (auth.workspaceContext()?.tenantId) {
       return router.createUrlTree([APP_PATHS.dashboard]);
     }
-    return router.createUrlTree([APP_PATHS.select]);
+    return router.createUrlTree(['/auth', 'login']);
   }
 
   return true;

@@ -11,7 +11,6 @@ export const RESERVED_APP_SEGMENTS = new Set([
   'projects',
   'roles',
   'settings',
-  'tenant-select',
   'users',
 ]);
 

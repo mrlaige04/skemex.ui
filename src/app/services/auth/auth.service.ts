@@ -30,7 +30,6 @@ import { BaseHttp } from '../http/base-http.service';
 import { AuthTokenStore } from './auth-token.store';
 import { isSuperAdminFromToken } from '../../utils/jwt.util';
 
-const PENDING_TENANT_USER_KEY = 'skemex.sx.tu';
 const WORKSPACE_CONTEXT_KEY = 'skemex.sx.ws';
 const SUPER_ADMIN_SESSION_KEY = 'skemex.sx.sa';
 
@@ -49,7 +48,7 @@ export class AuthService {
   private readonly _superAdminSession = signal<SuperAdminSession | null>(null);
   private readonly _isSuperAdmin = signal(false);
   /**
-   * Tenant-scoped roles/permissions from {@code GET api/auth/session} / select-tenant.
+   * Tenant-scoped roles/permissions from {@code GET api/auth/session} / login / select-tenant.
    * UI must not read RBAC from the JWT.
    */
   private readonly _sessionRoles = signal<string[]>([]);
@@ -57,7 +56,7 @@ export class AuthService {
   /** Tenant id the current in-memory RBAC cache belongs to. */
   private _rbacTenantId: string | null = null;
 
-  /** Current tenant workspace (after {@link selectTenant}); persisted in localStorage, cleared on logout. */
+  /** Current tenant workspace; persisted in localStorage, cleared on logout. */
   readonly workspaceContext = this._workspaceContext.asReadonly();
 
   /** Platform super-admin console session (no tenant workspace). */
@@ -138,7 +137,6 @@ export class AuthService {
 
   establishSuperAdminSession(user: CurrentUserResponse): void {
     this.clearWorkspaceContext();
-    this.clearPendingTenantSelection();
     this.persistSuperAdminSession({
       email: user.email,
       firstName: user.firstName,
@@ -183,10 +181,31 @@ export class AuthService {
     await this.tokens.persistFromAccessTokenResponse(res.token);
     if (res.user.isSuperAdmin) {
       this.establishSuperAdminSession(res.user);
-    } else {
-      this.clearSuperAdminSession();
-      this.setPendingTenantSelection(res.user);
+      return res;
     }
+
+    this.clearSuperAdminSession();
+    const tenantId = res.tenantId?.trim() || null;
+    const tenantName = res.tenantName?.trim() || null;
+    if (!tenantId || !tenantName) {
+      throw new Error('Login response did not include a workspace.');
+    }
+
+    const tenants = Array.isArray(res.user.tenants) ? [...res.user.tenants] : [];
+    if (!tenants.some((t) => t.id === tenantId)) {
+      tenants.push({ id: tenantId, name: tenantName });
+    }
+
+    this.persistWorkspaceContext({
+      tenantId,
+      tenantName,
+      userEmail: res.user.email,
+      firstName: res.user.firstName,
+      lastName: res.user.lastName,
+      avatarUrl: res.user.avatarUrl ?? null,
+      tenants,
+    });
+    this.setSessionRbac(res.user.roles ?? [], res.user.permissions ?? [], tenantId);
     return res;
   }
 
@@ -226,49 +245,16 @@ export class AuthService {
     );
   }
 
-  /** Snapshot of user + tenant list until a workspace is selected (sessionStorage + login). */
-  setPendingTenantSelection(user: CurrentUserResponse): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    sessionStorage.setItem(PENDING_TENANT_USER_KEY, JSON.stringify(user));
-  }
-
-  getPendingTenantSelection(): CurrentUserResponse | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
-    }
-    const raw = sessionStorage.getItem(PENDING_TENANT_USER_KEY);
-    if (!raw) {
-      return null;
-    }
-    try {
-      return JSON.parse(raw) as CurrentUserResponse;
-    } catch {
-      sessionStorage.removeItem(PENDING_TENANT_USER_KEY);
-      return null;
-    }
-  }
-
-  clearPendingTenantSelection(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    sessionStorage.removeItem(PENDING_TENANT_USER_KEY);
-  }
-
   async selectTenant(tenantId: string): Promise<void> {
     if (this.isSuperAdmin()) {
       throw new Error('Platform administrators cannot select a tenant workspace.');
     }
-    const pending = this.getPendingTenantSelection();
     const prev = this._workspaceContext();
     const res = await firstValueFrom(
       this.api.post<{ tenantId: string }, TenantSessionResponse>('api/auth/tenant', { tenantId }),
     );
     await this.tokens.persistFromAccessTokenResponse(res.token);
-    const fromPending = pending?.tenants;
-    let tenants = fromPending ?? prev?.tenants ?? [];
+    let tenants = prev?.tenants ?? [];
     if (tenants.length === 0) {
       tenants = [{ id: res.tenantId, name: res.tenantName }];
     } else {
@@ -280,20 +266,18 @@ export class AuthService {
     this.persistWorkspaceContext({
       tenantId: res.tenantId,
       tenantName: res.tenantName,
-      userEmail: pending?.email ?? prev?.userEmail ?? '',
-      firstName: pending?.firstName ?? prev?.firstName ?? '',
-      lastName: pending?.lastName ?? prev?.lastName ?? '',
-      avatarUrl: pending?.avatarUrl ?? prev?.avatarUrl ?? null,
+      userEmail: prev?.userEmail ?? '',
+      firstName: prev?.firstName ?? '',
+      lastName: prev?.lastName ?? '',
+      avatarUrl: prev?.avatarUrl ?? null,
       tenants,
     });
     this.setSessionRbac(res.roles ?? [], res.permissions ?? [], res.tenantId);
-    // Re-fetch session with the new tenant-scoped token as the source of truth.
     try {
       await this.getSession();
     } catch {
       /* keep select-tenant payload */
     }
-    this.clearPendingTenantSelection();
   }
 
   /** Loads first/last name and email from the API (authoritative prefill for the profile page). */
@@ -339,10 +323,9 @@ export class AuthService {
     await this.getSession();
   }
 
-  /** Re-fetches session from the API and updates pending selection / workspace tenant list. */
+  /** Re-fetches session from the API and updates workspace tenant list / profile fields. */
   async refreshSessionState(): Promise<CurrentUserResponse> {
     const session = await this.getSession();
-    this.setPendingTenantSelection(session);
     const ws = this._workspaceContext();
     if (ws) {
       this.persistWorkspaceContext({
@@ -409,20 +392,30 @@ export class AuthService {
     this.persistWorkspaceContext({ ...cur, ...partial });
   }
 
-  async createTenant(body: CreateTenantRequest): Promise<TenantSummary> {
-    const created = await firstValueFrom(
-      this.api.post<CreateTenantRequest, TenantSummary>('api/tenants', body),
-    );
-    const pending = this.getPendingTenantSelection();
-    if (pending) {
-      const tenants = [...pending.tenants, created];
-      this.setPendingTenantSelection({ ...pending, tenants });
+  /** Updates cached workspace name (e.g. after Settings → Workspace save). */
+  patchWorkspaceName(name: string): void {
+    const cur = this._workspaceContext();
+    if (!cur) {
+      return;
     }
-    return created;
+    const trimmed = name.trim();
+    const tenants = cur.tenants.map((t) => (t.id === cur.tenantId ? { ...t, name: trimmed } : t));
+    this.persistWorkspaceContext({ ...cur, tenantName: trimmed, tenants });
+  }
+
+  async createTenant(body: CreateTenantRequest): Promise<TenantSummary> {
+    return firstValueFrom(this.api.post<CreateTenantRequest, TenantSummary>('api/tenants', body));
+  }
+
+  async updateCurrentTenant(body: { name: string }): Promise<TenantSummary> {
+    const updated = await firstValueFrom(
+      this.api.patch<{ name: string }, TenantSummary>('api/tenants/current', body),
+    );
+    this.patchWorkspaceName(updated.name);
+    return updated;
   }
 
   async logout(): Promise<void> {
-    this.clearPendingTenantSelection();
     this.clearWorkspaceContext();
     this.clearSuperAdminSession();
     this.tokens.clear();

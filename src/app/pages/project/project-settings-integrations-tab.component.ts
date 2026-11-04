@@ -9,8 +9,10 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { findRouteParam } from '../../routing/find-route-param';
 import {
   lucideCheck,
+  lucideChevronDown,
   lucideExternalLink,
   lucideLink2,
   lucideLoaderCircle,
@@ -18,6 +20,7 @@ import {
 } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
+import { HlmCollapsibleImports } from 'spartan/collapsible';
 import { HlmIconImports } from 'spartan/icon';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
@@ -40,6 +43,7 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
     HasPermissionDirective,
     ...HlmButtonImports,
     ...HlmCardImports,
+    ...HlmCollapsibleImports,
     ...HlmIconImports,
     ...HlmLabelImports,
     ...HlmSelectImports,
@@ -47,6 +51,7 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
   providers: [
     provideIcons({
       lucideCheck,
+      lucideChevronDown,
       lucideExternalLink,
       lucideLink2,
       lucideLoaderCircle,
@@ -79,6 +84,8 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
 
   readonly selectedCloudId = signal<string | null>(null);
   readonly selectedProjectId = signal<string | null>(null);
+  /** Connection details (site/project mapping + webhooks) accordion. */
+  readonly detailsOpen = signal(true);
 
   private projectId: string | null = null;
 
@@ -91,6 +98,10 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
     const c = this.connection();
     return !!c && c.status === 'Connected';
   });
+
+  readonly hasDetails = computed(
+    () => !!this.connection() && (this.needsMapping() || this.isConnected()),
+  );
 
   readonly selectedSite = computed(() => {
     const id = this.selectedCloudId();
@@ -283,7 +294,7 @@ export class ProjectSettingsIntegrationsTabComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const projectCode = this.route.parent?.snapshot.paramMap.get('projectCode')?.trim();
+      const projectCode = findRouteParam(this.route, 'projectCode')?.trim();
       if (!projectCode) {
         this.error.set('Project was not found.');
         return;
