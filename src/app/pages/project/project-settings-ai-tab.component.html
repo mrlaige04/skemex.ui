@@ -1,9 +1,8 @@
 <section hlmCard>
   <div hlmCardHeader>
-    <h2 hlmCardTitle>AI task decomposition</h2>
+    <h2 hlmCardTitle>Default AI model</h2>
     <p hlmCardDescription>
-      Set this project’s default model and limits for AI-generated task trees. The default model is
-      required for decomposition when a chat does not pick its own.
+      Used for new AI chats in this project when a chat does not pick its own model.
     </p>
   </div>
 
@@ -34,7 +33,7 @@
           <label hlmLabel for="ai-default-model">Default AI model</label>
           <hlm-select
             class="w-full max-w-md"
-            [value]="model().defaultAiModelId ?? noneModelValue"
+            [value]="defaultAiModelId() ?? noneModelValue"
             [itemToString]="modelLabel"
             (valueChange)="updateDefaultModel($event)"
           >
@@ -87,56 +86,11 @@
               }
             </hlm-select-content>
           </hlm-select>
-          <p class="text-muted-foreground text-xs">
-            Stored on this project and used for new AI chats unless a chat overrides it.
-          </p>
-          @if (!model().defaultAiModelId && models().length === 0) {
+          @if (!defaultAiModelId() && models().length === 0) {
             <p class="text-muted-foreground text-xs">
               No models available yet. Check that the AI provider API key is configured on the server.
             </p>
           }
-        </div>
-
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div class="space-y-2">
-            <label hlmLabel for="ai-max-depth">Max tree depth</label>
-            <input
-              hlmInput
-              id="ai-max-depth"
-              type="number"
-              min="1"
-              max="8"
-              step="1"
-              [value]="model().maxTreeDepth"
-              (input)="updateDepth($event)"
-            />
-            <p class="text-muted-foreground text-xs">
-              1 = root only, 2 = root + subtasks, 3 = root + subtasks + nested subtasks. Range 1–8.
-            </p>
-            @if (submitted() && (model().maxTreeDepth < 1 || model().maxTreeDepth > 8)) {
-              <p class="text-destructive text-sm">Depth must be between 1 and 8.</p>
-            }
-          </div>
-
-          <div class="space-y-2">
-            <label hlmLabel for="ai-max-nodes">Max nodes</label>
-            <input
-              hlmInput
-              id="ai-max-nodes"
-              type="number"
-              min="1"
-              max="64"
-              step="1"
-              [value]="model().maxNodes"
-              (input)="updateNodes($event)"
-            />
-            <p class="text-muted-foreground text-xs">
-              Total tasks in one AI tree including the root. Range 1–64.
-            </p>
-            @if (submitted() && (model().maxNodes < 1 || model().maxNodes > 64)) {
-              <p class="text-destructive text-sm">Max nodes must be between 1 and 64.</p>
-            }
-          </div>
         </div>
 
         <div class="flex justify-end">
