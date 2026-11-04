@@ -32,6 +32,7 @@ import type {
   ProjectTaskAttachmentDto,
   ProjectTaskCommentDto,
   ProjectTaskDto,
+  ProjectTaskRelationDto,
   ProjectTaskWorkLogDto,
   ProjectUserDto,
   UpdateProjectTaskRequest,
@@ -88,6 +89,21 @@ function formatWorkLogRangeLabel(startedAt?: string | null, endedAt?: string | n
 function personLabel(user: ProjectUserDto | ProjectTaskDto['reporter']): string {
   const name = `${user.firstName} ${user.lastName}`.trim();
   return name || user.email;
+}
+
+function relationVerb(relation: ProjectTaskRelationDto): string {
+  const type = (relation.relationType ?? '').trim();
+  const incoming = (relation.direction ?? '').trim().toLowerCase() === 'incoming';
+  switch (type) {
+    case 'BlockedBy':
+      return incoming ? 'Blocks' : 'Blocked by';
+    case 'Duplicates':
+      return incoming ? 'Duplicated by' : 'Duplicates';
+    case 'RelatesTo':
+      return 'Relates to';
+    default:
+      return type || 'Related';
+  }
 }
 
 function formatAttachmentFileSize(bytes: number): string {
@@ -206,6 +222,8 @@ export class ProjectIssuePageComponent {
   );
   readonly formatAttachmentSize = formatAttachmentFileSize;
   readonly subtasks = computed(() => this.task()?.subtasks ?? []);
+  readonly relations = computed(() => this.task()?.relations ?? []);
+  readonly relationVerb = relationVerb;
   readonly workLogs = computed(() => this.task()?.workLogs ?? []);
   readonly acceptanceCriteria = computed(() =>
     (this.task()?.acceptanceCriteria ?? []).filter((item) => item.trim().length > 0),
