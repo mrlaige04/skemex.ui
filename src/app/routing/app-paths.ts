@@ -17,6 +17,7 @@ export const APP_PATHS = {
   projectTaskNew: (projectCode: string) => `/${projectCode}/tasks/new`,
   projectIssues: (projectCode: string) => `/${projectCode}/issues`,
   projectIssue: (projectCode: string, issueCode: string) => `/${projectCode}/issues/${issueCode}`,
+  projectGraph: (projectCode: string) => `/${projectCode}/graph`,
   projectDocuments: (projectCode: string) => `/${projectCode}/documents`,
   projectDocument: (projectCode: string, documentId: string) =>
     `/${projectCode}/documents/${documentId}`,

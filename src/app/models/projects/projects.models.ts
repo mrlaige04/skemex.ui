@@ -157,6 +157,32 @@ export interface CreateProjectTaskCommentRequest {
 
 export type TaskRelationType = 'BlockedBy' | 'RelatesTo' | 'Duplicates';
 export type TaskRelationDirection = 'Outgoing' | 'Incoming';
+export type TaskGraphEdgeKind = 'ParentOf' | TaskRelationType | string;
+
+export interface ProjectTaskGraphNodeDto {
+  id: string;
+  code: string;
+  title: string;
+  type: string;
+  parentId?: string | null;
+  projectColumnId: string;
+  columnKey: string;
+  columnTitle: string;
+  assigneeId?: string | null;
+}
+
+export interface ProjectTaskGraphEdgeDto {
+  id: string;
+  sourceTaskId: string;
+  targetTaskId: string;
+  kind: TaskGraphEdgeKind;
+}
+
+export interface ProjectTaskGraphDto {
+  nodes: ProjectTaskGraphNodeDto[];
+  edges: ProjectTaskGraphEdgeDto[];
+  truncated: boolean;
+}
 
 export interface ProjectTaskRelationDto {
   id: string;

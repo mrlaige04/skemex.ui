@@ -56,6 +56,16 @@
                 <span>Issues</span>
               </a>
             </li>
+            <li hlmSidebarMenuItem>
+              <a
+                hlmSidebarMenuButton
+                [routerLink]="projectSection('graph')"
+                [isActive]="isProjectSectionActive('graph')"
+              >
+                <ng-icon hlm name="lucideNetwork" />
+                <span>Graph</span>
+              </a>
+            </li>
             <li hlmSidebarMenuItem *hasPermission="permissions.documentsView">
               <a
                 hlmSidebarMenuButton
