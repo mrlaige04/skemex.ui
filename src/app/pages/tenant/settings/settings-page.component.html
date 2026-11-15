@@ -15,6 +15,13 @@
       </button>
       <button
         type="button"
+        hlmTabsTrigger="ai"
+        *hasPermission="permissions.settingsWorkspaceView"
+      >
+        AI
+      </button>
+      <button
+        type="button"
         hlmTabsTrigger="columns"
         *hasPermission="permissions.settingsColumnsView"
       >
@@ -34,6 +41,12 @@
 
     <div hlmTabsContent="workspace" class="pt-4" *hasPermission="permissions.settingsWorkspaceView">
       <app-settings-workspace-tab />
+    </div>
+
+    <div hlmTabsContent="ai" class="pt-4" *hasPermission="permissions.settingsWorkspaceView">
+      @if (activeTab() === 'ai') {
+        <app-settings-ai-tab />
+      }
     </div>
 
     <div hlmTabsContent="columns" class="pt-4" *hasPermission="permissions.settingsColumnsView">

@@ -5,6 +5,7 @@ import { PERMISSIONS } from '../../../models/auth/permissions';
 import { AuthService } from '../../../services/auth/auth.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { RolesPageComponent } from '../roles/roles-page.component';
+import { SettingsAiTabComponent } from './settings-ai-tab.component';
 import { SettingsColumnsTabComponent } from './settings-columns-tab.component';
 import { SettingsSpecializationsTabComponent } from './settings-specializations-tab.component';
 import { SettingsWorkspaceTabComponent } from './settings-workspace-tab.component';
@@ -13,6 +14,7 @@ import { SettingsWorkspaceTabComponent } from './settings-workspace-tab.componen
   selector: 'app-settings-page',
   imports: [
     SettingsWorkspaceTabComponent,
+    SettingsAiTabComponent,
     SettingsColumnsTabComponent,
     SettingsSpecializationsTabComponent,
     RolesPageComponent,
@@ -33,7 +35,13 @@ export class SettingsPageComponent implements OnInit {
 
   ngOnInit(): void {
     const tab = this.route.snapshot.queryParamMap.get('tab');
-    if (tab === 'workspace' || tab === 'roles' || tab === 'specializations' || tab === 'columns') {
+    if (
+      tab === 'workspace' ||
+      tab === 'ai' ||
+      tab === 'roles' ||
+      tab === 'specializations' ||
+      tab === 'columns'
+    ) {
       this.activeTab.set(tab);
     } else if (this.auth.hasPermission(PERMISSIONS.settingsWorkspaceView)) {
       this.activeTab.set('workspace');

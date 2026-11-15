@@ -26,6 +26,10 @@ import type {
   UpdateUserProfileResponse,
 } from '../../models/auth/auth.models';
 import { apiConfig } from '../../config/api.config';
+import type {
+  TenantAiSettingsDto,
+  UpdateTenantAiSettingsRequest,
+} from '../../models/tenants/tenant-ai-settings.models';
 import { BaseHttp } from '../http/base-http.service';
 import { AuthTokenStore } from './auth-token.store';
 import { isSuperAdminFromToken } from '../../utils/jwt.util';
@@ -413,6 +417,19 @@ export class AuthService {
     );
     this.patchWorkspaceName(updated.name);
     return updated;
+  }
+
+  async getTenantAiSettings(): Promise<TenantAiSettingsDto> {
+    return firstValueFrom(this.api.get<TenantAiSettingsDto>('api/tenants/current/ai-settings'));
+  }
+
+  async updateTenantAiSettings(body: UpdateTenantAiSettingsRequest): Promise<TenantAiSettingsDto> {
+    return firstValueFrom(
+      this.api.patch<UpdateTenantAiSettingsRequest, TenantAiSettingsDto>(
+        'api/tenants/current/ai-settings',
+        body,
+      ),
+    );
   }
 
   async logout(): Promise<void> {

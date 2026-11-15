@@ -1,0 +1,65 @@
+<section hlmCard>
+  <div hlmCardHeader>
+    <h2 hlmCardTitle>AI</h2>
+    <p hlmCardDescription>
+      Workspace-wide sampling settings for chat completions and agent tools. Lower temperature
+      makes answers more deterministic.
+    </p>
+  </div>
+
+  <div hlmCardContent>
+    @if (loading()) {
+      <p class="text-muted-foreground text-sm">Loading AI settings…</p>
+    } @else {
+      <form novalidate class="space-y-5" (submit)="onSubmit($event)">
+        @if (error(); as err) {
+          <p
+            class="rounded-md border border-red-500/30 bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ err }}
+          </p>
+        }
+
+        @if (savedMessage(); as msg) {
+          <p
+            class="rounded-md border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+            role="status"
+          >
+            {{ msg }}
+          </p>
+        }
+
+        <div class="space-y-2 max-w-sm">
+          <label hlmLabel for="ai-temperature">Temperature</label>
+          <input
+            hlmInput
+            id="ai-temperature"
+            type="number"
+            [min]="minTemperature"
+            [max]="maxTemperature"
+            step="0.05"
+            [value]="temperature()"
+            (input)="updateTemperature($event)"
+          />
+          <p class="text-muted-foreground text-xs">
+            Range {{ minTemperature }}–{{ maxTemperature }}. Recommended for structured tools:
+            0–0.3. Default 0.2.
+          </p>
+        </div>
+
+        <div *hasPermission="permissions.settingsWorkspaceEdit" class="flex justify-end">
+          <button hlmBtn type="submit" [disabled]="!canSave()">
+            @if (saving()) {
+              <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+              Saving…
+            } @else {
+              <ng-icon hlm name="lucideCheck" size="sm" />
+              Save
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

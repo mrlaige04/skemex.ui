@@ -5,7 +5,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { aiUserFacingError, aiUserFacingMessage } from '../../http/ai-user-facing-error';
 import { problemDetailMessage } from '../../http/problem-details';
-import type { AiChatArtefactRefDto } from '../../models/ai-chat/ai-agent.models';
+import type { AiChatArtefactRefDto, AiAgentJobDto } from '../../models/ai-chat/ai-agent.models';
 import type {
   AiChatDto,
   AiChatMessage,
@@ -26,6 +26,7 @@ const activeKey = (projectId: string) => `skemex.aiChat.active.${projectId}`;
 const POLL_INTERVAL_MS = 2500;
 const POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
+/** Jobs that create/update board tasks — board should soft-refresh after these. */
 @Injectable({ providedIn: 'root' })
 export class AiChatService {
   private readonly platformId = inject(PLATFORM_ID);
@@ -656,7 +657,12 @@ export class AiChatService {
     projectId: string,
     chatId: string,
     projectCode: string,
-  ): Promise<{ status: string; error?: string | null; timedOut: boolean }> {
+  ): Promise<{
+    status: string;
+    error?: string | null;
+    timedOut: boolean;
+    job?: AiAgentJobDto | null;
+  }> {
     const started = Date.now();
     while (Date.now() - started < POLL_TIMEOUT_MS) {
       await delay(POLL_INTERVAL_MS);
@@ -672,6 +678,7 @@ export class AiChatService {
           status: job.status,
           error: job.error ? aiUserFacingMessage(job.error) : job.error,
           timedOut: false,
+          job,
         };
       }
     }
@@ -680,6 +687,7 @@ export class AiChatService {
       status: 'Failed',
       timedOut: true,
       error: 'Timed out waiting for the AI. Please try again.',
+      job: null,
     };
   }
 

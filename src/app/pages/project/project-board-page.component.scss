@@ -30,6 +30,10 @@
   min-height: 0;
   margin-bottom: 0.75rem;
 }
+.board-columns--refreshing {
+  opacity: 0.55;
+  pointer-events: none;
+}
 .board-column {
   display: flex;
   flex: 1 1 0;
