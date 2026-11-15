@@ -9,10 +9,25 @@ import {
   CdkDropListGroup,
 } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles } from '@ng-icons/lucide';
+import {
+  lucideCircleDot,
+  lucideLayers,
+  lucideLoaderCircle,
+  lucidePlus,
+  lucideSparkles,
+} from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmIconImports } from 'spartan/icon';
 import { problemDetailMessage } from '../../http/problem-details';
@@ -20,7 +35,7 @@ import type { ProjectColumnDto, ProjectTaskDto, ProjectTaskUserDto } from '../..
 import { PERMISSIONS } from '../../models/auth/permissions';
 import { projectSectionPath } from '../../routing/app-paths';
 import { AiChatService } from '../../services/ai-chat/ai-chat.service';
-import { AuthService } from '../../services/auth/auth.service';
+import { ProjectBoardRealtimeService } from '../../services/projects/project-board-realtime.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { TaskTypeBadgeComponent } from '../../shared/task-type-badge/task-type-badge.component';
@@ -176,7 +191,15 @@ function mapColumnsToBoard(columns: ProjectColumnDto[], tasksByColumnId: Map<str
     ...HlmButtonImports,
     ...HlmIconImports,
   ],
-  providers: [provideIcons({ lucideCircleDot, lucideLayers, lucidePlus, lucideSparkles })],
+  providers: [
+    provideIcons({
+      lucideCircleDot,
+      lucideLayers,
+      lucideLoaderCircle,
+      lucidePlus,
+      lucideSparkles,
+    }),
+  ],
   templateUrl: './project-board-page.component.html',
   styleUrl: './project-board-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -186,11 +209,14 @@ export class ProjectBoardPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly projectsService = inject(ProjectsService);
+  private readonly boardRealtime = inject(ProjectBoardRealtimeService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
   readonly aiChat = inject(AiChatService);
   readonly permissions = PERMISSIONS;
 
   readonly loading = signal(true);
+  readonly refreshing = signal(false);
   readonly moving = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly moveError = signal<string | null>(null);
@@ -203,9 +229,30 @@ export class ProjectBoardPageComponent implements OnInit {
 
   private projectId: string | null = null;
   private projectCode = '';
+  private boardColumnsMeta: ProjectColumnDto[] = [];
+  /** Quiet window after the last SignalR event before we reload once. */
+  private static readonly REFRESH_SETTLE_MS = 450;
+  private refreshSettleTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshInFlight = false;
+  /** Another burst arrived while a reload was in flight — arm settle again after. */
+  private refreshAgainAfterFlight = false;
 
   ngOnInit(): void {
     void this.loadBoard();
+
+    this.destroyRef.onDestroy(() => {
+      this.clearRefreshSettleTimer();
+      void this.boardRealtime.disconnect();
+    });
+
+    this.boardRealtime.boardChanged$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        if (!this.projectId || event.projectId !== this.projectId) {
+          return;
+        }
+        this.noteBoardChanged();
+      });
   }
 
   taskCount(column: BoardColumn): number {
@@ -321,6 +368,7 @@ export class ProjectBoardPageComponent implements OnInit {
       this.loading.set(false);
       this.loadError.set('Project was not found.');
       this.columns.set([]);
+      this.boardColumnsMeta = [];
       return;
     }
 
@@ -334,25 +382,107 @@ export class ProjectBoardPageComponent implements OnInit {
       if (!project) {
         this.loadError.set('Project was not found.');
         this.columns.set([]);
+        this.boardColumnsMeta = [];
         this.projectId = null;
         return;
       }
 
       this.projectId = project.id;
       const projectColumns = await this.projectsService.listColumns(project.id);
-      const tasksByColumn = await Promise.all(
-        projectColumns.map(async (column) => {
-          const tasks = await this.projectsService.listTasksByColumn(project.id, column.id);
-          return [column.id, tasks] as const;
-        }),
-      );
-
-      this.columns.set(mapColumnsToBoard(projectColumns, new Map(tasksByColumn)));
+      this.boardColumnsMeta = projectColumns;
+      await this.reloadTasksIntoColumns(project.id, projectColumns);
+      void this.boardRealtime.connect(project.id);
     } catch (err) {
       this.loadError.set(problemDetailMessage(err as HttpErrorResponse));
       this.columns.set([]);
+      this.boardColumnsMeta = [];
+      void this.boardRealtime.disconnect();
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /**
+   * Moving a root updates parent + each child (sequential HTTP), so SignalR fires a burst
+   * spaced by RTT. Show one loader for the whole burst; reload once after events settle.
+   */
+  private noteBoardChanged(): void {
+    if (!this.projectId || this.boardColumnsMeta.length === 0) {
+      return;
+    }
+
+    this.refreshing.set(true);
+    this.armRefreshSettleTimer();
+  }
+
+  private armRefreshSettleTimer(): void {
+    this.clearRefreshSettleTimer();
+    this.refreshSettleTimer = setTimeout(() => {
+      this.refreshSettleTimer = null;
+      void this.executeSettledRefresh();
+    }, ProjectBoardPageComponent.REFRESH_SETTLE_MS);
+  }
+
+  private clearRefreshSettleTimer(): void {
+    if (this.refreshSettleTimer == null) {
+      return;
+    }
+    clearTimeout(this.refreshSettleTimer);
+    this.refreshSettleTimer = null;
+  }
+
+  private async executeSettledRefresh(): Promise<void> {
+    if (!this.projectId || this.boardColumnsMeta.length === 0) {
+      this.refreshing.set(false);
+      return;
+    }
+
+    // Own drag persist is still running — keep loader and wait for the next quiet window.
+    if (this.moving()) {
+      this.armRefreshSettleTimer();
+      return;
+    }
+
+    if (this.refreshInFlight) {
+      this.refreshAgainAfterFlight = true;
+      return;
+    }
+
+    this.refreshInFlight = true;
+    try {
+      await this.reloadTasksIntoColumns(this.projectId, this.boardColumnsMeta);
+      this.moveError.set(null);
+    } catch (err) {
+      this.moveError.set(problemDetailMessage(err as HttpErrorResponse));
+    } finally {
+      this.refreshInFlight = false;
+
+      if (this.refreshSettleTimer != null) {
+        // Newer events already re-armed the settle timer — keep loader until that run.
+        return;
+      }
+
+      if (this.refreshAgainAfterFlight) {
+        this.refreshAgainAfterFlight = false;
+        this.armRefreshSettleTimer();
+        return;
+      }
+
+      this.refreshing.set(false);
+    }
+  }
+
+  private async reloadTasksIntoColumns(
+    projectId: string,
+    projectColumns: ProjectColumnDto[],
+  ): Promise<void> {
+    const tasksByColumn = await Promise.all(
+      projectColumns.map(async (column) => {
+        const tasks = await this.projectsService.listTasksByColumn(projectId, column.id);
+        return [column.id, tasks] as const;
+      }),
+    );
+
+    this.columns.set(mapColumnsToBoard(projectColumns, new Map(tasksByColumn)));
   }
 }

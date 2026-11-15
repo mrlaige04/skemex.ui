@@ -25,7 +25,10 @@
   </div>
 
   @if (loading()) {
-    <p class="text-muted-foreground text-sm">Loading board…</p>
+    <div class="text-muted-foreground flex flex-1 items-center justify-center gap-2 text-sm">
+      <ng-icon hlm name="lucideLoaderCircle" class="animate-spin" />
+      Loading board…
+    </div>
   } @else if (loadError(); as error) {
     <p class="text-destructive text-sm">{{ error }}</p>
   } @else if (columns().length === 0) {
@@ -34,8 +37,26 @@
     @if (moveError(); as moveErr) {
       <p class="text-destructive shrink-0 text-sm" role="alert">{{ moveErr }}</p>
     }
-    <div class="board-scroll overflow-x-auto overflow-y-hidden" cdkScrollable>
-      <div class="board-columns min-h-0 gap-2" cdkDropListGroup>
+    <div class="board-scroll relative overflow-x-auto overflow-y-hidden" cdkScrollable>
+      @if (refreshing()) {
+        <div
+          class="bg-background/50 absolute inset-0 z-10 flex items-start justify-center pt-8 backdrop-blur-[1px]"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div
+            class="bg-background/95 text-muted-foreground border-border flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm shadow-sm"
+          >
+            <ng-icon hlm name="lucideLoaderCircle" size="sm" class="animate-spin" />
+            Updating board…
+          </div>
+        </div>
+      }
+      <div
+        class="board-columns min-h-0 gap-2 transition-opacity duration-200"
+        [class.board-columns--refreshing]="refreshing()"
+        cdkDropListGroup
+      >
         @for (column of columns(); track column.id) {
           <section
             class="board-column border-border bg-muted/25 rounded-xl border shadow-sm"
@@ -59,7 +80,7 @@
               cdkScrollable
               [id]="column.id"
               [cdkDropListData]="column.tasks"
-              [cdkDropListDisabled]="moving()"
+              [cdkDropListDisabled]="moving() || refreshing()"
               [cdkDropListSortingDisabled]="true"
               (cdkDropListDropped)="onDrop($event)"
             >
@@ -67,7 +88,7 @@
                 <article
                   cdkDrag
                   [cdkDragData]="task"
-                  [cdkDragDisabled]="moving()"
+                  [cdkDragDisabled]="moving() || refreshing()"
                   class="board-issue-card border-border bg-card hover:border-primary/30 shrink-0 rounded-lg border p-3 shadow-sm transition-colors"
                 >
                   <div
@@ -141,7 +162,7 @@
                         <div
                           cdkDrag
                           [cdkDragData]="subtask"
-                          [cdkDragDisabled]="moving()"
+                          [cdkDragDisabled]="moving() || refreshing()"
                           class="board-subtask-card bg-muted/40 hover:bg-muted/60 cursor-grab rounded-md px-2 py-1.5 transition-colors active:cursor-grabbing"
                           [class.board-subtask-card--lifting]="draggingNestedSubtaskId() === subtask.id"
                           (pointerdown)="prepareNestedSubtaskDrag($event)"
