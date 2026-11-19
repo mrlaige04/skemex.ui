@@ -1,8 +1,9 @@
 <section hlmCard>
   <div hlmCardHeader>
-    <h2 hlmCardTitle>AI models</h2>
+    <h2 hlmCardTitle>AI</h2>
     <p hlmCardDescription>
-      Choose which models this project uses for chat and document indexing.
+      Project-level models and sampling for chat, agents, and document indexing. New projects start
+      from Workspace Settings → AI defaults.
     </p>
   </div>
 
@@ -156,6 +157,24 @@
               No models available yet. Check that the AI provider API key is configured on the server.
             </p>
           }
+        </div>
+
+        <div class="space-y-2 max-w-sm">
+          <label hlmLabel for="ai-temperature">Temperature</label>
+          <input
+            hlmInput
+            id="ai-temperature"
+            type="number"
+            [min]="minTemperature"
+            [max]="maxTemperature"
+            step="0.05"
+            [value]="temperature()"
+            (input)="updateTemperature($event)"
+          />
+          <p class="text-muted-foreground text-xs">
+            Range {{ minTemperature }}–{{ maxTemperature }}. Lower is more deterministic. Recommended
+            for structured tools: 0–0.3. Default 0.2.
+          </p>
         </div>
 
         <div class="flex justify-end">

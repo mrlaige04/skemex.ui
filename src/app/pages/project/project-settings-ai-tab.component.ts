@@ -13,6 +13,7 @@ import { lucideBot, lucideCheck, lucideLoaderCircle } from '@ng-icons/lucide';
 import { HlmButtonImports } from 'spartan/button';
 import { HlmCardImports } from 'spartan/card';
 import { HlmIconImports } from 'spartan/icon';
+import { HlmInputImports } from 'spartan/input';
 import { HlmLabelImports } from 'spartan/label';
 import { HlmSelectImports } from 'spartan/select';
 import { isTransientHttpFailure, problemDetailMessage } from '../../http/problem-details';
@@ -29,6 +30,9 @@ import { AiService } from '../../services/ai/ai.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 
 const NONE_MODEL = '__none__';
+const MIN_TEMPERATURE = 0;
+const MAX_TEMPERATURE = 2;
+const DEFAULT_TEMPERATURE = 0.2;
 
 @Component({
   selector: 'app-project-settings-ai-tab',
@@ -37,6 +41,7 @@ const NONE_MODEL = '__none__';
     ...HlmButtonImports,
     ...HlmCardImports,
     ...HlmIconImports,
+    ...HlmInputImports,
     ...HlmLabelImports,
     ...HlmSelectImports,
   ],
@@ -50,6 +55,8 @@ export class ProjectSettingsAiTabComponent implements OnInit {
   private readonly aiService = inject(AiService);
 
   readonly noneModelValue = NONE_MODEL;
+  readonly minTemperature = MIN_TEMPERATURE;
+  readonly maxTemperature = MAX_TEMPERATURE;
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -59,17 +66,24 @@ export class ProjectSettingsAiTabComponent implements OnInit {
 
   readonly defaultAiModelId = signal<string | null>(null);
   readonly enrichmentAiModelId = signal<string | null>(null);
+  readonly temperature = signal(DEFAULT_TEMPERATURE);
   private initialDefaultAiModelId: string | null = null;
   private initialEnrichmentAiModelId: string | null = null;
+  private initialTemperature = DEFAULT_TEMPERATURE;
   private projectId: string | null = null;
 
   readonly canSave = computed(() => {
     if (this.saving() || this.loading()) {
       return false;
     }
+    const temperature = this.temperature();
+    if (!this.isValidTemperature(temperature)) {
+      return false;
+    }
     return (
       this.defaultAiModelId() !== this.initialDefaultAiModelId ||
-      this.enrichmentAiModelId() !== this.initialEnrichmentAiModelId
+      this.enrichmentAiModelId() !== this.initialEnrichmentAiModelId ||
+      temperature !== this.initialTemperature
     );
   });
 
@@ -132,12 +146,24 @@ export class ProjectSettingsAiTabComponent implements OnInit {
     this.savedMessage.set(null);
   }
 
+  updateTemperature(event: Event): void {
+    const raw = Number((event.target as HTMLInputElement).value);
+    this.temperature.set(Number.isFinite(raw) ? raw : this.temperature());
+    this.savedMessage.set(null);
+  }
+
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
     this.error.set(null);
     this.savedMessage.set(null);
 
     if (!this.projectId) {
+      return;
+    }
+
+    const temperature = this.temperature();
+    if (!this.isValidTemperature(temperature)) {
+      this.error.set(`Temperature must be between ${MIN_TEMPERATURE} and ${MAX_TEMPERATURE}.`);
       return;
     }
 
@@ -157,6 +183,10 @@ export class ProjectSettingsAiTabComponent implements OnInit {
         body.enrichmentAiModelId = selectedEnrichment;
       } else if (this.initialEnrichmentAiModelId) {
         body.clearEnrichmentAiModel = true;
+      }
+
+      if (temperature !== this.initialTemperature) {
+        body.aiTemperature = temperature;
       }
 
       const updated = await this.projectsService.updateSettings(this.projectId, body);
@@ -205,9 +235,20 @@ export class ProjectSettingsAiTabComponent implements OnInit {
   private applySettings(settings: ProjectSettingsDto): void {
     const defaultId = settings.defaultAiModelId ?? null;
     const enrichmentId = settings.enrichmentAiModelId ?? null;
+    const temperature = this.clampTemperature(settings.aiTemperature ?? DEFAULT_TEMPERATURE);
     this.defaultAiModelId.set(defaultId);
     this.initialDefaultAiModelId = defaultId;
     this.enrichmentAiModelId.set(enrichmentId);
     this.initialEnrichmentAiModelId = enrichmentId;
+    this.temperature.set(temperature);
+    this.initialTemperature = temperature;
+  }
+
+  private clampTemperature(value: number): number {
+    return Math.min(MAX_TEMPERATURE, Math.max(MIN_TEMPERATURE, value));
+  }
+
+  private isValidTemperature(value: number): boolean {
+    return Number.isFinite(value) && value >= MIN_TEMPERATURE && value <= MAX_TEMPERATURE;
   }
 }

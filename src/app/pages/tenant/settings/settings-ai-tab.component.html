@@ -1,9 +1,9 @@
 <section hlmCard>
   <div hlmCardHeader>
-    <h2 hlmCardTitle>AI</h2>
+    <h2 hlmCardTitle>AI defaults</h2>
     <p hlmCardDescription>
-      Workspace-wide sampling settings for chat completions and agent tools. Lower temperature
-      makes answers more deterministic.
+      Workspace defaults copied into new projects. Existing projects keep their own Project Settings →
+      AI values.
     </p>
   </div>
 
@@ -30,11 +30,140 @@
           </p>
         }
 
+        <div class="space-y-2">
+          <label hlmLabel for="tenant-ai-default-model">Default AI model</label>
+          <hlm-select
+            class="w-full max-w-md"
+            [value]="defaultAiModelId() ?? noneModelValue"
+            [itemToString]="modelLabel"
+            (valueChange)="updateDefaultModel($event)"
+          >
+            <hlm-select-trigger id="tenant-ai-default-model" class="w-full">
+              @if (selectedDefaultModel(); as selected) {
+                <span class="inline-flex min-w-0 flex-1 items-center gap-2">
+                  @if (authorIconSrc(selected.author); as iconSrc) {
+                    <img
+                      [src]="iconSrc"
+                      [alt]="selected.author ?? ''"
+                      width="16"
+                      height="16"
+                      class="size-4 shrink-0 object-contain"
+                    />
+                  } @else {
+                    <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
+                  }
+                  <span class="truncate">{{ selected.displayName }}</span>
+                </span>
+              } @else {
+                <span class="text-muted-foreground">No default</span>
+              }
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                <hlm-select-item [value]="noneModelValue">No default</hlm-select-item>
+              </hlm-select-group>
+              @for (group of modelsByProvider(); track group.provider) {
+                <hlm-select-group>
+                  <hlm-select-label>{{ group.providerName }}</hlm-select-label>
+                  @for (aiModel of group.models; track aiModel.id) {
+                    <hlm-select-item [value]="aiModel.id">
+                      <span class="inline-flex items-center gap-2">
+                        @if (authorIconSrc(aiModel.author); as iconSrc) {
+                          <img
+                            [src]="iconSrc"
+                            [alt]="aiModel.author ?? ''"
+                            width="16"
+                            height="16"
+                            class="size-4 shrink-0 object-contain"
+                          />
+                        } @else {
+                          <ng-icon hlm name="lucideBot" size="sm" />
+                        }
+                        <span>{{ aiModel.displayName }}</span>
+                      </span>
+                    </hlm-select-item>
+                  }
+                </hlm-select-group>
+              }
+            </hlm-select-content>
+          </hlm-select>
+          <p class="text-muted-foreground text-xs">
+            Applied to new projects as their default chat model.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label hlmLabel for="tenant-ai-enrichment-model">Enrichment model</label>
+          <hlm-select
+            class="w-full max-w-md"
+            [value]="enrichmentAiModelId() ?? noneModelValue"
+            [itemToString]="enrichmentModelLabel"
+            (valueChange)="updateEnrichmentModel($event)"
+          >
+            <hlm-select-trigger id="tenant-ai-enrichment-model" class="w-full">
+              @if (selectedEnrichmentModel(); as selected) {
+                <span class="inline-flex min-w-0 flex-1 items-center gap-2">
+                  @if (authorIconSrc(selected.author); as iconSrc) {
+                    <img
+                      [src]="iconSrc"
+                      [alt]="selected.author ?? ''"
+                      width="16"
+                      height="16"
+                      class="size-4 shrink-0 object-contain"
+                    />
+                  } @else {
+                    <ng-icon hlm name="lucideBot" size="sm" class="shrink-0" />
+                  }
+                  <span class="truncate">{{ selected.displayName }}</span>
+                </span>
+              } @else {
+                <span class="text-muted-foreground">Use default AI model</span>
+              }
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-group>
+                <hlm-select-item [value]="noneModelValue">Use default AI model</hlm-select-item>
+              </hlm-select-group>
+              @for (group of modelsByProvider(); track group.provider) {
+                <hlm-select-group>
+                  <hlm-select-label>{{ group.providerName }}</hlm-select-label>
+                  @for (aiModel of group.models; track aiModel.id) {
+                    <hlm-select-item [value]="aiModel.id">
+                      <span class="inline-flex items-center gap-2">
+                        @if (authorIconSrc(aiModel.author); as iconSrc) {
+                          <img
+                            [src]="iconSrc"
+                            [alt]="aiModel.author ?? ''"
+                            width="16"
+                            height="16"
+                            class="size-4 shrink-0 object-contain"
+                          />
+                        } @else {
+                          <ng-icon hlm name="lucideBot" size="sm" />
+                        }
+                        <span>{{ aiModel.displayName }}</span>
+                      </span>
+                    </hlm-select-item>
+                  }
+                </hlm-select-group>
+              }
+            </hlm-select-content>
+          </hlm-select>
+          <p class="text-muted-foreground text-xs">
+            Applied to new projects for document indexing. Prefer a fast Flash-class model.
+          </p>
+          @if (!defaultAiModelId() && !enrichmentAiModelId() && models().length === 0) {
+            <p class="text-muted-foreground text-xs">
+              No models available yet. Check that the AI provider API key is configured on the server.
+            </p>
+          }
+        </div>
+
         <div class="space-y-2 max-w-sm">
-          <label hlmLabel for="ai-temperature">Temperature</label>
+          <label hlmLabel for="tenant-ai-temperature">Temperature</label>
           <input
             hlmInput
-            id="ai-temperature"
+            id="tenant-ai-temperature"
             type="number"
             [min]="minTemperature"
             [max]="maxTemperature"
@@ -43,8 +172,8 @@
             (input)="updateTemperature($event)"
           />
           <p class="text-muted-foreground text-xs">
-            Range {{ minTemperature }}–{{ maxTemperature }}. Recommended for structured tools:
-            0–0.3. Default 0.2.
+            Range {{ minTemperature }}–{{ maxTemperature }}. Copied to new projects. Recommended for
+            structured tools: 0–0.3. Default 0.2.
           </p>
         </div>
 

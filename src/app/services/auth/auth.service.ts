@@ -27,9 +27,9 @@ import type {
 } from '../../models/auth/auth.models';
 import { apiConfig } from '../../config/api.config';
 import type {
-  TenantAiSettingsDto,
-  UpdateTenantAiSettingsRequest,
-} from '../../models/tenants/tenant-ai-settings.models';
+  TenantSettingsDto,
+  UpdateTenantSettingsRequest,
+} from '../../models/tenants/tenant-settings.models';
 import { BaseHttp } from '../http/base-http.service';
 import { AuthTokenStore } from './auth-token.store';
 import { isSuperAdminFromToken } from '../../utils/jwt.util';
@@ -419,14 +419,14 @@ export class AuthService {
     return updated;
   }
 
-  async getTenantAiSettings(): Promise<TenantAiSettingsDto> {
-    return firstValueFrom(this.api.get<TenantAiSettingsDto>('api/tenants/current/ai-settings'));
+  async getTenantSettings(): Promise<TenantSettingsDto> {
+    return firstValueFrom(this.api.get<TenantSettingsDto>('api/tenants/current/settings'));
   }
 
-  async updateTenantAiSettings(body: UpdateTenantAiSettingsRequest): Promise<TenantAiSettingsDto> {
+  async updateTenantSettings(body: UpdateTenantSettingsRequest): Promise<TenantSettingsDto> {
     return firstValueFrom(
-      this.api.patch<UpdateTenantAiSettingsRequest, TenantAiSettingsDto>(
-        'api/tenants/current/ai-settings',
+      this.api.patch<UpdateTenantSettingsRequest, TenantSettingsDto>(
+        'api/tenants/current/settings',
         body,
       ),
     );
