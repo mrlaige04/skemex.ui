@@ -21,7 +21,10 @@ import {
   groupAiModelsByProvider,
   type AiModelDto,
 } from '../../models/ai-chat/ai-chat.models';
-import type { ProjectSettingsDto } from '../../models/projects/projects.models';
+import type {
+  ProjectSettingsDto,
+  UpdateProjectSettingsRequest,
+} from '../../models/projects/projects.models';
 import { AiService } from '../../services/ai/ai.service';
 import { ProjectsService } from '../../services/projects/projects.service';
 
@@ -55,14 +58,19 @@ export class ProjectSettingsAiTabComponent implements OnInit {
   readonly models = signal<AiModelDto[]>([]);
 
   readonly defaultAiModelId = signal<string | null>(null);
+  readonly enrichmentAiModelId = signal<string | null>(null);
   private initialDefaultAiModelId: string | null = null;
+  private initialEnrichmentAiModelId: string | null = null;
   private projectId: string | null = null;
 
   readonly canSave = computed(() => {
     if (this.saving() || this.loading()) {
       return false;
     }
-    return this.defaultAiModelId() !== this.initialDefaultAiModelId;
+    return (
+      this.defaultAiModelId() !== this.initialDefaultAiModelId ||
+      this.enrichmentAiModelId() !== this.initialEnrichmentAiModelId
+    );
   });
 
   readonly modelsByProvider = computed(() => groupAiModelsByProvider(this.models()));
@@ -70,6 +78,14 @@ export class ProjectSettingsAiTabComponent implements OnInit {
 
   readonly selectedDefaultModel = computed(() => {
     const id = this.defaultAiModelId();
+    if (!id) {
+      return null;
+    }
+    return this.models().find((m) => m.id === id) ?? null;
+  });
+
+  readonly selectedEnrichmentModel = computed(() => {
+    const id = this.enrichmentAiModelId();
     if (!id) {
       return null;
     }
@@ -91,6 +107,13 @@ export class ProjectSettingsAiTabComponent implements OnInit {
     return this.modelById(value)?.displayName ?? String(value);
   };
 
+  readonly enrichmentModelLabel = (value: unknown): string => {
+    if (value === NONE_MODEL || value == null || value === '') {
+      return 'Use default AI model';
+    }
+    return this.modelById(value)?.displayName ?? String(value);
+  };
+
   ngOnInit(): void {
     void this.load();
   }
@@ -99,6 +122,13 @@ export class ProjectSettingsAiTabComponent implements OnInit {
     const id =
       value === NONE_MODEL || value == null || value === '' ? null : String(value);
     this.defaultAiModelId.set(id);
+    this.savedMessage.set(null);
+  }
+
+  updateEnrichmentModel(value: unknown): void {
+    const id =
+      value === NONE_MODEL || value == null || value === '' ? null : String(value);
+    this.enrichmentAiModelId.set(id);
     this.savedMessage.set(null);
   }
 
@@ -111,23 +141,27 @@ export class ProjectSettingsAiTabComponent implements OnInit {
       return;
     }
 
-    const selected = this.defaultAiModelId();
+    const selectedDefault = this.defaultAiModelId();
+    const selectedEnrichment = this.enrichmentAiModelId();
     this.saving.set(true);
     try {
-      const body: {
-        defaultAiModelId?: string;
-        clearDefaultAiModel?: boolean;
-      } = {};
+      const body: UpdateProjectSettingsRequest = {};
 
-      if (selected) {
-        body.defaultAiModelId = selected;
+      if (selectedDefault) {
+        body.defaultAiModelId = selectedDefault;
       } else if (this.initialDefaultAiModelId) {
         body.clearDefaultAiModel = true;
       }
 
+      if (selectedEnrichment) {
+        body.enrichmentAiModelId = selectedEnrichment;
+      } else if (this.initialEnrichmentAiModelId) {
+        body.clearEnrichmentAiModel = true;
+      }
+
       const updated = await this.projectsService.updateSettings(this.projectId, body);
       this.applySettings(updated);
-      this.savedMessage.set('Default AI model saved.');
+      this.savedMessage.set('AI settings saved.');
     } catch (err) {
       this.error.set(problemDetailMessage(err as HttpErrorResponse));
     } finally {
@@ -169,8 +203,11 @@ export class ProjectSettingsAiTabComponent implements OnInit {
   }
 
   private applySettings(settings: ProjectSettingsDto): void {
-    const id = settings.defaultAiModelId ?? null;
-    this.defaultAiModelId.set(id);
-    this.initialDefaultAiModelId = id;
+    const defaultId = settings.defaultAiModelId ?? null;
+    const enrichmentId = settings.enrichmentAiModelId ?? null;
+    this.defaultAiModelId.set(defaultId);
+    this.initialDefaultAiModelId = defaultId;
+    this.enrichmentAiModelId.set(enrichmentId);
+    this.initialEnrichmentAiModelId = enrichmentId;
   }
 }

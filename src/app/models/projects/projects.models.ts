@@ -50,12 +50,15 @@ export interface ProjectSettingsDto {
   projectId: string;
   defaultTaskColumnId: string;
   defaultAiModelId?: string | null;
+  enrichmentAiModelId?: string | null;
 }
 
 export interface UpdateProjectSettingsRequest {
   defaultTaskColumnId?: string;
   defaultAiModelId?: string | null;
   clearDefaultAiModel?: boolean;
+  enrichmentAiModelId?: string | null;
+  clearEnrichmentAiModel?: boolean;
 }
 
 export interface CreateProjectRequest {
